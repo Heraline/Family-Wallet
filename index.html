@@ -6,824 +6,810 @@
 <title>Family Wallet</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
-
   :root {
-    --bg: #0A0A14;
-    --bg2: #12121E;
-    --bg3: #1A1A2E;
-    --accent: #6C63FF;
-    --accent2: #4ECDC4;
-    --green: #69D2A0;
-    --red: #FF6B6B;
-    --yellow: #FFE66D;
-    --text: #F0EEF6;
-    --muted: #8A88AA;
-    --dim: #5A587A;
-    --border: rgba(255,255,255,0.07);
+    --bg:#0A0A14; --bg2:#12121E; --bg3:#1A1A2E;
+    --accent:#6C63FF; --accent2:#4ECDC4;
+    --green:#69D2A0; --red:#FF6B6B; --yellow:#FFE66D;
+    --text:#F0EEF6; --muted:#8A88AA; --dim:#5A587A;
+    --border:rgba(255,255,255,0.07);
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; overflow: hidden; }
-
-  body {
-    font-family: 'Sora', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
-    justify-content: center;
-    align-items: stretch;
-  }
-
-  #app {
-    width: 100%;
-    max-width: 430px;
-    height: 100vh;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* scrollable content area */
-  .page {
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: 90px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .page::-webkit-scrollbar { display: none; }
-
-  /* BG glows */
-  .glow1 {
-    position: fixed; top: -80px; right: -80px;
-    width: 280px; height: 280px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(108,99,255,0.15), transparent 70%);
-    pointer-events: none; z-index: 0;
-  }
-  .glow2 {
-    position: fixed; bottom: 60px; left: -60px;
-    width: 220px; height: 220px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(78,205,196,0.10), transparent 70%);
-    pointer-events: none; z-index: 0;
-  }
-
-  /* ── Typography ── */
-  .label { font-size: 11px; color: var(--dim); letter-spacing: 0.12em; text-transform: uppercase; }
-
-  /* ── Cards ── */
-  .card {
-    background: var(--bg3);
-    border: 1px solid rgba(108,99,255,0.2);
-    border-radius: 22px;
-    box-shadow: 0 0 40px rgba(108,99,255,0.12), 0 8px 32px rgba(0,0,0,0.35);
-  }
-
-  .surface {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-  }
-
-  /* ── Buttons ── */
-  button { cursor: pointer; font-family: 'Sora', sans-serif; border: none; transition: all 0.18s; }
-  button:active { transform: scale(0.95); opacity: 0.85; }
-
-  .btn-primary {
-    width: 100%;
-    padding: 17px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: #fff;
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    box-shadow: 0 8px 24px rgba(108,99,255,0.35);
-  }
-
-  .btn-ghost {
-    background: none;
-    color: var(--accent);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 0;
-    display: flex; align-items: center; gap: 6px;
-  }
-
-  /* ── Tabs ── */
-  .tab-bar {
-    display: flex;
-    background: rgba(255,255,255,0.05);
-    border-radius: 14px;
-    padding: 4px;
-    margin: 18px 22px 0;
-  }
-  .tab-btn {
-    flex: 1; padding: 10px; border-radius: 11px;
-    font-size: 13px; font-weight: 600; text-transform: capitalize;
-    color: var(--dim); background: transparent;
-  }
-  .tab-btn.active {
-    background: rgba(108,99,255,0.8);
-    color: #fff;
-  }
-
-  /* ── Member pills ── */
-  .member-scroll {
-    display: flex; gap: 8px;
-    padding: 18px 22px 0;
-    overflow-x: auto;
-  }
-  .member-scroll::-webkit-scrollbar { display: none; }
-
-  .member-pill {
-    flex-shrink: 0;
-    display: flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 999px;
-    font-size: 13px; font-weight: 600;
-    background: rgba(255,255,255,0.07);
-    color: var(--muted);
-  }
-  .member-pill.active { color: #fff; }
-
-  /* ── Balance card ── */
-  .balance-card { margin: 18px 22px 0; padding: 26px; }
-  .balance-amount {
-    font-family: 'DM Mono', monospace;
-    font-size: 38px; font-weight: 700;
-    letter-spacing: -0.03em;
-  }
-  .mini-cards { display: flex; gap: 12px; margin-top: 18px; }
-  .mini-card {
-    flex: 1; border-radius: 14px; padding: 13px 15px;
-    border: 1px solid;
-  }
-  .mini-card .mc-label { font-size: 10px; letter-spacing: 0.1em; margin-bottom: 4px; }
-  .mini-card .mc-val { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; }
-  .mini-card.income { background: rgba(105,210,160,0.1); border-color: rgba(105,210,160,0.2); }
-  .mini-card.income .mc-label, .mini-card.income .mc-val { color: var(--green); }
-  .mini-card.expense { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.2); }
-  .mini-card.expense .mc-label, .mini-card.expense .mc-val { color: var(--red); }
-
-  /* ── Transaction rows ── */
-  .tx-group { padding: 0 22px; margin-top: 20px; }
-  .tx-date-label { font-size: 11px; color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
-  .tx-list { display: flex; flex-direction: column; gap: 8px; }
-
-  .tx-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 13px 15px; border-radius: 15px; cursor: pointer;
-  }
-  .tx-row:active { transform: scale(0.98); }
-
-  .tx-icon {
-    width: 42px; height: 42px; border-radius: 13px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; flex-shrink: 0;
-  }
-  .tx-info { flex: 1; min-width: 0; }
-  .tx-desc { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tx-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
-  .tag {
-    font-size: 10px; border-radius: 6px;
-    padding: 2px 7px; font-weight: 600;
-  }
-  .tx-amount { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 600; flex-shrink: 0; }
-
-  /* ── Analytics ── */
-  .analytics-section { padding: 0 22px; margin-top: 20px; }
-  .cat-bar-row { margin-bottom: 14px; }
-  .cat-bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
-  .cat-bar-track { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; }
-  .cat-bar-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
-
-  .debt-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 15px; border-radius: 14px; margin-bottom: 8px;
-  }
-
-  /* ── Add form ── */
-  .add-page { padding: 50px 22px 100px; }
-  .form-section { margin-bottom: 16px; }
-  .input-card { padding: 16px 18px; border-radius: 17px; }
-  .input-card input, .input-card select {
-    background: none; border: none; outline: none;
-    color: var(--text); font-family: 'Sora', sans-serif;
-    width: 100%;
-  }
-  .big-input { font-family: 'DM Mono', monospace; font-size: 34px; font-weight: 700; }
-  .normal-input { font-size: 15px; }
-
-  .type-toggle {
-    display: flex; background: rgba(255,255,255,0.05);
-    border-radius: 14px; padding: 4px; margin-bottom: 22px;
-  }
-  .type-btn {
-    flex: 1; padding: 12px; border-radius: 11px;
-    font-size: 14px; font-weight: 700; background: transparent; color: var(--dim);
-  }
-  .type-btn.active-expense { background: var(--red); color: #fff; }
-  .type-btn.active-income { background: var(--green); color: #fff; }
-
-  .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip {
-    padding: 8px 13px; border-radius: 999px;
-    font-size: 12px; font-weight: 600;
-    background: rgba(255,255,255,0.06); color: var(--muted);
-  }
-  .chip.active { color: #fff; }
-
-  .member-grid { display: flex; gap: 8px; }
-  .member-box {
-    flex: 1; padding: 10px 6px; border-radius: 13px;
-    text-align: center; font-size: 12px; font-weight: 600;
-    background: rgba(255,255,255,0.06); color: var(--muted);
-  }
-  .member-box .m-avatar { font-size: 20px; margin-bottom: 3px; }
-  .member-box.active { color: #fff; }
-
-  .split-hint { font-size: 12px; color: var(--accent); text-align: center; margin-top: 10px; }
-
-  /* ── Bottom Nav ── */
-  .bottom-nav {
-    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 430px;
-    background: rgba(10,10,20,0.92);
-    backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border);
-    padding: 10px 30px 24px;
-    display: flex; justify-content: space-around; align-items: center;
-    z-index: 50;
-  }
-  .nav-btn {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    background: none; color: var(--dim);
-    font-size: 11px; font-weight: 600; padding: 4px 12px;
-  }
-  .nav-btn.active { color: var(--accent); }
-  .nav-btn .nav-icon { font-size: 22px; }
-
-  .fab {
-    width: 56px; height: 56px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    font-size: 28px; display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 8px 24px rgba(108,99,255,0.4);
-    margin-top: -18px; color: #fff;
-  }
-
-  /* ── Modal ── */
-  .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(8px);
-    z-index: 100;
-    display: flex; align-items: flex-end; justify-content: center;
-  }
-  .modal-sheet {
-    width: 100%; max-width: 430px;
-    background: var(--bg2);
-    border-radius: 24px 24px 0 0;
-    padding: 26px 22px 48px;
-    border: 1px solid rgba(255,255,255,0.09);
-    animation: slideUp 0.3s cubic-bezier(.22,.68,0,1.15) both;
-  }
-  .modal-handle {
-    width: 40px; height: 4px; border-radius: 999px;
-    background: rgba(255,255,255,0.2); margin: 0 auto 22px;
-  }
-
-  /* ── Animations ── */
-  @keyframes slideUp {
-    from { opacity:0; transform: translateY(30px); }
-    to   { opacity:1; transform: translateY(0); }
-  }
-  @keyframes fadeIn {
-    from { opacity:0; } to { opacity:1; }
-  }
-  .fade-in { animation: fadeIn 0.3s ease both; }
-  .slide-up { animation: slideUp 0.35s cubic-bezier(.22,.68,0,1.2) both; }
-
-  /* ── Empty state ── */
-  .empty { text-align: center; color: var(--dim); padding: 50px 20px; font-size: 14px; }
-
-  /* ── Delete button ── */
-  .delete-btn {
-    font-size: 11px; background: rgba(255,107,107,0.15);
-    color: var(--red); border-radius: 8px; padding: 4px 10px;
-    font-weight: 600;
-  }
-
-  /* ── Settings page ── */
-  .settings-page { padding: 50px 22px 100px; }
-  .settings-section { margin-bottom: 24px; }
-  .settings-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 16px; border-radius: 14px; margin-bottom: 8px;
-  }
-  .settings-row .sr-left { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; }
-  .clear-btn {
-    width: 100%; padding: 14px; border-radius: 14px;
-    background: rgba(255,107,107,0.12); color: var(--red);
-    font-size: 14px; font-weight: 600; border: 1px solid rgba(255,107,107,0.2);
-  }
-  .export-btn {
-    width: 100%; padding: 14px; border-radius: 14px;
-    background: rgba(108,99,255,0.12); color: var(--accent);
-    font-size: 14px; font-weight: 600; border: 1px solid rgba(108,99,255,0.2);
-    margin-bottom: 10px;
-  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden}
+  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:stretch}
+  #app{width:100%;max-width:430px;height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column}
+  .page{flex:1;overflow-y:auto;padding-bottom:90px;-webkit-overflow-scrolling:touch}
+  .page::-webkit-scrollbar{display:none}
+  .glow1{position:fixed;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(108,99,255,0.15),transparent 70%);pointer-events:none;z-index:0}
+  .glow2{position:fixed;bottom:60px;left:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(78,205,196,0.10),transparent 70%);pointer-events:none;z-index:0}
+  .label{font-size:11px;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase}
+  .card{background:var(--bg3);border:1px solid rgba(108,99,255,0.2);border-radius:22px;box-shadow:0 0 40px rgba(108,99,255,0.12),0 8px 32px rgba(0,0,0,0.35)}
+  .surface{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px}
+  button{cursor:pointer;font-family:'Sora',sans-serif;border:none;transition:all 0.18s}
+  button:active{transform:scale(0.95);opacity:0.85}
+  .btn-primary{width:100%;padding:17px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:16px;font-weight:700;letter-spacing:0.02em;box-shadow:0 8px 24px rgba(108,99,255,0.35)}
+  .btn-ghost{background:none;color:var(--accent);font-size:13px;font-weight:600;padding:0;display:flex;align-items:center;gap:6px}
+  .tab-bar{display:flex;background:rgba(255,255,255,0.05);border-radius:14px;padding:4px;margin:18px 22px 0}
+  .tab-btn{flex:1;padding:10px;border-radius:11px;font-size:13px;font-weight:600;color:var(--dim);background:transparent}
+  .tab-btn.active{background:rgba(108,99,255,0.8);color:#fff}
+  .member-scroll{display:flex;gap:8px;padding:18px 22px 0;overflow-x:auto}
+  .member-scroll::-webkit-scrollbar{display:none}
+  .member-pill{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;background:rgba(255,255,255,0.07);color:var(--muted)}
+  .member-pill.active{color:#fff}
+  .balance-card{margin:18px 22px 0;padding:26px}
+  .balance-amount{font-family:'DM Mono',monospace;font-size:38px;font-weight:700;letter-spacing:-0.03em}
+  .mini-cards{display:flex;gap:12px;margin-top:18px}
+  .mini-card{flex:1;border-radius:14px;padding:13px 15px;border:1px solid}
+  .mini-card .mc-label{font-size:10px;letter-spacing:0.1em;margin-bottom:4px}
+  .mini-card .mc-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:500}
+  .mini-card.income{background:rgba(105,210,160,0.1);border-color:rgba(105,210,160,0.2)}
+  .mini-card.income .mc-label,.mini-card.income .mc-val{color:var(--green)}
+  .mini-card.expense{background:rgba(255,107,107,0.1);border-color:rgba(255,107,107,0.2)}
+  .mini-card.expense .mc-label,.mini-card.expense .mc-val{color:var(--red)}
+  .tx-group{padding:0 22px;margin-top:20px}
+  .tx-date-label{font-size:11px;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px}
+  .tx-list{display:flex;flex-direction:column;gap:8px}
+  .tx-row{display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:15px;cursor:pointer}
+  .tx-row:active{transform:scale(0.98)}
+  .tx-icon{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .tx-info{flex:1;min-width:0}
+  .tx-desc{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tx-meta{display:flex;align-items:center;gap:6px;margin-top:3px}
+  .tag{font-size:10px;border-radius:6px;padding:2px 7px;font-weight:600}
+  .tx-amount{font-family:'DM Mono',monospace;font-size:15px;font-weight:600;flex-shrink:0}
+  .analytics-section{padding:0 22px;margin-top:20px}
+  .cat-bar-row{margin-bottom:14px}
+  .cat-bar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:13px}
+  .cat-bar-track{height:6px;border-radius:999px;background:rgba(255,255,255,0.07);overflow:hidden}
+  .cat-bar-fill{height:100%;border-radius:999px;transition:width 0.5s ease}
+  .debt-row{display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:14px;margin-bottom:8px}
+  .add-page{padding:50px 22px 100px}
+  .form-section{margin-bottom:16px}
+  .input-card{padding:16px 18px;border-radius:17px}
+  .input-card input,.input-card select{background:none;border:none;outline:none;color:var(--text);font-family:'Sora',sans-serif;width:100%}
+  .big-input{font-family:'DM Mono',monospace;font-size:34px;font-weight:700}
+  .normal-input{font-size:15px}
+  .type-toggle{display:flex;background:rgba(255,255,255,0.05);border-radius:14px;padding:4px;margin-bottom:22px}
+  .type-btn{flex:1;padding:12px;border-radius:11px;font-size:14px;font-weight:700;background:transparent;color:var(--dim)}
+  .type-btn.active-expense{background:var(--red);color:#fff}
+  .type-btn.active-income{background:var(--green);color:#fff}
+  .chip-grid{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{padding:8px 13px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(255,255,255,0.06);color:var(--muted)}
+  .chip.active{color:#fff}
+  .member-grid{display:flex;gap:8px;flex-wrap:wrap}
+  .member-box{flex:1;min-width:60px;padding:10px 6px;border-radius:13px;text-align:center;font-size:12px;font-weight:600;background:rgba(255,255,255,0.06);color:var(--muted)}
+  .member-box .m-avatar{font-size:20px;margin-bottom:3px}
+  .member-box.active{color:#fff}
+  .split-hint{font-size:12px;color:var(--accent);text-align:center;margin-top:10px}
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(10,10,20,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 30px 24px;display:flex;justify-content:space-around;align-items:center;z-index:50}
+  .nav-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;color:var(--dim);font-size:11px;font-weight:600;padding:4px 12px}
+  .nav-btn.active{color:var(--accent)}
+  .nav-btn .nav-icon{font-size:22px}
+  .fab{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(108,99,255,0.4);margin-top:-18px;color:#fff}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+  .modal-sheet{width:100%;max-width:430px;background:var(--bg2);border-radius:24px 24px 0 0;padding:26px 22px 48px;border:1px solid rgba(255,255,255,0.09);animation:slideUp 0.3s cubic-bezier(.22,.68,0,1.15) both}
+  .modal-handle{width:40px;height:4px;border-radius:999px;background:rgba(255,255,255,0.2);margin:0 auto 22px}
+  @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .fade-in{animation:fadeIn 0.3s ease both}
+  .slide-up{animation:slideUp 0.35s cubic-bezier(.22,.68,0,1.2) both}
+  .empty{text-align:center;color:var(--dim);padding:50px 20px;font-size:14px}
+  .delete-btn{font-size:11px;background:rgba(255,107,107,0.15);color:var(--red);border-radius:8px;padding:4px 10px;font-weight:600}
+  .settings-page{padding:50px 22px 100px}
+  .settings-section{margin-bottom:24px}
+  .settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:14px;margin-bottom:8px}
+  .settings-row .sr-left{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:500}
+  .clear-btn{width:100%;padding:14px;border-radius:14px;background:rgba(255,107,107,0.12);color:var(--red);font-size:14px;font-weight:600;border:1px solid rgba(255,107,107,0.2)}
+  .export-btn{width:100%;padding:14px;border-radius:14px;background:rgba(108,99,255,0.12);color:var(--accent);font-size:14px;font-weight:600;border:1px solid rgba(108,99,255,0.2);margin-bottom:10px}
+  /* AUTH */
+  .auth-screen{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 28px;animation:fadeIn 0.4s ease both;overflow-y:auto}
+  .auth-tabs{display:flex;width:100%;background:rgba(255,255,255,0.05);border-radius:14px;padding:4px;margin-bottom:22px}
+  .auth-tab{flex:1;padding:11px;border-radius:11px;font-size:14px;font-weight:700;background:transparent;color:var(--dim)}
+  .auth-tab.active{background:rgba(108,99,255,0.8);color:#fff}
+  .auth-input{width:100%;padding:15px 16px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);font-family:'Sora',sans-serif;font-size:15px;outline:none;transition:border-color 0.2s}
+  .auth-input:focus{border-color:var(--accent)}
+  .auth-error{font-size:13px;color:var(--red);margin-bottom:12px;padding:10px 14px;border-radius:10px;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.2);width:100%;text-align:center}
+  .user-badge{display:flex;align-items:center;gap:8px;background:rgba(108,99,255,0.12);border:1px solid rgba(108,99,255,0.25);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--accent)}
+  /* LEDGER SCREEN */
+  .ledger-screen{position:fixed;inset:0;background:var(--bg);z-index:190;display:flex;flex-direction:column;animation:fadeIn 0.3s ease both}
+  .ledger-card{background:var(--bg3);border:1px solid rgba(108,99,255,0.15);border-radius:18px;padding:18px;margin-bottom:12px;cursor:pointer;transition:all 0.2s}
+  .ledger-card:active{transform:scale(0.97)}
+  .ledger-card.active-ledger{border-color:var(--accent);background:rgba(108,99,255,0.08)}
+  /* INVITE */
+  .invite-code-box{background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.3);border-radius:18px;padding:20px;text-align:center;margin-bottom:20px}
+  .invite-code{font-family:'DM Mono',monospace;font-size:28px;font-weight:700;color:var(--accent);letter-spacing:0.15em;margin:10px 0}
+  .copy-btn{padding:8px 18px;border-radius:10px;background:rgba(108,99,255,0.2);color:var(--accent);font-size:13px;font-weight:600;border:1px solid rgba(108,99,255,0.3)}
+  .join-input-row{display:flex;gap:10px;align-items:center}
+  .join-input-row input{flex:1;padding:13px 15px;border-radius:13px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:16px;outline:none;letter-spacing:0.1em}
+  .join-input-row input:focus{border-color:var(--accent)}
+  .join-btn{padding:13px 18px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px;font-weight:700}
+  .collab-member-row{display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:14px;margin-bottom:8px}
+  .collab-badge{font-size:10px;padding:3px 8px;border-radius:6px;font-weight:700}
+  .collab-badge.owner{background:rgba(108,99,255,0.2);color:var(--accent)}
+  .collab-badge.member{background:rgba(78,205,196,0.2);color:var(--accent2)}
+  /* LOADING */
+  .loading-screen{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+  .spinner{width:36px;height:36px;border:3px solid rgba(108,99,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+  .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid rgba(108,99,255,0.3);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:600;z-index:500;animation:fadeIn 0.2s ease;white-space:nowrap;pointer-events:none}
 </style>
 </head>
 <body>
 <div id="app">
-  <div class="glow1"></div>
-  <div class="glow2"></div>
+  <div class="glow1"></div><div class="glow2"></div>
+  <div id="loadingScreen" class="loading-screen">
+    <div style="font-size:48px">💳</div>
+    <div class="spinner"></div>
+    <p style="font-size:13px;color:var(--muted)">Connecting to Firebase...</p>
+  </div>
+  <div id="authContainer"></div>
+  <div id="ledgerContainer"></div>
   <div class="page" id="mainPage"></div>
   <div id="modalContainer"></div>
-  <nav class="bottom-nav" id="bottomNav"></nav>
+  <nav class="bottom-nav" id="bottomNav" style="display:none"></nav>
 </div>
 
-<script>
-// ═══════════════════════════════
-//  DATA & STORAGE
-// ═══════════════════════════════
-const STORE_KEY = 'familyWallet_v2';
+<script type="module">
+import { initializeApp }           from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile }
+                                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, set, get, push, onValue, off, update, remove }
+                                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-const CATEGORIES = {
-  food:          { icon: '🍜', label: 'Food & Dining',   color: '#FF6B6B' },
-  transport:     { icon: '🚌', label: 'Transport',       color: '#4ECDC4' },
-  shopping:      { icon: '🛍️', label: 'Shopping',       color: '#FFE66D' },
-  utilities:     { icon: '💡', label: 'Utilities',       color: '#A8E6CF' },
-  health:        { icon: '💊', label: 'Health',          color: '#FF8B94' },
-  entertainment: { icon: '🎬', label: 'Entertainment',   color: '#B4A7D6' },
-  income:        { icon: '💰', label: 'Income',          color: '#69D2A0' },
-  other:         { icon: '📦', label: 'Other',           color: '#C9C9C9' },
+// ── Firebase config ──
+const app = initializeApp({
+  apiKey: "AIzaSyBhrlxbni_T4OHTf-_VlvBtOQ0Tm5XNicE",
+  authDomain: "family-wallet-20e8b.firebaseapp.com",
+  databaseURL: "https://family-wallet-20e8b-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "family-wallet-20e8b",
+  storageBucket: "family-wallet-20e8b.firebasestorage.app",
+  messagingSenderId: "70042258839",
+  appId: "1:70042258839:web:13efe2ddc3c482980e48d2"
+});
+const auth = getAuth(app);
+const db   = getDatabase(app);
+
+// ══════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════
+const CATS = {
+  food:          { icon:'🍜', label:'Food & Dining',   color:'#FF6B6B' },
+  transport:     { icon:'🚌', label:'Transport',       color:'#4ECDC4' },
+  shopping:      { icon:'🛍️', label:'Shopping',       color:'#FFE66D' },
+  utilities:     { icon:'💡', label:'Utilities',       color:'#A8E6CF' },
+  health:        { icon:'💊', label:'Health',          color:'#FF8B94' },
+  entertainment: { icon:'🎬', label:'Entertainment',   color:'#B4A7D6' },
+  income:        { icon:'💰', label:'Income',          color:'#69D2A0' },
+  other:         { icon:'📦', label:'Other',           color:'#C9C9C9' },
 };
+const LEDGER_ICONS = ['👨‍👩‍👧‍👦','🏠','✈️','🎉','💼','🛒','🏥','📚','🎮','🍽️'];
+const AVATARS      = ['👨','👩','🧒','👦','👧','🧑','👴','👵','🧔','👱'];
+const M_COLORS     = ['#FF6B6B','#4ECDC4','#FFE66D','#A8E6CF','#B4A7D6','#FF8B94','#6C63FF','#69D2A0'];
 
-const DEFAULT_MEMBERS = [
-  { id: 'dad',  name: 'Dad',  avatar: '👨', color: '#FF6B6B' },
-  { id: 'mom',  name: 'Mom',  avatar: '👩', color: '#FF8B94' },
-  { id: 'kid1', name: 'Alex', avatar: '🧒', color: '#4ECDC4' },
-  { id: 'kid2', name: 'Sam',  avatar: '👦', color: '#FFE66D' },
-];
-
-const SAMPLE = [
-  { id: 1, type:'expense', amount:45.80,  category:'food',          description:'Lunch at hawker centre', member:'dad',  date:today(), splitWith:['mom'] },
-  { id: 2, type:'expense', amount:12.50,  category:'transport',     description:'MRT top-up',             member:'mom',  date:today(), splitWith:[] },
-  { id: 3, type:'income',  amount:3200,   category:'income',        description:'Monthly salary',         member:'dad',  date:prevDay(1), splitWith:[] },
-  { id: 4, type:'expense', amount:89.90,  category:'shopping',      description:'Groceries – Giant',      member:'mom',  date:prevDay(1), splitWith:['dad'] },
-  { id: 5, type:'expense', amount:15.00,  category:'entertainment', description:'Movie tickets',          member:'kid1', date:prevDay(2), splitWith:['kid2'] },
-  { id: 6, type:'income',  amount:2800,   category:'income',        description:'Monthly salary',         member:'mom',  date:prevDay(2), splitWith:[] },
-  { id: 7, type:'expense', amount:32.40,  category:'health',        description:'Pharmacy',               member:'mom',  date:prevDay(3), splitWith:[] },
-  { id: 8, type:'expense', amount:120.00, category:'utilities',     description:'Electric bill',          member:'dad',  date:prevDay(4), splitWith:['mom'] },
-];
-
-function today() {
-  return new Date().toISOString().slice(0,10);
-}
-function prevDay(n) {
-  const d = new Date(); d.setDate(d.getDate()-n);
-  return d.toISOString().slice(0,10);
-}
-
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch(e) {}
-  return { transactions: SAMPLE, members: DEFAULT_MEMBERS };
-}
-
-function saveData() {
-  localStorage.setItem(STORE_KEY, JSON.stringify(state.data));
-}
-
-// ═══════════════════════════════
+// ══════════════════════════════════════════
 //  STATE
-// ═══════════════════════════════
-const state = {
-  data: loadData(),
-  view: 'home',          // home | add | settings
-  tab: 'transactions',   // transactions | analytics
-  filterMember: 'all',
-  addForm: {
-    type: 'expense', amount: '', category: 'food',
-    description: '', member: '', splitWith: [], date: today()
-  },
-  splitModal: null,
+// ══════════════════════════════════════════
+const S = {
+  user:null, profile:null,
+  ledgers:{},             // { [ledgerId]: { name, icon, role } }
+  activeLedgerId:null,
+  txs:{},                 // raw Firebase transactions object
+  members:{},             // raw Firebase members object
+  view:'home', tab:'transactions', filterMember:'all',
+  addForm:{ type:'expense',amount:'',category:'food',description:'',member:'',splitWith:[],date:td() },
+  splitModal:null,
+  authMode:'login',
+  listeners:[],
 };
 
-// ═══════════════════════════════
-//  HELPERS
-// ═══════════════════════════════
-function fmt(n) {
-  return 'RM ' + Number(n).toFixed(2);
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function td(){ return new Date().toISOString().slice(0,10); }
+function fmt(n){ return 'RM '+Number(n).toFixed(2); }
+function genCode(n=6){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:n},()=>c[~~(Math.random()*c.length)]).join(''); }
+function dlabel(str){
+  const now=new Date(); now.setHours(0,0,0,0);
+  const d=new Date(str+'T00:00:00');
+  const diff=Math.round((now-d)/86400000);
+  if(diff===0)return'Today'; if(diff===1)return'Yesterday';
+  return d.toLocaleDateString('en-MY',{weekday:'short',month:'short',day:'numeric'});
 }
-
-function dateLabel(str) {
-  const t = new Date(); t.setHours(0,0,0,0);
-  const d = new Date(str + 'T00:00:00');
-  const diff = Math.round((t - d) / 86400000);
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Yesterday';
-  return d.toLocaleDateString('en-MY', { weekday:'short', month:'short', day:'numeric' });
+function txArr(){
+  return Object.entries(S.txs||{}).map(([k,v])=>({...v,_k:k}))
+    .sort((a,b)=>b.date.localeCompare(a.date)||(b.ts||0)-(a.ts||0));
 }
-
-function getMember(id) {
-  return state.data.members.find(m => m.id === id) || { id, name: id, avatar: '👤', color: '#999' };
+function getMem(id){
+  return (S.members&&S.members[id]) ? {...S.members[id],id} : {id,displayName:id,avatar:'👤',color:'#999'};
 }
-
-function getFiltered() {
-  const fm = state.filterMember;
-  if (fm === 'all') return state.data.transactions;
-  return state.data.transactions.filter(t => t.member === fm || (t.splitWith||[]).includes(fm));
+function filtered(){
+  const f=S.filterMember, all=txArr();
+  return f==='all'?all:all.filter(t=>t.member===f||(t.splitWith||[]).includes(f));
 }
-
-function getSplitDebts() {
-  const debts = {};
-  state.data.transactions.forEach(t => {
-    if (t.splitWith && t.splitWith.length && t.type === 'expense') {
-      const share = t.amount / (t.splitWith.length + 1);
-      t.splitWith.forEach(p => {
-        const key = p + '->' + t.member;
-        debts[key] = (debts[key]||0) + share;
-      });
+function debts(){
+  const d={};
+  txArr().forEach(t=>{
+    if(t.splitWith?.length&&t.type==='expense'){
+      const sh=t.amount/(t.splitWith.length+1);
+      t.splitWith.forEach(p=>{ const k=p+'->'+t.member; d[k]=(d[k]||0)+sh; });
     }
   });
-  return Object.entries(debts).map(([k,v]) => {
-    const [from,to] = k.split('->');
-    return { from, to, amount: v };
-  });
+  return Object.entries(d).map(([k,v])=>{ const[f,t]=k.split('->'); return{from:f,to:t,amount:v}; });
+}
+function toast(msg,col='var(--green)'){
+  const el=document.createElement('div');
+  el.className='toast'; el.textContent=msg; el.style.color=col;
+  document.body.appendChild(el); setTimeout(()=>el.remove(),2500);
+}
+function showLoad(){ document.getElementById('loadingScreen').style.display='flex'; }
+function hideLoad(){ document.getElementById('loadingScreen').style.display='none'; }
+
+// ══════════════════════════════════════════
+//  AUTH STATE
+// ══════════════════════════════════════════
+onAuthStateChanged(auth, async user=>{
+  if(user){
+    S.user=user;
+    const snap=await get(ref(db,'users/'+user.uid));
+    S.profile = snap.exists() ? snap.val() : { displayName:user.displayName||'User', avatar:'👤', color:M_COLORS[0] };
+    if(!snap.exists()) await set(ref(db,'users/'+user.uid), S.profile);
+
+    // Load ledger memberships
+    const lsnap=await get(ref(db,'userLedgers/'+user.uid));
+    S.ledgers = lsnap.exists() ? lsnap.val() : {};
+
+    if(!Object.keys(S.ledgers).length){
+      const id=await mkLedger('Family','👨‍👩‍👧‍👦');
+      S.ledgers[id]={name:'Family',icon:'👨‍👩‍👧‍👦',role:'owner'};
+    }
+    const last=localStorage.getItem('fw_lid_'+user.uid);
+    const pick=(last&&S.ledgers[last])?last:Object.keys(S.ledgers)[0];
+    await switchLedger(pick);
+    hideLoad(); showApp();
+  } else {
+    S.user=null; S.profile=null;
+    hideLoad(); showAuth();
+  }
+});
+
+// ══════════════════════════════════════════
+//  LEDGER OPERATIONS
+// ══════════════════════════════════════════
+async function mkLedger(name,icon){
+  const lid=push(ref(db,'ledgers')).key;
+  const code=genCode(6);
+  const up={};
+  up[`ledgers/${lid}`]={ id:lid,name,icon,inviteCode:code,owner:S.user.uid,createdAt:Date.now(),members:{[S.user.uid]:true} };
+  up[`userLedgers/${S.user.uid}/${lid}`]={ name,icon,role:'owner' };
+  up[`ledgerMembers/${lid}/${S.user.uid}`]={ displayName:S.profile.displayName,avatar:S.profile.avatar,color:S.profile.color,role:'owner',joinedAt:Date.now() };
+  await update(ref(db),up);
+  return lid;
 }
 
-// ═══════════════════════════════
-//  RENDER
-// ═══════════════════════════════
-function render() {
-  renderPage();
-  renderNav();
-  renderModal();
+async function switchLedger(lid){
+  S.listeners.forEach(({r,fn})=>{ try{ off(r,'value',fn); }catch(e){} });
+  S.listeners=[];
+  S.activeLedgerId=lid;
+  S.filterMember='all'; S.view='home';
+  localStorage.setItem('fw_lid_'+S.user.uid, lid);
+
+  const tr=ref(db,'ledgerTransactions/'+lid);
+  const tfn=snap=>{ S.txs=snap.exists()?snap.val():{};  safeRenderPage(); };
+  onValue(tr,tfn); S.listeners.push({r:tr,fn:tfn});
+
+  const mr=ref(db,'ledgerMembers/'+lid);
+  const mfn=snap=>{ S.members=snap.exists()?snap.val():{};  safeRenderPage(); };
+  onValue(mr,mfn); S.listeners.push({r:mr,fn:mfn});
+
+  // ensure self in members
+  const ms=await get(ref(db,`ledgerMembers/${lid}/${S.user.uid}`));
+  if(!ms.exists()) await set(ref(db,`ledgerMembers/${lid}/${S.user.uid}`),{displayName:S.profile.displayName,avatar:S.profile.avatar,color:S.profile.color,role:'member',joinedAt:Date.now()});
 }
 
-// ── NAV ──
-function renderNav() {
-  const nav = document.getElementById('bottomNav');
-  const { view, tab } = state;
-  nav.innerHTML = `
+function safeRenderPage(){ const pg=document.getElementById('mainPage'); if(pg&&document.getElementById('ledgerContainer')?.innerHTML==='') renderPage(); }
+
+// ══════════════════════════════════════════
+//  SHOW / HIDE SCREENS
+// ══════════════════════════════════════════
+function showAuth(){
+  document.getElementById('authContainer').innerHTML=renderAuth();
+  document.getElementById('ledgerContainer').innerHTML='';
+  document.getElementById('bottomNav').style.display='none';
+  document.getElementById('mainPage').innerHTML='';
+}
+function showApp(){
+  document.getElementById('authContainer').innerHTML='';
+  document.getElementById('ledgerContainer').innerHTML='';
+  document.getElementById('bottomNav').style.display='flex';
+  render();
+}
+
+// ══════════════════════════════════════════
+//  AUTH UI
+// ══════════════════════════════════════════
+let selAv=0;
+function renderAuth(){
+  const login=S.authMode==='login';
+  return `
+  <div class="auth-screen fade-in">
+    <div style="font-size:52px;margin-bottom:12px">💳</div>
+    <p style="font-size:26px;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px;text-align:center">Family Wallet</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:36px;text-align:center">Real-time shared spending tracker</p>
+    <div class="auth-tabs" style="width:100%;max-width:360px">
+      <button class="auth-tab ${login?'active':''}" onclick="setAM('login')">Sign In</button>
+      <button class="auth-tab ${!login?'active':''}" onclick="setAM('register')">Register</button>
+    </div>
+    <div id="authErr"></div>
+    <div style="width:100%;max-width:360px">
+      ${!login?`<div style="margin-bottom:14px"><p class="label" style="margin-bottom:8px">Your Name</p>
+        <input class="auth-input" id="aName" type="text" placeholder="e.g. Ahmad, Sarah..."></div>`:''}
+      <div style="margin-bottom:14px"><p class="label" style="margin-bottom:8px">Email</p>
+        <input class="auth-input" id="aEmail" type="email" placeholder="you@email.com"></div>
+      <div style="margin-bottom:${login?22:14}px"><p class="label" style="margin-bottom:8px">Password</p>
+        <input class="auth-input" id="aPass" type="password" placeholder="••••••••">
+        ${!login?'<p style="font-size:11px;color:var(--dim);margin-top:5px">Min 6 characters</p>':''}</div>
+      ${!login?`<div style="margin-bottom:22px"><p class="label" style="margin-bottom:10px">Pick Avatar</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${AVATARS.map((a,i)=>`<button onclick="pickAv(${i})" id="av${i}" style="width:44px;height:44px;border-radius:12px;font-size:22px;background:rgba(255,255,255,0.06);border:2px solid ${i===0?'var(--accent)':'transparent'};transition:all 0.15s">${a}</button>`).join('')}
+        </div></div>`:''}
+      <button class="btn-primary" style="margin-top:4px" onclick="${login?'doLogin()':'doReg()'}">${login?'→ Sign In':'✓ Create Account'}</button>
+    </div>
+  </div>`;
+}
+window.pickAv=i=>{ selAv=i; document.querySelectorAll('[id^="av"]').forEach(b=>b.style.borderColor='transparent'); const b=document.getElementById('av'+i); if(b)b.style.borderColor='var(--accent)'; };
+window.setAM=m=>{ S.authMode=m; document.getElementById('authContainer').innerHTML=renderAuth(); };
+function aErr(msg){ const el=document.getElementById('authErr'); if(el)el.innerHTML=`<div class="auth-error" style="max-width:360px">${msg}</div>`; }
+
+window.doReg=async()=>{
+  const name=document.getElementById('aName')?.value.trim();
+  const email=document.getElementById('aEmail')?.value.trim();
+  const pass=document.getElementById('aPass')?.value;
+  if(!name||!email||!pass){aErr('All fields required.');return;}
+  if(pass.length<6){aErr('Password min 6 characters.');return;}
+  try{
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    await updateProfile(cred.user,{displayName:name});
+    const color=M_COLORS[~~(Math.random()*M_COLORS.length)];
+    await set(ref(db,'users/'+cred.user.uid),{displayName:name,avatar:AVATARS[selAv],color});
+  }catch(e){ aErr(e.code==='auth/email-already-in-use'?'Email already registered — sign in instead.':'Error: '+e.message); }
+};
+window.doLogin=async()=>{
+  const email=document.getElementById('aEmail')?.value.trim();
+  const pass=document.getElementById('aPass')?.value;
+  if(!email||!pass){aErr('Enter email and password.');return;}
+  try{ await signInWithEmailAndPassword(auth,email,pass); }
+  catch(e){ aErr(e.code==='auth/invalid-credential'?'Wrong email or password.':'Error: '+e.message); }
+};
+window.doLogout=async()=>{
+  if(!confirm('Sign out?'))return;
+  S.listeners.forEach(({r,fn})=>{ try{off(r,'value',fn);}catch(e){} }); S.listeners=[];
+  await signOut(auth);
+};
+
+// ══════════════════════════════════════════
+//  LEDGER PICKER
+// ══════════════════════════════════════════
+window.openLedgerPicker=()=>{
+  document.getElementById('ledgerContainer').innerHTML=renderLedgerPicker();
+  document.getElementById('mainPage').innerHTML='';
+  document.getElementById('bottomNav').style.display='none';
+};
+window.closeLedgerPicker=()=>{
+  document.getElementById('ledgerContainer').innerHTML='';
+  document.getElementById('bottomNav').style.display='flex';
+  render();
+};
+
+let selIcon=0;
+function renderLedgerPicker(){
+  const cards=Object.entries(S.ledgers).map(([id,l])=>`
+    <div class="ledger-card ${id===S.activeLedgerId?'active-ledger':''}" onclick="pickLedger('${id}')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:46px;height:46px;border-radius:14px;background:rgba(108,99,255,0.15);display:flex;align-items:center;justify-content:center;font-size:22px">${l.icon||'💼'}</div>
+        <div style="flex:1">
+          <p style="font-size:16px;font-weight:700">${l.name}</p>
+          <p style="font-size:11px;color:var(--dim)">${l.role==='owner'?'👑 Owner':'👤 Member'}${id===S.activeLedgerId?' · Active':''}</p>
+        </div>
+        ${id===S.activeLedgerId?'<span style="color:var(--accent);font-size:20px">✓</span>':''}
+      </div>
+    </div>`).join('');
+
+  return `
+  <div class="ledger-screen fade-in">
+    <div style="padding:50px 22px 0">
+      <button class="btn-ghost" onclick="closeLedgerPicker()" style="margin-bottom:22px">← Back</button>
+      <h2 style="font-size:24px;font-weight:700;margin-bottom:4px">My Ledgers</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Switch, create, or join ledgers</p>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0 22px 120px">
+      ${cards}
+
+      <div class="surface" style="padding:20px;margin-top:8px;border-radius:18px">
+        <p style="font-size:15px;font-weight:700;margin-bottom:14px">➕ Create New Ledger</p>
+        <div style="margin-bottom:12px">
+          <p class="label" style="margin-bottom:8px">Name</p>
+          <input id="nlName" type="text" placeholder="e.g. Family, Bali Trip..."
+            style="width:100%;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none">
+        </div>
+        <div style="margin-bottom:16px">
+          <p class="label" style="margin-bottom:10px">Icon</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${LEDGER_ICONS.map((ic,i)=>`<button onclick="pickIcon(${i})" id="ic${i}" style="width:42px;height:42px;border-radius:11px;font-size:20px;background:rgba(255,255,255,0.06);border:2px solid ${i===0?'var(--accent)':'transparent'};transition:all 0.15s">${ic}</button>`).join('')}
+          </div>
+        </div>
+        <button class="btn-primary" style="padding:14px" onclick="doCreateLedger()">Create Ledger</button>
+        <div id="clMsg" style="margin-top:10px;font-size:13px;text-align:center"></div>
+      </div>
+
+      <div class="surface" style="padding:20px;margin-top:12px;border-radius:18px">
+        <p style="font-size:15px;font-weight:700;margin-bottom:6px">🔑 Join a Ledger</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Enter a 6-character invite code</p>
+        <div class="join-input-row">
+          <input id="jCode" type="text" placeholder="ABC123" maxlength="6" oninput="this.value=this.value.toUpperCase()">
+          <button class="join-btn" onclick="doJoin()">Join</button>
+        </div>
+        <div id="jMsg" style="margin-top:10px;font-size:13px"></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+window.pickIcon=i=>{ selIcon=i; document.querySelectorAll('[id^="ic"]').forEach(b=>b.style.borderColor='transparent'); const b=document.getElementById('ic'+i); if(b)b.style.borderColor='var(--accent)'; };
+
+window.doCreateLedger=async()=>{
+  const name=document.getElementById('nlName')?.value.trim();
+  const msg=document.getElementById('clMsg');
+  if(!name){if(msg){msg.style.color='var(--red)';msg.textContent='Enter a name.';}return;}
+  try{
+    const id=await mkLedger(name,LEDGER_ICONS[selIcon]);
+    S.ledgers[id]={name,icon:LEDGER_ICONS[selIcon],role:'owner'};
+    if(msg){msg.style.color='var(--green)';msg.textContent='✓ Ledger created!';}
+    await switchLedger(id);
+    setTimeout(()=>{closeLedgerPicker();showApp();toast('✓ '+name+' created');},700);
+  }catch(e){if(msg){msg.style.color='var(--red)';msg.textContent='Error: '+e.message;}}
+};
+
+async function joinByCode(code, msgEl){
+  if(!code||code.length!==6){if(msgEl){msgEl.style.color='var(--red)';msgEl.textContent='Enter a valid 6-character code.';}return;}
+  try{
+    const snap=await get(ref(db,'ledgers'));
+    if(!snap.exists()){if(msgEl){msgEl.style.color='var(--red)';msgEl.textContent='No ledgers found.';}return;}
+    let tid=null,tl=null;
+    snap.forEach(c=>{if(c.val().inviteCode===code){tid=c.key;tl=c.val();}});
+    if(!tid){if(msgEl){msgEl.style.color='var(--red)';msgEl.textContent='Invalid invite code.';}return;}
+    if(S.ledgers[tid]){if(msgEl){msgEl.style.color='var(--accent2)';msgEl.textContent='Already a member!';}return;}
+    const up={};
+    up[`ledgers/${tid}/members/${S.user.uid}`]=true;
+    up[`userLedgers/${S.user.uid}/${tid}`]={name:tl.name,icon:tl.icon||'💼',role:'member'};
+    up[`ledgerMembers/${tid}/${S.user.uid}`]={displayName:S.profile.displayName,avatar:S.profile.avatar,color:S.profile.color,role:'member',joinedAt:Date.now()};
+    await update(ref(db),up);
+    S.ledgers[tid]={name:tl.name,icon:tl.icon||'💼',role:'member'};
+    if(msgEl){msgEl.style.color='var(--green)';msgEl.textContent='✓ Joined "'+tl.name+'"!';}
+    await switchLedger(tid);
+    return tl.name;
+  }catch(e){if(msgEl){msgEl.style.color='var(--red)';msgEl.textContent='Error: '+e.message;}}
+}
+
+window.doJoin=async()=>{
+  const code=document.getElementById('jCode')?.value.trim().toUpperCase();
+  const msg=document.getElementById('jMsg');
+  const name=await joinByCode(code,msg);
+  if(name) setTimeout(()=>{closeLedgerPicker();showApp();toast('✓ Joined '+name);},700);
+};
+
+window.pickLedger=async id=>{
+  showLoad();
+  await switchLedger(id);
+  hideLoad(); closeLedgerPicker(); showApp();
+};
+
+// ══════════════════════════════════════════
+//  MAIN RENDER
+// ══════════════════════════════════════════
+function render(){ renderPage(); renderNav(); renderModal(); }
+
+function renderNav(){
+  const nav=document.getElementById('bottomNav'); if(!nav)return;
+  const{view,tab}=S;
+  nav.innerHTML=`
     <button class="nav-btn ${view==='home'&&tab==='transactions'?'active':''}" onclick="goHome('transactions')">
-      <span class="nav-icon">📋</span>
-      <span>Ledger</span>
+      <span class="nav-icon">📋</span><span>Ledger</span>
     </button>
     <button class="fab" onclick="goAdd()">+</button>
     <button class="nav-btn ${view==='home'&&tab==='analytics'?'active':''}" onclick="goHome('analytics')">
-      <span class="nav-icon">📊</span>
-      <span>Analytics</span>
-    </button>
-  `;
+      <span class="nav-icon">📊</span><span>Analytics</span>
+    </button>`;
 }
 
-// ── PAGE ──
-function renderPage() {
-  const pg = document.getElementById('mainPage');
-  if (state.view === 'add') { pg.innerHTML = renderAddPage(); return; }
-  if (state.view === 'settings') { pg.innerHTML = renderSettingsPage(); return; }
-  pg.innerHTML = renderHomePage();
+function renderPage(){
+  const pg=document.getElementById('mainPage'); if(!pg)return;
+  if(S.view==='add')      {pg.innerHTML=renderAdd();return;}
+  if(S.view==='settings') {pg.innerHTML=renderSettings();return;}
+  if(S.view==='invite')   {pg.innerHTML=renderInvite();return;}
+  pg.innerHTML=renderHome();
 }
 
 // ── HOME ──
-function renderHomePage() {
-  const filtered = getFiltered();
-  const income  = filtered.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const expense = filtered.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const balance = income - expense;
-  const isPos   = balance >= 0;
-
-  // member pills
-  const allMembers = [{ id:'all', name:'All', avatar:'👨‍👩‍👧‍👦', color:'#6C63FF' }, ...state.data.members];
-  const memberPills = allMembers.map(m => `
-    <button class="member-pill ${state.filterMember===m.id?'active':''}"
-      style="${state.filterMember===m.id?'background:'+m.color+';':''}"
+function renderHome(){
+  const fil=filtered();
+  const inc=fil.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp=fil.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const bal=inc-exp; const isPos=bal>=0;
+  const mems=S.members||{};
+  const allM=[{id:'all',displayName:'All',avatar:'👨‍👩‍👧‍👦',color:'#6C63FF'},...Object.entries(mems).map(([id,m])=>({id,...m}))];
+  const pills=allM.map(m=>`
+    <button class="member-pill ${S.filterMember===m.id?'active':''}"
+      style="${S.filterMember===m.id?'background:'+m.color+';':''}"
       onclick="setFilter('${m.id}')">
-      <span style="font-size:16px">${m.avatar}</span> ${m.name}
+      <span style="font-size:16px">${m.avatar}</span> ${m.displayName}
     </button>`).join('');
-
-  const tabContent = state.tab === 'transactions'
-    ? renderTransactions(filtered)
-    : renderAnalytics(filtered, expense);
+  const linfo=S.ledgers[S.activeLedgerId]||{};
+  const memCnt=Object.keys(mems).length;
+  const tc=S.tab==='transactions'?renderTxs(fil):renderAnalytics(fil,exp);
 
   return `
   <div class="fade-in">
     <div style="padding:50px 22px 0;display:flex;justify-content:space-between;align-items:flex-start">
       <div>
         <p class="label" style="margin-bottom:4px">Family Wallet</p>
-        <h1 style="font-size:26px;font-weight:700;letter-spacing:-0.02em">Overview</h1>
+        <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="openLedgerPicker()">
+          <h1 style="font-size:23px;font-weight:700;letter-spacing:-0.02em">${linfo.icon||'💳'} ${linfo.name||'Ledger'}</h1>
+          <span style="color:var(--dim);font-size:16px">⌄</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <div class="user-badge"><span>${S.profile?.avatar||'👤'}</span><span>${S.profile?.displayName||''}</span></div>
+          ${memCnt>1?`<span style="font-size:11px;color:var(--accent2)">👥 ${memCnt}</span>`:''}
+        </div>
       </div>
-      <button onclick="goSettings()" style="background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 12px;font-size:18px;cursor:pointer">⚙️</button>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button onclick="goInvite()" style="background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.25);border-radius:12px;padding:8px 12px;font-size:18px">🔗</button>
+        <button onclick="goSettings()" style="background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 12px;font-size:18px">⚙️</button>
+      </div>
     </div>
-
-    <div class="member-scroll">${memberPills}</div>
-
+    <div class="member-scroll">${pills}</div>
     <div class="card balance-card slide-up">
       <p class="label" style="color:var(--accent);margin-bottom:6px">Net Balance</p>
-      <p class="balance-amount" style="color:${isPos?'var(--green)':'var(--red)'}">
-        ${fmt(Math.abs(balance))}
-      </p>
+      <p class="balance-amount" style="color:${isPos?'var(--green)':'var(--red)'}"> ${fmt(Math.abs(bal))}</p>
       <p style="font-size:12px;color:var(--dim);margin-top:3px">${isPos?'▲ surplus':'▼ deficit'} · ${new Date().toLocaleDateString('en-MY',{month:'long',year:'numeric'})}</p>
       <div class="mini-cards">
-        <div class="mini-card income">
-          <p class="mc-label">INCOME</p>
-          <p class="mc-val">${fmt(income)}</p>
-        </div>
-        <div class="mini-card expense">
-          <p class="mc-label">SPENT</p>
-          <p class="mc-val">${fmt(expense)}</p>
-        </div>
+        <div class="mini-card income"><p class="mc-label">INCOME</p><p class="mc-val">${fmt(inc)}</p></div>
+        <div class="mini-card expense"><p class="mc-label">SPENT</p><p class="mc-val">${fmt(exp)}</p></div>
       </div>
     </div>
-
     <div class="tab-bar">
-      <button class="tab-btn ${state.tab==='transactions'?'active':''}" onclick="setTab('transactions')">Transactions</button>
-      <button class="tab-btn ${state.tab==='analytics'?'active':''}" onclick="setTab('analytics')">Analytics</button>
+      <button class="tab-btn ${S.tab==='transactions'?'active':''}" onclick="setTab('transactions')">Transactions</button>
+      <button class="tab-btn ${S.tab==='analytics'?'active':''}" onclick="setTab('analytics')">Analytics</button>
     </div>
-
-    ${tabContent}
+    ${tc}
   </div>`;
 }
 
-function renderTransactions(filtered) {
-  if (!filtered.length) return '<div class="empty">No transactions yet.<br>Tap + to add one!</div>';
-
-  // group by date label
-  const groups = {};
-  [...filtered].sort((a,b)=>b.date.localeCompare(a.date)).forEach(t => {
-    const lbl = dateLabel(t.date);
-    if (!groups[lbl]) groups[lbl] = [];
-    groups[lbl].push(t);
-  });
-
-  return Object.entries(groups).map(([lbl, txs]) => `
+function renderTxs(fil){
+  if(!fil.length)return'<div class="empty">No transactions yet.<br>Tap + to add one!</div>';
+  const g={};
+  fil.forEach(t=>{const l=dlabel(t.date);if(!g[l])g[l]=[];g[l].push(t);});
+  return Object.entries(g).map(([lbl,txs])=>`
     <div class="tx-group">
       <p class="tx-date-label">${lbl}</p>
       <div class="tx-list">
-        ${txs.map(t => {
-          const cat = CATEGORIES[t.category] || CATEGORIES.other;
-          const mem = getMember(t.member);
-          const hasSplit = t.splitWith && t.splitWith.length > 0;
-          return `
-          <div class="tx-row surface" onclick="${hasSplit?'openSplitModal('+t.id+')':'deleteTx('+t.id+')'}">
+        ${txs.map(t=>{
+          const cat=CATS[t.category]||CATS.other;
+          const mem=getMem(t.member);
+          const hs=t.splitWith?.length>0;
+          return `<div class="tx-row surface" onclick="${hs?`openSplit('${t._k}')`:`delTx('${t._k}')`}">
             <div class="tx-icon" style="background:${cat.color}22">${cat.icon}</div>
             <div class="tx-info">
               <p class="tx-desc">${t.description}</p>
               <div class="tx-meta">
-                <span class="tag" style="background:${mem.color}33;color:${mem.color}">${mem.avatar} ${mem.name}</span>
-                ${hasSplit?`<span class="tag" style="background:rgba(108,99,255,0.15);color:var(--accent)">÷${t.splitWith.length+1}</span>`:''}
+                <span class="tag" style="background:${(mem.color||'#999')}33;color:${mem.color||'#999'}">${mem.avatar} ${mem.displayName}</span>
+                ${hs?`<span class="tag" style="background:rgba(108,99,255,0.15);color:var(--accent)">÷${t.splitWith.length+1}</span>`:''}
               </div>
             </div>
-            <p class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--text)'}">
-              ${t.type==='income'?'+':'-'}${fmt(t.amount)}
-            </p>
+            <p class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</p>
           </div>`;
         }).join('')}
       </div>
     </div>`).join('');
 }
 
-function renderAnalytics(filtered, totalExpense) {
-  // Category bars
-  const catData = Object.entries(CATEGORIES)
-    .filter(([k]) => k !== 'income')
-    .map(([key, cat]) => ({
-      key, ...cat,
-      total: filtered.filter(t=>t.category===key&&t.type==='expense').reduce((s,t)=>s+t.amount,0)
-    }))
-    .filter(c => c.total > 0)
-    .sort((a,b) => b.total - a.total);
+function renderAnalytics(fil,totalExp){
+  const catData=Object.entries(CATS).filter(([k])=>k!=='income').map(([key,cat])=>({
+    key,...cat,total:fil.filter(t=>t.category===key&&t.type==='expense').reduce((s,t)=>s+t.amount,0)
+  })).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
 
-  const catBars = catData.length
-    ? catData.map(cat => `
-      <div class="cat-bar-row">
-        <div class="cat-bar-header">
-          <span style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:18px">${cat.icon}</span>
-            <span style="color:var(--muted)">${cat.label}</span>
-          </span>
-          <span style="font-family:'DM Mono',monospace;font-size:13px">${fmt(cat.total)}</span>
-        </div>
-        <div class="cat-bar-track">
-          <div class="cat-bar-fill" style="background:${cat.color};width:${Math.min(100,totalExpense>0?(cat.total/totalExpense)*100:0)}%"></div>
-        </div>
-      </div>`).join('')
-    : '<p class="empty">No expense data yet.</p>';
-
-  // Split debts
-  const debts = getSplitDebts();
-  const debtRows = debts.length
-    ? debts.map(d => {
-        const from = getMember(d.from), to = getMember(d.to);
-        return `
-        <div class="debt-row surface">
-          <span style="font-size:20px">${from.avatar}</span>
-          <span style="font-size:13px;color:var(--muted);flex:1">${from.name} owes ${to.name}</span>
-          <span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--yellow);font-weight:600">${fmt(d.amount)}</span>
-        </div>`;}).join('')
-    : '<p style="font-size:13px;color:var(--dim)">No split balances.</p>';
-
-  // Per-member spending
-  const memberStats = state.data.members.map(m => {
-    const spent = state.data.transactions.filter(t=>t.member===m.id&&t.type==='expense').reduce((s,t)=>s+t.amount,0);
-    const earned = state.data.transactions.filter(t=>t.member===m.id&&t.type==='income').reduce((s,t)=>s+t.amount,0);
-    return { ...m, spent, earned };
-  }).filter(m => m.spent > 0 || m.earned > 0);
-
-  const memberRows = memberStats.map(m => `
-    <div class="settings-row surface" style="margin-bottom:8px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:22px">${m.avatar}</span>
-        <div>
-          <p style="font-size:13px;font-weight:600">${m.name}</p>
-          <p style="font-size:11px;color:var(--dim)">Spent ${fmt(m.spent)}</p>
-        </div>
+  const bars=catData.length?catData.map(c=>`
+    <div class="cat-bar-row">
+      <div class="cat-bar-header">
+        <span style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">${c.icon}</span><span style="color:var(--muted)">${c.label}</span></span>
+        <span style="font-family:'DM Mono',monospace;font-size:13px">${fmt(c.total)}</span>
       </div>
-      <p style="font-family:'DM Mono',monospace;font-size:13px;color:var(--green)">+${fmt(m.earned)}</p>
-    </div>`).join('');
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="background:${c.color};width:${Math.min(100,totalExp>0?(c.total/totalExp)*100:0)}%"></div></div>
+    </div>`).join(''):'<p class="empty">No expense data yet.</p>';
+
+  const dbs=debts();
+  const dRows=dbs.length?dbs.map(d=>{
+    const f=getMem(d.from),t=getMem(d.to);
+    return`<div class="debt-row surface"><span style="font-size:20px">${f.avatar}</span><span style="font-size:13px;color:var(--muted);flex:1">${f.displayName} owes ${t.displayName}</span><span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--yellow);font-weight:600">${fmt(d.amount)}</span></div>`;
+  }).join(''):'<p style="font-size:13px;color:var(--dim)">No split balances.</p>';
+
+  const allTx=txArr();
+  const mStats=Object.entries(S.members||{}).map(([id,m])=>({
+    id,...m,
+    spent:allTx.filter(t=>t.member===id&&t.type==='expense').reduce((s,t)=>s+t.amount,0),
+    earned:allTx.filter(t=>t.member===id&&t.type==='income').reduce((s,t)=>s+t.amount,0),
+  })).filter(m=>m.spent>0||m.earned>0);
 
   return `
-    <div class="analytics-section">
-      <p class="label" style="margin-bottom:12px">Spending by category</p>
-      ${catBars}
-    </div>
-    <div class="analytics-section" style="margin-top:8px">
-      <p class="label" style="margin-bottom:12px">Split balances owed</p>
-      ${debtRows}
-    </div>
-    <div class="analytics-section" style="margin-top:8px">
-      <p class="label" style="margin-bottom:12px">Per member</p>
-      ${memberRows || '<p style="font-size:13px;color:var(--dim)">No data yet.</p>'}
+    <div class="analytics-section"><p class="label" style="margin-bottom:12px">Spending by category</p>${bars}</div>
+    <div class="analytics-section" style="margin-top:8px"><p class="label" style="margin-bottom:12px">Split balances owed</p>${dRows}</div>
+    <div class="analytics-section" style="margin-top:8px"><p class="label" style="margin-bottom:12px">Per member</p>
+      ${mStats.map(m=>`<div class="settings-row surface" style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">${m.avatar}</span>
+          <div><p style="font-size:13px;font-weight:600">${m.displayName}</p><p style="font-size:11px;color:var(--dim)">Spent ${fmt(m.spent)}</p></div>
+        </div><p style="font-family:'DM Mono',monospace;font-size:13px;color:var(--green)">+${fmt(m.earned)}</p>
+      </div>`).join('')||'<p style="font-size:13px;color:var(--dim)">No data yet.</p>'}
     </div>`;
 }
 
 // ── ADD PAGE ──
-function renderAddPage() {
-  const f = state.addForm;
-  if (!f.member) f.member = state.data.members[0]?.id || '';
+function renderAdd(){
+  const f=S.addForm;
+  const mList=Object.entries(S.members||{}).map(([id,m])=>({id,...m}));
+  if(!f.member&&mList.length) f.member=mList[0].id;
 
-  const catChips = Object.entries(CATEGORIES)
-    .filter(([k]) => k !== 'income')
-    .map(([key,cat]) => `
-      <button class="chip ${f.category===key?'active':''}"
-        style="${f.category===key?'background:'+cat.color+';':''}"
-        onclick="setFormField('category','${key}')">
-        ${cat.icon} ${cat.label}
-      </button>`).join('');
+  const chips=Object.entries(CATS).filter(([k])=>k!=='income').map(([key,c])=>`
+    <button class="chip ${f.category===key?'active':''}" style="${f.category===key?'background:'+c.color+';':''}" onclick="setFF('category','${key}')">${c.icon} ${c.label}</button>`).join('');
 
-  const paidBy = state.data.members.map(m => `
-    <button class="member-box ${f.member===m.id?'active':''}"
-      style="${f.member===m.id?'background:'+m.color+';':''}"
-      onclick="setFormMember('${m.id}')">
-      <div class="m-avatar">${m.avatar}</div>
-      <div>${m.name}</div>
+  const paidBy=mList.map(m=>`
+    <button class="member-box ${f.member===m.id?'active':''}" style="${f.member===m.id?'background:'+(m.color||'#888')+';':''}" onclick="setFM('${m.id}')">
+      <div class="m-avatar">${m.avatar}</div><div>${m.displayName}</div>
     </button>`).join('');
 
-  const splitOptions = state.data.members
-    .filter(m => m.id !== f.member)
-    .map(m => `
-      <button class="member-box ${f.splitWith.includes(m.id)?'active':''}"
-        style="${f.splitWith.includes(m.id)?'background:'+m.color+'CC;':''}"
-        onclick="toggleSplit('${m.id}')">
-        <div class="m-avatar">${m.avatar}</div>
-        <div>${m.name}</div>
-        ${f.splitWith.includes(m.id)?'<div style="font-size:9px;margin-top:2px">✓</div>':''}
-      </button>`).join('');
+  const splits=mList.filter(m=>m.id!==f.member).map(m=>`
+    <button class="member-box ${f.splitWith.includes(m.id)?'active':''}" style="${f.splitWith.includes(m.id)?'background:'+(m.color||'#888')+'CC;':''}" onclick="togSplit('${m.id}')">
+      <div class="m-avatar">${m.avatar}</div><div>${m.displayName}</div>
+      ${f.splitWith.includes(m.id)?'<div style="font-size:9px;margin-top:2px">✓</div>':''}
+    </button>`).join('');
 
-  const splitHint = f.splitWith.length > 0 && f.amount
-    ? `<p class="split-hint">Each pays ${fmt(parseFloat(f.amount)/(f.splitWith.length+1))}</p>` : '';
+  const hint=f.splitWith.length>0&&f.amount?`<p class="split-hint">Each pays ${fmt(parseFloat(f.amount)/(f.splitWith.length+1))}</p>`:'';
 
   return `
   <div class="add-page slide-up">
     <button class="btn-ghost" onclick="goHome()" style="margin-bottom:22px">← Back</button>
     <h2 style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-bottom:26px">New Entry</h2>
-
     <div class="type-toggle">
       <button class="type-btn ${f.type==='expense'?'active-expense':''}" onclick="setType('expense')">💸 Expense</button>
       <button class="type-btn ${f.type==='income'?'active-income':''}" onclick="setType('income')">💰 Income</button>
     </div>
-
-    <div class="form-section">
-      <div class="input-card surface">
-        <p class="label" style="margin-bottom:8px">Amount (RM)</p>
-        <input class="big-input" type="number" inputmode="decimal" placeholder="0.00"
-          value="${f.amount}" oninput="setFormField('amount',this.value)">
-      </div>
-    </div>
-
-    <div class="form-section">
-      <div class="input-card surface">
-        <p class="label" style="margin-bottom:8px">Description</p>
-        <input class="normal-input" type="text" placeholder="What was this for?"
-          value="${f.description}" oninput="setFormField('description',this.value)">
-      </div>
-    </div>
-
-    <div class="form-section">
-      <div class="input-card surface">
-        <p class="label" style="margin-bottom:8px">Date</p>
-        <input class="normal-input" type="date"
-          value="${f.date}" oninput="setFormField('date',this.value)">
-      </div>
-    </div>
-
-    ${f.type==='expense' ? `
-    <div class="form-section">
-      <p class="label" style="margin-bottom:10px">Category</p>
-      <div class="chip-grid">${catChips}</div>
-    </div>` : ''}
-
-    <div class="form-section">
-      <p class="label" style="margin-bottom:10px">Paid by</p>
-      <div class="member-grid">${paidBy}</div>
-    </div>
-
-    ${f.type==='expense' ? `
-    <div class="form-section">
-      <p class="label" style="margin-bottom:10px">Split with</p>
-      <div class="member-grid">${splitOptions}</div>
-      ${splitHint}
-    </div>` : ''}
-
+    <div class="form-section"><div class="input-card surface">
+      <p class="label" style="margin-bottom:8px">Amount (RM)</p>
+      <input class="big-input" type="number" inputmode="decimal" placeholder="0.00" value="${f.amount}" oninput="setFF('amount',this.value)">
+    </div></div>
+    <div class="form-section"><div class="input-card surface">
+      <p class="label" style="margin-bottom:8px">Description</p>
+      <input class="normal-input" type="text" placeholder="What was this for?" value="${f.description}" oninput="setFF('description',this.value)">
+    </div></div>
+    <div class="form-section"><div class="input-card surface">
+      <p class="label" style="margin-bottom:8px">Date</p>
+      <input class="normal-input" type="date" value="${f.date}" oninput="setFF('date',this.value)">
+    </div></div>
+    ${f.type==='expense'?`<div class="form-section"><p class="label" style="margin-bottom:10px">Category</p><div class="chip-grid">${chips}</div></div>`:''}
+    <div class="form-section"><p class="label" style="margin-bottom:10px">Paid by</p>
+      <div class="member-grid">${paidBy||'<p style="color:var(--dim);font-size:13px">No members yet.</p>'}</div></div>
+    ${f.type==='expense'?`<div class="form-section"><p class="label" style="margin-bottom:10px">Split with</p><div class="member-grid">${splits}</div>${hint}</div>`:''}
     <button class="btn-primary" onclick="submitForm()">Save Entry ✓</button>
   </div>`;
 }
 
-// ── SETTINGS PAGE ──
-function renderSettingsPage() {
-  const memberRows = state.data.members.map(m => `
+// ── SETTINGS ──
+function renderSettings(){
+  const mems=S.members||{};
+  const rows=Object.entries(mems).map(([id,m])=>`
     <div class="settings-row surface">
-      <div class="sr-left">
-        <span style="font-size:22px">${m.avatar}</span>
-        <span>${m.name}</span>
+      <div class="sr-left"><span style="font-size:22px">${m.avatar}</span>
+        <div><span>${m.displayName}</span>${id===S.user.uid?'<span style="font-size:10px;color:var(--accent);margin-left:6px">YOU</span>':''}</div>
       </div>
-      <button class="delete-btn" onclick="removeMember('${m.id}')">Remove</button>
+      ${id!==S.user.uid?`<button class="delete-btn" onclick="removeMem('${id}')">Remove</button>`:''}
     </div>`).join('');
 
   return `
   <div class="settings-page fade-in">
     <button class="btn-ghost" onclick="goHome()" style="margin-bottom:22px">← Back</button>
     <h2 style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-bottom:26px">Settings</h2>
-
     <div class="settings-section">
-      <p class="label" style="margin-bottom:12px">Family members</p>
-      ${memberRows}
-      <div class="surface" style="padding:14px 16px;margin-top:8px;display:flex;gap:10px;align-items:center;border-radius:14px">
-        <input id="newMemberName" type="text" placeholder="Name"
-          style="flex:1;background:none;border:none;outline:none;color:var(--text);font-family:'Sora',sans-serif;font-size:14px">
-        <input id="newMemberAvatar" type="text" placeholder="😀" maxlength="2"
-          style="width:44px;background:none;border:none;outline:none;color:var(--text);font-family:'Sora',sans-serif;font-size:20px;text-align:center">
-        <button onclick="addMember()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;font-family:'Sora',sans-serif">Add</button>
+      <p class="label" style="margin-bottom:12px">Your Account</p>
+      <div class="surface" style="padding:16px;border-radius:14px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:32px">${S.profile?.avatar||'👤'}</span>
+          <div><p style="font-size:16px;font-weight:700">${S.profile?.displayName||''}</p>
+            <p style="font-size:12px;color:var(--muted)">${S.user?.email||''}</p></div>
+        </div>
       </div>
+      <button class="clear-btn" onclick="doLogout()">🚪 Sign Out</button>
     </div>
-
+    <div class="settings-section">
+      <p class="label" style="margin-bottom:12px">Ledger Members</p>
+      ${rows||'<p style="font-size:13px;color:var(--dim)">No members yet.</p>'}
+    </div>
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">Data</p>
       <button class="export-btn" onclick="exportCSV()">⬇️ Export to CSV</button>
-      <button class="clear-btn" onclick="clearAll()">🗑️ Clear all data</button>
+      <button class="clear-btn" onclick="clearAll()">🗑️ Clear all transactions</button>
     </div>
-
     <div class="settings-section">
       <p class="label" style="margin-bottom:10px">About</p>
       <div class="surface" style="padding:16px;border-radius:14px">
         <p style="font-size:13px;color:var(--muted);line-height:1.6">
-          <strong style="color:var(--text)">Family Wallet</strong> — offline spending tracker.<br>
-          All data is stored locally on this device.<br>
-          Total entries: <strong style="color:var(--accent)">${state.data.transactions.length}</strong>
+          <strong style="color:var(--text)">Family Wallet</strong> — real-time collaborative spending tracker powered by Firebase.<br>
+          Total entries: <strong style="color:var(--accent)">${txArr().length}</strong>
         </p>
       </div>
     </div>
   </div>`;
 }
 
-// ── MODAL ──
-function renderModal() {
-  const mc = document.getElementById('modalContainer');
-  if (!state.splitModal) { mc.innerHTML = ''; return; }
-
-  const t = state.splitModal;
-  const cat = CATEGORIES[t.category] || CATEGORIES.other;
-  const mem = getMember(t.member);
-  const allPeople = [t.member, ...(t.splitWith||[])];
-  const share = t.amount / allPeople.length;
-
-  const rows = allPeople.map(mid => {
-    const m = getMember(mid);
-    const isPayer = mid === t.member;
-    return `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+// ── INVITE / COLLABORATE ──
+let _code=null;
+function renderInvite(){
+  if(!_code){
+    get(ref(db,'ledgers/'+S.activeLedgerId+'/inviteCode')).then(s=>{
+      _code=s.val()||'------';
+      const el=document.getElementById('invCode'); if(el)el.textContent=_code;
+    });
+  }
+  const mems=S.members||{};
+  const linfo=S.ledgers[S.activeLedgerId]||{};
+  const rows=Object.entries(mems).map(([id,m])=>`
+    <div class="collab-member-row surface">
       <span style="font-size:24px">${m.avatar}</span>
-      <span style="font-size:15px;font-weight:500;flex:1">${m.name}</span>
-      ${isPayer?`<span class="tag" style="background:rgba(108,99,255,0.15);color:var(--accent)">paid</span>`:''}
-      <span style="font-family:'DM Mono',monospace;font-size:15px;color:${isPayer?'var(--green)':'var(--red)'}">${fmt(share)}</span>
-    </div>`;}).join('');
+      <div style="flex:1"><p style="font-size:14px;font-weight:600">${m.displayName}</p>
+        <p style="font-size:11px;color:var(--dim)">${m.role==='owner'?'Owner':'Member'}${id===S.user.uid?' · you':''}</p></div>
+      <span class="collab-badge ${m.role==='owner'?'owner':'member'}">${m.role==='owner'?'Owner':'Member'}</span>
+    </div>`).join('');
 
-  mc.innerHTML = `
-  <div class="modal-overlay fade-in" onclick="closeSplitModal()">
+  return `
+  <div class="settings-page fade-in">
+    <button class="btn-ghost" onclick="goHome()" style="margin-bottom:22px">← Back</button>
+    <h2 style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px">Collaborate</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Share <strong style="color:var(--text)">${linfo.name||'this ledger'}</strong> with family</p>
+    <div class="invite-code-box">
+      <p class="label" style="margin-bottom:6px">Invite Code</p>
+      <p class="invite-code" id="invCode">${_code||'Loading...'}</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Share this code — family members enter it to join</p>
+      <button class="copy-btn" onclick="copyCode()">📋 Copy Code</button>
+    </div>
+    <div class="settings-section">
+      <p style="font-size:14px;font-weight:700;margin-bottom:12px">👥 Members (${Object.keys(mems).length})</p>
+      ${rows||'<p style="font-size:13px;color:var(--dim)">No members yet.</p>'}
+    </div>
+    <div class="settings-section">
+      <p style="font-size:14px;font-weight:700;margin-bottom:8px">🔑 Join Another Ledger</p>
+      <div class="join-input-row">
+        <input id="qjCode" type="text" placeholder="ABC123" maxlength="6" oninput="this.value=this.value.toUpperCase()">
+        <button class="join-btn" onclick="quickJoin()">Join</button>
+      </div>
+      <div id="qjMsg" style="margin-top:10px;font-size:13px"></div>
+    </div>
+  </div>`;
+}
+
+// ── MODAL ──
+function renderModal(){
+  const mc=document.getElementById('modalContainer'); if(!mc)return;
+  if(!S.splitModal){mc.innerHTML='';return;}
+  const t=S.splitModal;
+  const cat=CATS[t.category]||CATS.other;
+  const all=[t.member,...(t.splitWith||[])];
+  const sh=t.amount/all.length;
+  const rows=all.map(mid=>{
+    const m=getMem(mid); const ip=mid===t.member;
+    return`<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <span style="font-size:24px">${m.avatar}</span>
+      <span style="font-size:15px;font-weight:500;flex:1">${m.displayName}</span>
+      ${ip?`<span class="tag" style="background:rgba(108,99,255,0.15);color:var(--accent)">paid</span>`:''}
+      <span style="font-family:'DM Mono',monospace;font-size:15px;color:${ip?'var(--green)':'var(--red)'}">${fmt(sh)}</span>
+    </div>`;}).join('');
+  mc.innerHTML=`
+  <div class="modal-overlay fade-in" onclick="closeModal()">
     <div class="modal-sheet" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
       <h3 style="font-size:18px;font-weight:700;margin-bottom:18px">Split Details</h3>
@@ -831,138 +817,65 @@ function renderModal() {
       <p style="font-size:14px;color:var(--muted);margin-bottom:22px">${t.description} · ${cat.icon} ${cat.label}</p>
       <div style="border-top:1px solid var(--border);padding-top:18px">${rows}</div>
       <button style="margin-top:14px;width:100%;padding:12px;border-radius:12px;background:rgba(255,107,107,0.12);color:var(--red);font-size:13px;font-weight:600;border:1px solid rgba(255,107,107,0.2);font-family:'Sora',sans-serif"
-        onclick="deleteTxFromModal(${t.id})">Delete Transaction</button>
+        onclick="delTxModal('${t._k}')">Delete Transaction</button>
     </div>
   </div>`;
 }
 
-// ═══════════════════════════════
-//  ACTIONS  (global functions)
-// ═══════════════════════════════
-window.goHome = function(tab) {
-  state.view = 'home';
-  if (tab) state.tab = tab;
-  render();
-};
-window.goAdd = function() {
-  state.addForm = {
-    type: 'expense', amount: '', category: 'food',
-    description: '', member: state.data.members[0]?.id || '',
-    splitWith: [], date: today()
-  };
-  state.view = 'add';
-  render();
-};
-window.goSettings = function() { state.view = 'settings'; render(); };
+// ══════════════════════════════════════════
+//  ACTIONS
+// ══════════════════════════════════════════
+window.goHome    =t=>{ S.view='home'; if(t)S.tab=t; render(); };
+window.goAdd     =()=>{ S.addForm={type:'expense',amount:'',category:'food',description:'',member:'',splitWith:[],date:td()}; S.view='add'; render(); };
+window.goSettings=()=>{ S.view='settings'; render(); };
+window.goInvite  =()=>{ _code=null; S.view='invite'; render(); };
+window.setFilter =id=>{ S.filterMember=id; render(); };
+window.setTab    =t=>{ S.tab=t; render(); };
+window.setType   =type=>{ S.addForm.type=type; S.addForm.splitWith=[]; S.addForm.category=type==='income'?'income':'food'; renderPage(); };
+window.setFF     =(k,v)=>{ S.addForm[k]=v; };
+window.setFM     =id=>{ S.addForm.member=id; S.addForm.splitWith=S.addForm.splitWith.filter(s=>s!==id); renderPage(); };
+window.togSplit  =id=>{ const sw=S.addForm.splitWith; S.addForm.splitWith=sw.includes(id)?sw.filter(s=>s!==id):[...sw,id]; renderPage(); };
 
-window.setFilter = function(id) { state.filterMember = id; render(); };
-window.setTab    = function(t)  { state.tab = t; render(); };
-
-window.setType = function(type) {
-  state.addForm.type = type;
-  state.addForm.splitWith = [];
-  if (type === 'income') state.addForm.category = 'income';
-  else state.addForm.category = 'food';
-  renderPage();
-};
-window.setFormField = function(k, v) { state.addForm[k] = v; };
-window.setFormMember = function(id) {
-  state.addForm.member = id;
-  state.addForm.splitWith = state.addForm.splitWith.filter(s => s !== id);
-  renderPage();
-};
-window.toggleSplit = function(id) {
-  const sw = state.addForm.splitWith;
-  if (sw.includes(id)) state.addForm.splitWith = sw.filter(s=>s!==id);
-  else state.addForm.splitWith = [...sw, id];
-  renderPage();
+window.submitForm=async()=>{
+  const f=S.addForm;
+  if(!f.amount||isNaN(parseFloat(f.amount))){alert('Enter an amount.');return;}
+  if(!f.description.trim()){alert('Enter a description.');return;}
+  if(!f.member){alert('Select who paid.');return;}
+  try{
+    await push(ref(db,'ledgerTransactions/'+S.activeLedgerId),{
+      type:f.type, amount:parseFloat(f.amount),
+      category:f.type==='income'?'income':f.category,
+      description:f.description.trim(),
+      member:f.member, splitWith:[...f.splitWith],
+      date:f.date||td(), addedBy:S.user.uid, ts:Date.now(),
+    });
+    S.view='home'; S.tab='transactions'; render(); toast('✓ Entry saved');
+  }catch(e){alert('Error: '+e.message);}
 };
 
-window.submitForm = function() {
-  const f = state.addForm;
-  if (!f.amount || isNaN(parseFloat(f.amount))) { alert('Please enter an amount.'); return; }
-  if (!f.description.trim()) { alert('Please enter a description.'); return; }
-  if (!f.member) { alert('Please select who paid.'); return; }
-  const tx = {
-    id: Date.now(),
-    type: f.type,
-    amount: parseFloat(f.amount),
-    category: f.type === 'income' ? 'income' : f.category,
-    description: f.description.trim(),
-    member: f.member,
-    splitWith: f.type === 'income' ? [] : [...f.splitWith],
-    date: f.date || today(),
-  };
-  state.data.transactions.unshift(tx);
-  saveData();
-  state.view = 'home';
-  state.tab = 'transactions';
-  render();
-};
+window.delTx=async k=>{ if(!confirm('Delete this transaction?'))return; await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+k)); };
+window.delTxModal=async k=>{ if(!confirm('Delete this transaction?'))return; await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+k)); S.splitModal=null; renderModal(); };
+window.openSplit =k=>{ S.splitModal=txArr().find(t=>t._k===k); renderModal(); };
+window.closeModal=()=>{ S.splitModal=null; renderModal(); };
 
-window.deleteTx = function(id) {
-  if (!confirm('Delete this transaction?')) return;
-  state.data.transactions = state.data.transactions.filter(t => t.id !== id);
-  saveData();
-  render();
+window.removeMem=async uid=>{ if(!confirm('Remove this member?'))return;
+  await remove(ref(db,'ledgerMembers/'+S.activeLedgerId+'/'+uid));
+  await remove(ref(db,'ledgers/'+S.activeLedgerId+'/members/'+uid));
+  await remove(ref(db,'userLedgers/'+uid+'/'+S.activeLedgerId));
 };
-window.deleteTxFromModal = function(id) {
-  if (!confirm('Delete this transaction?')) return;
-  state.data.transactions = state.data.transactions.filter(t => t.id !== id);
-  state.splitModal = null;
-  saveData();
-  render();
+window.clearAll=async()=>{ if(!confirm('Delete ALL transactions? Cannot be undone.'))return; await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId)); S.view='home'; render(); };
+window.exportCSV=()=>{
+  const rows=txArr().map(t=>[t.date,t.type,t.amount,t.category,'"'+t.description.replace(/"/g,'""')+'"',t.member,(t.splitWith||[]).join(';')].join(','));
+  const csv=['Date,Type,Amount,Category,Description,Member,SplitWith',...rows].join('\n');
+  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='family-wallet-'+td()+'.csv'; a.click();
 };
-
-window.openSplitModal  = function(id) { state.splitModal = state.data.transactions.find(t=>t.id===id); renderModal(); };
-window.closeSplitModal = function()    { state.splitModal = null; renderModal(); };
-
-window.addMember = function() {
-  const name   = document.getElementById('newMemberName')?.value.trim();
-  const avatar = document.getElementById('newMemberAvatar')?.value.trim() || '👤';
-  if (!name) { alert('Enter a name.'); return; }
-  const id = name.toLowerCase().replace(/\s+/g,'_') + '_' + Date.now();
-  const colors = ['#FF6B6B','#4ECDC4','#FFE66D','#A8E6CF','#B4A7D6','#FF8B94'];
-  const color = colors[state.data.members.length % colors.length];
-  state.data.members.push({ id, name, avatar, color });
-  saveData();
-  renderPage();
+window.copyCode=()=>{ const c=document.getElementById('invCode')?.textContent||''; navigator.clipboard.writeText(c).then(()=>toast('📋 Copied: '+c)).catch(()=>prompt('Copy:',c)); };
+window.quickJoin=async()=>{
+  const code=document.getElementById('qjCode')?.value.trim().toUpperCase();
+  const msg=document.getElementById('qjMsg');
+  const name=await joinByCode(code,msg);
+  if(name) setTimeout(()=>{ S.view='home'; render(); toast('✓ Joined '+name); },700);
 };
-window.removeMember = function(id) {
-  if (!confirm('Remove member? Their transactions will remain.')) return;
-  state.data.members = state.data.members.filter(m=>m.id!==id);
-  if (state.filterMember === id) state.filterMember = 'all';
-  saveData();
-  renderPage();
-};
-
-window.clearAll = function() {
-  if (!confirm('Delete ALL transactions? This cannot be undone.')) return;
-  state.data.transactions = [];
-  saveData();
-  state.view = 'home';
-  render();
-};
-
-window.exportCSV = function() {
-  const header = 'Date,Type,Amount,Category,Description,Member,SplitWith';
-  const rows = state.data.transactions.map(t =>
-    [t.date, t.type, t.amount, t.category,
-     '"'+t.description.replace(/"/g,'""')+'"',
-     t.member,
-     (t.splitWith||[]).join(';')].join(',')
-  );
-  const csv = [header, ...rows].join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = 'family-wallet-' + today() + '.csv';
-  a.click();
-};
-
-// ═══════════════════════════════
-//  INIT
-// ═══════════════════════════════
-render();
 </script>
 </body>
 </html>
