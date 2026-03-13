@@ -6,13 +6,7 @@
 <title>Family Wallet</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
-  :root {
-    --bg:#0A0A14; --bg2:#12121E; --bg3:#1A1A2E;
-    --accent:#6C63FF; --accent2:#4ECDC4;
-    --green:#69D2A0; --red:#FF6B6B; --yellow:#FFE66D;
-    --text:#F0EEF6; --muted:#8A88AA; --dim:#5A587A;
-    --border:rgba(255,255,255,0.07);
-  }
+  :root{--bg:#0A0A14;--bg2:#12121E;--bg3:#1A1A2E;--accent:#6C63FF;--accent2:#4ECDC4;--green:#69D2A0;--red:#FF6B6B;--yellow:#FFE66D;--text:#F0EEF6;--muted:#8A88AA;--dim:#5A587A;--border:rgba(255,255,255,0.07)}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden}
   body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:stretch}
@@ -53,28 +47,30 @@
   .tx-icon{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
   .tx-info{flex:1;min-width:0}
   .tx-desc{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tx-meta{display:flex;align-items:center;gap:6px;margin-top:3px}
+  .tx-meta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
   .tag{font-size:10px;border-radius:6px;padding:2px 7px;font-weight:600}
   .tx-amount{font-family:'DM Mono',monospace;font-size:15px;font-weight:600;flex-shrink:0}
   .analytics-section{padding:0 22px;margin-top:20px}
   .cat-bar-row{margin-bottom:14px}
   .cat-bar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:13px}
-  .cat-bar-track{height:6px;border-radius:999px;background:rgba(255,255,255,0.07);overflow:hidden}
+  .cat-bar-track{height:8px;border-radius:999px;background:rgba(255,255,255,0.07);overflow:hidden}
   .cat-bar-fill{height:100%;border-radius:999px;transition:width 0.5s ease}
   .debt-row{display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:14px;margin-bottom:8px}
-  .add-page{padding:50px 22px 100px}
+  .add-page{padding:50px 22px 120px}
   .form-section{margin-bottom:16px}
   .input-card{padding:16px 18px;border-radius:17px}
   .input-card input,.input-card select{background:none;border:none;outline:none;color:var(--text);font-family:'Sora',sans-serif;width:100%}
-  .big-input{font-family:'DM Mono',monospace;font-size:34px;font-weight:700}
-  .normal-input{font-size:15px}
+  .big-input{font-family:'DM Mono',monospace;font-size:34px;font-weight:700;width:100%;display:block;min-height:50px;padding:4px 0;-webkit-appearance:none}
+  .normal-input{font-size:15px;width:100%;display:block;padding:4px 0}
   .type-toggle{display:flex;background:rgba(255,255,255,0.05);border-radius:14px;padding:4px;margin-bottom:22px}
   .type-btn{flex:1;padding:12px;border-radius:11px;font-size:14px;font-weight:700;background:transparent;color:var(--dim)}
   .type-btn.active-expense{background:var(--red);color:#fff}
   .type-btn.active-income{background:var(--green);color:#fff}
   .chip-grid{display:flex;flex-wrap:wrap;gap:8px}
-  .chip{padding:8px 13px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(255,255,255,0.06);color:var(--muted)}
+  .chip{padding:8px 13px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(255,255,255,0.06);color:var(--muted);border:none}
   .chip.active{color:#fff}
+  .subcat-chip{padding:6px 11px;border-radius:999px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.04);color:var(--dim);border:1px solid var(--border)}
+  .subcat-chip.active{color:#fff;border-color:transparent}
   .member-grid{display:flex;gap:8px;flex-wrap:wrap}
   .member-box{flex:1;min-width:60px;padding:10px 6px;border-radius:13px;text-align:center;font-size:12px;font-weight:600;background:rgba(255,255,255,0.06);color:var(--muted)}
   .member-box .m-avatar{font-size:20px;margin-bottom:3px}
@@ -86,7 +82,7 @@
   .nav-btn .nav-icon{font-size:22px}
   .fab{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(108,99,255,0.4);margin-top:-18px;color:#fff}
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:flex-end;justify-content:center}
-  .modal-sheet{width:100%;max-width:430px;background:var(--bg2);border-radius:24px 24px 0 0;padding:26px 22px 48px;border:1px solid rgba(255,255,255,0.09);animation:slideUp 0.3s cubic-bezier(.22,.68,0,1.15) both}
+  .modal-sheet{width:100%;max-width:430px;background:var(--bg2);border-radius:24px 24px 0 0;padding:26px 22px 48px;border:1px solid rgba(255,255,255,0.09);animation:slideUp 0.3s cubic-bezier(.22,.68,0,1.15) both;max-height:90vh;overflow-y:auto}
   .modal-handle{width:40px;height:4px;border-radius:999px;background:rgba(255,255,255,0.2);margin:0 auto 22px}
   @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -95,13 +91,13 @@
   .slide-up{animation:slideUp 0.35s cubic-bezier(.22,.68,0,1.2) both}
   .empty{text-align:center;color:var(--dim);padding:50px 20px;font-size:14px}
   .delete-btn{font-size:11px;background:rgba(255,107,107,0.15);color:var(--red);border-radius:8px;padding:4px 10px;font-weight:600}
+  .edit-btn{font-size:11px;background:rgba(108,99,255,0.15);color:var(--accent);border-radius:8px;padding:4px 10px;font-weight:600}
   .settings-page{padding:50px 22px 100px}
   .settings-section{margin-bottom:24px}
   .settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:14px;margin-bottom:8px}
   .settings-row .sr-left{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:500}
   .clear-btn{width:100%;padding:14px;border-radius:14px;background:rgba(255,107,107,0.12);color:var(--red);font-size:14px;font-weight:600;border:1px solid rgba(255,107,107,0.2)}
   .export-btn{width:100%;padding:14px;border-radius:14px;background:rgba(108,99,255,0.12);color:var(--accent);font-size:14px;font-weight:600;border:1px solid rgba(108,99,255,0.2);margin-bottom:10px}
-  /* AUTH */
   .auth-screen{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 28px;animation:fadeIn 0.4s ease both;overflow-y:auto}
   .auth-tabs{display:flex;width:100%;background:rgba(255,255,255,0.05);border-radius:14px;padding:4px;margin-bottom:22px}
   .auth-tab{flex:1;padding:11px;border-radius:11px;font-size:14px;font-weight:700;background:transparent;color:var(--dim)}
@@ -110,12 +106,10 @@
   .auth-input:focus{border-color:var(--accent)}
   .auth-error{font-size:13px;color:var(--red);margin-bottom:12px;padding:10px 14px;border-radius:10px;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.2);width:100%;text-align:center}
   .user-badge{display:flex;align-items:center;gap:8px;background:rgba(108,99,255,0.12);border:1px solid rgba(108,99,255,0.25);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--accent)}
-  /* LEDGER SCREEN */
   .ledger-screen{position:fixed;inset:0;background:var(--bg);z-index:190;display:flex;flex-direction:column;animation:fadeIn 0.3s ease both}
   .ledger-card{background:var(--bg3);border:1px solid rgba(108,99,255,0.15);border-radius:18px;padding:18px;margin-bottom:12px;cursor:pointer;transition:all 0.2s}
   .ledger-card:active{transform:scale(0.97)}
   .ledger-card.active-ledger{border-color:var(--accent);background:rgba(108,99,255,0.08)}
-  /* INVITE */
   .invite-code-box{background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.3);border-radius:18px;padding:20px;text-align:center;margin-bottom:20px}
   .invite-code{font-family:'DM Mono',monospace;font-size:28px;font-weight:700;color:var(--accent);letter-spacing:0.15em;margin:10px 0}
   .copy-btn{padding:8px 18px;border-radius:10px;background:rgba(108,99,255,0.2);color:var(--accent);font-size:13px;font-weight:600;border:1px solid rgba(108,99,255,0.3)}
@@ -127,10 +121,24 @@
   .collab-badge{font-size:10px;padding:3px 8px;border-radius:6px;font-weight:700}
   .collab-badge.owner{background:rgba(108,99,255,0.2);color:var(--accent)}
   .collab-badge.member{background:rgba(78,205,196,0.2);color:var(--accent2)}
-  /* LOADING */
+  .collab-badge.guest{background:rgba(255,230,109,0.2);color:var(--yellow)}
   .loading-screen{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
   .spinner{width:36px;height:36px;border:3px solid rgba(108,99,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
   .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid rgba(108,99,255,0.3);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:600;z-index:500;animation:fadeIn 0.2s ease;white-space:nowrap;pointer-events:none}
+  .budget-bar-track{height:6px;border-radius:999px;background:rgba(255,255,255,0.07);overflow:hidden}
+  .budget-bar-fill{height:100%;border-radius:999px;transition:width 0.5s ease}
+  .budget-warning{color:var(--yellow);font-size:11px;margin-top:3px}
+  .budget-over{color:var(--red);font-size:11px;margin-top:3px}
+  .split-member-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+  .split-amount-input{width:90px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:14px;outline:none;text-align:right}
+  .split-amount-input:focus{border-color:var(--accent)}
+  .currency-selector{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;width:100%}
+  .color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all 0.15s}
+  .color-dot.selected{border-color:#fff;transform:scale(1.15)}
+  .fw-input{width:100%;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none}
+  .fw-input:focus{border-color:var(--accent)}
+  /* Guest member badge */
+  .guest-badge{font-size:9px;background:rgba(255,230,109,0.2);color:var(--yellow);border-radius:4px;padding:1px 5px;font-weight:700;margin-top:2px;display:inline-block}
 </style>
 </head>
 <body>
@@ -139,7 +147,7 @@
   <div id="loadingScreen" class="loading-screen">
     <div style="font-size:48px">💳</div>
     <div class="spinner"></div>
-    <p style="font-size:13px;color:var(--muted)">Connecting to Firebase...</p>
+    <p style="font-size:13px;color:var(--muted)">Connecting...</p>
   </div>
   <div id="authContainer"></div>
   <div id="ledgerContainer"></div>
@@ -149,188 +157,125 @@
 </div>
 
 <script type="module">
-import { initializeApp }           from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile }
-                                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, set, get, push, onValue, off, update, remove }
-                                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updateProfile}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import{getDatabase,ref,set,get,push,onValue,off,update,remove}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// ── Firebase config ──
-const app = initializeApp({
-  apiKey: "AIzaSyBhrlxbni_T4OHTf-_VlvBtOQ0Tm5XNicE",
-  authDomain: "family-wallet-20e8b.firebaseapp.com",
-  databaseURL: "https://family-wallet-20e8b-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "family-wallet-20e8b",
-  storageBucket: "family-wallet-20e8b.firebasestorage.app",
-  messagingSenderId: "70042258839",
-  appId: "1:70042258839:web:13efe2ddc3c482980e48d2"
-});
-const auth = getAuth(app);
-const db   = getDatabase(app);
+const app=initializeApp({apiKey:"AIzaSyBhrlxbni_T4OHTf-_VlvBtOQ0Tm5XNicE",authDomain:"family-wallet-20e8b.firebaseapp.com",databaseURL:"https://family-wallet-20e8b-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"family-wallet-20e8b",storageBucket:"family-wallet-20e8b.firebasestorage.app",messagingSenderId:"70042258839",appId:"1:70042258839:web:13efe2ddc3c482980e48d2"});
+const auth=getAuth(app),db=getDatabase(app);
 
-// ══════════════════════════════════════════
-//  CONSTANTS
-// ══════════════════════════════════════════
-const CATS = {
-  food:          { icon:'🍜', label:'Food & Dining',   color:'#FF6B6B' },
-  transport:     { icon:'🚌', label:'Transport',       color:'#4ECDC4' },
-  shopping:      { icon:'🛍️', label:'Shopping',       color:'#FFE66D' },
-  utilities:     { icon:'💡', label:'Utilities',       color:'#A8E6CF' },
-  health:        { icon:'💊', label:'Health',          color:'#FF8B94' },
-  entertainment: { icon:'🎬', label:'Entertainment',   color:'#B4A7D6' },
-  income:        { icon:'💰', label:'Income',          color:'#69D2A0' },
-  other:         { icon:'📦', label:'Other',           color:'#C9C9C9' },
+// ── CURRENCIES ──
+const CURRENCIES={MYR:{symbol:'RM',name:'Malaysian Ringgit',flag:'🇲🇾'},USD:{symbol:'$',name:'US Dollar',flag:'🇺🇸'},SGD:{symbol:'S$',name:'Singapore Dollar',flag:'🇸🇬'},GBP:{symbol:'£',name:'British Pound',flag:'🇬🇧'},EUR:{symbol:'€',name:'Euro',flag:'🇪🇺'},JPY:{symbol:'¥',name:'Japanese Yen',flag:'🇯🇵'},AUD:{symbol:'A$',name:'Australian Dollar',flag:'🇦🇺'},IDR:{symbol:'Rp',name:'Indonesian Rupiah',flag:'🇮🇩'},THB:{symbol:'฿',name:'Thai Baht',flag:'🇹🇭'},CNY:{symbol:'¥',name:'Chinese Yuan',flag:'🇨🇳'}};
+
+// ── DEFAULT CATEGORIES (with subcategories) ──
+const DEFAULT_CATS={
+  food:{icon:'🍜',label:'Food & Dining',color:'#FF6B6B',subcats:{groceries:'Groceries',restaurants:'Restaurants',takeaway:'Takeaway',cafe:'Café'}},
+  transport:{icon:'🚌',label:'Transport',color:'#4ECDC4',subcats:{fuel:'Fuel',toll:'Toll',parking:'Parking',grab:'Grab/Taxi'}},
+  shopping:{icon:'🛍️',label:'Shopping',color:'#FFE66D',subcats:{clothing:'Clothing',electronics:'Electronics',household:'Household'}},
+  utilities:{icon:'💡',label:'Utilities',color:'#A8E6CF',subcats:{electric:'Electric',water:'Water',internet:'Internet',phone:'Phone'}},
+  health:{icon:'💊',label:'Health',color:'#FF8B94',subcats:{medical:'Medical',pharmacy:'Pharmacy',gym:'Gym'}},
+  entertainment:{icon:'🎬',label:'Entertainment',color:'#B4A7D6',subcats:{movies:'Movies',games:'Games',subscriptions:'Subscriptions'}},
+  income:{icon:'💰',label:'Income',color:'#69D2A0',subcats:{}},
+  other:{icon:'📦',label:'Other',color:'#C9C9C9',subcats:{}},
 };
-const LEDGER_ICONS = ['👨‍👩‍👧‍👦','🏠','✈️','🎉','💼','🛒','🏥','📚','🎮','🍽️'];
-const AVATARS      = ['👨','👩','🧒','👦','👧','🧑','👴','👵','🧔','👱'];
-const M_COLORS     = ['#FF6B6B','#4ECDC4','#FFE66D','#A8E6CF','#B4A7D6','#FF8B94','#6C63FF','#69D2A0'];
+const CAT_COLORS=['#FF6B6B','#4ECDC4','#FFE66D','#A8E6CF','#B4A7D6','#FF8B94','#6C63FF','#69D2A0','#FFA07A','#87CEEB'];
+const CAT_ICONS=['🍜','🚌','🛍️','💡','💊','🎬','📦','☕','🎓','🏋️','🐾','✈️','🎁','💈','🏠','🎮','📱','👗','🍺','💅'];
+const LEDGER_ICONS=['👨‍👩‍👧‍👦','🏠','✈️','🎉','💼','🛒','🏥','📚','🎮','🍽️'];
+const AVATARS=['👨','👩','🧒','👦','👧','🧑','👴','👵','🧔','👱','🧕','👲'];
+const M_COLORS=['#FF6B6B','#4ECDC4','#FFE66D','#A8E6CF','#B4A7D6','#FF8B94','#6C63FF','#69D2A0'];
 
-// ══════════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════════
-const S = {
-  user:null, profile:null,
-  ledgers:{},             // { [ledgerId]: { name, icon, role } }
-  activeLedgerId:null,
-  txs:{},                 // raw Firebase transactions object
-  members:{},             // raw Firebase members object
-  view:'home', tab:'transactions', filterMember:'all',
-  addForm:{ type:'expense',amount:'',category:'food',description:'',member:'',splitWith:[],date:td() },
+// ── STATE ──
+const S={
+  user:null,profile:null,
+  ledgers:{},activeLedgerId:null,
+  txs:{},members:{},cats:{},budgets:{},ledgerCurrency:'MYR',
+  view:'home',tab:'transactions',filterMember:'all',
+  addForm:null,   // null = new, else pre-filled for edit
+  editTxKey:null, // key of tx being edited
   splitModal:null,
   authMode:'login',
   listeners:[],
 };
 
-// ══════════════════════════════════════════
-//  UTILS
-// ══════════════════════════════════════════
-function td(){ return new Date().toISOString().slice(0,10); }
-function fmt(n){ return 'RM '+Number(n).toFixed(2); }
-function genCode(n=6){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:n},()=>c[~~(Math.random()*c.length)]).join(''); }
-function dlabel(str){
-  const now=new Date(); now.setHours(0,0,0,0);
-  const d=new Date(str+'T00:00:00');
-  const diff=Math.round((now-d)/86400000);
-  if(diff===0)return'Today'; if(diff===1)return'Yesterday';
-  return d.toLocaleDateString('en-MY',{weekday:'short',month:'short',day:'numeric'});
-}
-function txArr(){
-  return Object.entries(S.txs||{}).map(([k,v])=>({...v,_k:k}))
-    .sort((a,b)=>b.date.localeCompare(a.date)||(b.ts||0)-(a.ts||0));
-}
-function getMem(id){
-  return (S.members&&S.members[id]) ? {...S.members[id],id} : {id,displayName:id,avatar:'👤',color:'#999'};
-}
-function filtered(){
-  const f=S.filterMember, all=txArr();
-  return f==='all'?all:all.filter(t=>t.member===f||(t.splitWith||[]).includes(f));
-}
+// ── UTILS ──
+function td(){return new Date().toISOString().slice(0,10);}
+function getCats(){return Object.keys(S.cats).length?S.cats:DEFAULT_CATS;}
+function getCur(){return CURRENCIES[S.ledgerCurrency]||CURRENCIES.MYR;}
+function fmt(n,cur){const c=cur?CURRENCIES[cur]:getCur();return(c?c.symbol:'RM')+' '+Number(n).toFixed(2);}
+function genCode(n=6){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:n},()=>c[~~(Math.random()*c.length)]).join('');}
+function dlabel(str){const now=new Date();now.setHours(0,0,0,0);const d=new Date(str+'T00:00:00');const diff=Math.round((now-d)/86400000);if(diff===0)return'Today';if(diff===1)return'Yesterday';return d.toLocaleDateString('en-MY',{weekday:'short',month:'short',day:'numeric'});}
+function txArr(){return Object.entries(S.txs||{}).map(([k,v])=>({...v,_k:k})).sort((a,b)=>b.date.localeCompare(a.date)||(b.ts||0)-(a.ts||0));}
+// getMem handles both real Firebase members AND guest members (guest:true stored in ledgerMembers)
+function getMem(id){return(S.members&&S.members[id])?{...S.members[id],id}:{id,displayName:id,avatar:'👤',color:'#999',guest:false};}
+function allMembers(){return Object.entries(S.members||{}).map(([id,m])=>({id,...m}));}
+function filtered(){const f=S.filterMember,all=txArr();return f==='all'?all:all.filter(t=>t.member===f||(t.splitWith||[]).includes(f));}
 function debts(){
   const d={};
   txArr().forEach(t=>{
-    if(t.splitWith?.length&&t.type==='expense'){
+    if(t.type==='expense'&&t.splitAmounts&&Object.keys(t.splitAmounts).length>1){
+      Object.entries(t.splitAmounts).forEach(([uid,amt])=>{if(uid!==t.member){const k=uid+'->'+t.member;d[k]=(d[k]||0)+amt;}});
+    }else if(t.splitWith?.length&&t.type==='expense'){
       const sh=t.amount/(t.splitWith.length+1);
-      t.splitWith.forEach(p=>{ const k=p+'->'+t.member; d[k]=(d[k]||0)+sh; });
+      t.splitWith.forEach(p=>{const k=p+'->'+t.member;d[k]=(d[k]||0)+sh;});
     }
   });
-  return Object.entries(d).map(([k,v])=>{ const[f,t]=k.split('->'); return{from:f,to:t,amount:v}; });
+  return Object.entries(d).map(([k,v])=>{const[f,t]=k.split('->');return{from:f,to:t,amount:v};});
 }
-function toast(msg,col='var(--green)'){
-  const el=document.createElement('div');
-  el.className='toast'; el.textContent=msg; el.style.color=col;
-  document.body.appendChild(el); setTimeout(()=>el.remove(),2500);
-}
-function showLoad(){ document.getElementById('loadingScreen').style.display='flex'; }
-function hideLoad(){ document.getElementById('loadingScreen').style.display='none'; }
+function blankForm(){return{type:'expense',amount:'',category:'food',subcat:'',description:'',member:'',splitWith:[],splitMode:'equal',customSplits:{},date:td(),currency:S.ledgerCurrency};}
+function toast(msg,col='var(--green)'){const el=document.createElement('div');el.className='toast';el.textContent=msg;el.style.color=col;document.body.appendChild(el);setTimeout(()=>el.remove(),2500);}
+function showLoad(){document.getElementById('loadingScreen').style.display='flex';}
+function hideLoad(){document.getElementById('loadingScreen').style.display='none';}
+function safeRender(){const pg=document.getElementById('mainPage');if(pg&&!document.getElementById('ledgerContainer')?.innerHTML)renderPage();}
 
-// ══════════════════════════════════════════
-//  AUTH STATE
-// ══════════════════════════════════════════
-onAuthStateChanged(auth, async user=>{
+// ── AUTH STATE ──
+onAuthStateChanged(auth,async user=>{
   if(user){
     S.user=user;
     const snap=await get(ref(db,'users/'+user.uid));
-    S.profile = snap.exists() ? snap.val() : { displayName:user.displayName||'User', avatar:'👤', color:M_COLORS[0] };
-    if(!snap.exists()) await set(ref(db,'users/'+user.uid), S.profile);
-
-    // Load ledger memberships
+    S.profile=snap.exists()?snap.val():{displayName:user.displayName||'User',avatar:'👤',color:M_COLORS[0]};
+    if(!snap.exists())await set(ref(db,'users/'+user.uid),S.profile);
     const lsnap=await get(ref(db,'userLedgers/'+user.uid));
-    S.ledgers = lsnap.exists() ? lsnap.val() : {};
-
-    if(!Object.keys(S.ledgers).length){
-      const id=await mkLedger('Family','👨‍👩‍👧‍👦');
-      S.ledgers[id]={name:'Family',icon:'👨‍👩‍👧‍👦',role:'owner'};
-    }
+    S.ledgers=lsnap.exists()?lsnap.val():{};
+    if(!Object.keys(S.ledgers).length){const id=await mkLedger('Family','👨‍👩‍👧‍👦');S.ledgers[id]={name:'Family',icon:'👨‍👩‍👧‍👦',role:'owner'};}
     const last=localStorage.getItem('fw_lid_'+user.uid);
     const pick=(last&&S.ledgers[last])?last:Object.keys(S.ledgers)[0];
     await switchLedger(pick);
-    hideLoad(); showApp();
-  } else {
-    S.user=null; S.profile=null;
-    hideLoad(); showAuth();
-  }
+    hideLoad();showApp();
+  }else{S.user=null;S.profile=null;hideLoad();showAuth();}
 });
 
-// ══════════════════════════════════════════
-//  LEDGER OPERATIONS
-// ══════════════════════════════════════════
-async function mkLedger(name,icon){
+// ── LEDGER OPS ──
+async function mkLedger(name,icon,currency='MYR'){
   const lid=push(ref(db,'ledgers')).key;
-  const code=genCode(6);
   const up={};
-  up[`ledgers/${lid}`]={ id:lid,name,icon,inviteCode:code,owner:S.user.uid,createdAt:Date.now(),members:{[S.user.uid]:true} };
-  up[`userLedgers/${S.user.uid}/${lid}`]={ name,icon,role:'owner' };
-  up[`ledgerMembers/${lid}/${S.user.uid}`]={ displayName:S.profile.displayName,avatar:S.profile.avatar,color:S.profile.color,role:'owner',joinedAt:Date.now() };
-  await update(ref(db),up);
-  return lid;
+  up[`ledgers/${lid}`]={id:lid,name,icon,inviteCode:genCode(6),owner:S.user.uid,createdAt:Date.now(),members:{[S.user.uid]:true},currency};
+  up[`userLedgers/${S.user.uid}/${lid}`]={name,icon,role:'owner'};
+  up[`ledgerMembers/${lid}/${S.user.uid}`]={displayName:S.profile.displayName,avatar:S.profile.avatar,color:S.profile.color,role:'owner',joinedAt:Date.now()};
+  await update(ref(db),up);return lid;
 }
-
 async function switchLedger(lid){
-  S.listeners.forEach(({r,fn})=>{ try{ off(r,'value',fn); }catch(e){} });
-  S.listeners=[];
-  S.activeLedgerId=lid;
-  S.filterMember='all'; S.view='home';
-  localStorage.setItem('fw_lid_'+S.user.uid, lid);
-
-  const tr=ref(db,'ledgerTransactions/'+lid);
-  const tfn=snap=>{ S.txs=snap.exists()?snap.val():{};  safeRenderPage(); };
-  onValue(tr,tfn); S.listeners.push({r:tr,fn:tfn});
-
-  const mr=ref(db,'ledgerMembers/'+lid);
-  const mfn=snap=>{ S.members=snap.exists()?snap.val():{};  safeRenderPage(); };
-  onValue(mr,mfn); S.listeners.push({r:mr,fn:mfn});
-
-  // ensure self in members
+  S.listeners.forEach(({r,fn})=>{try{off(r,'value',fn);}catch(e){}});
+  S.listeners=[];S.activeLedgerId=lid;S.filterMember='all';S.view='home';
+  localStorage.setItem('fw_lid_'+S.user.uid,lid);
+  const listen=(path,cb)=>{const r=ref(db,path);const fn=s=>cb(s);onValue(r,fn);S.listeners.push({r,fn});};
+  listen('ledgerTransactions/'+lid,s=>{S.txs=s.exists()?s.val():{};safeRender();});
+  listen('ledgerMembers/'+lid,s=>{S.members=s.exists()?s.val():{};safeRender();});
+  listen('ledgerCategories/'+lid,s=>{S.cats=s.exists()?s.val():{};safeRender();});
+  listen('ledgerBudgets/'+lid,s=>{S.budgets=s.exists()?s.val():{};safeRender();});
+  listen('ledgers/'+lid+'/currency',s=>{S.ledgerCurrency=s.exists()?s.val():'MYR';safeRender();});
   const ms=await get(ref(db,`ledgerMembers/${lid}/${S.user.uid}`));
-  if(!ms.exists()) await set(ref(db,`ledgerMembers/${lid}/${S.user.uid}`),{displayName:S.profile.displayName,avatar:S.profile.avatar,color:S.profile.color,role:'member',joinedAt:Date.now()});
+  if(!ms.exists())await set(ref(db,`ledgerMembers/${lid}/${S.user.uid}`),{displayName:S.profile.displayName,avatar:S.profile.avatar,color:S.profile.color,role:'member',joinedAt:Date.now()});
 }
 
-function safeRenderPage(){ const pg=document.getElementById('mainPage'); if(pg&&document.getElementById('ledgerContainer')?.innerHTML==='') renderPage(); }
+// ── SHOW/HIDE ──
+function showAuth(){document.getElementById('authContainer').innerHTML=renderAuth();document.getElementById('ledgerContainer').innerHTML='';document.getElementById('bottomNav').style.display='none';document.getElementById('mainPage').innerHTML='';}
+function showApp(){document.getElementById('authContainer').innerHTML='';document.getElementById('ledgerContainer').innerHTML='';document.getElementById('bottomNav').style.display='flex';render();}
 
-// ══════════════════════════════════════════
-//  SHOW / HIDE SCREENS
-// ══════════════════════════════════════════
-function showAuth(){
-  document.getElementById('authContainer').innerHTML=renderAuth();
-  document.getElementById('ledgerContainer').innerHTML='';
-  document.getElementById('bottomNav').style.display='none';
-  document.getElementById('mainPage').innerHTML='';
-}
-function showApp(){
-  document.getElementById('authContainer').innerHTML='';
-  document.getElementById('ledgerContainer').innerHTML='';
-  document.getElementById('bottomNav').style.display='flex';
-  render();
-}
-
-// ══════════════════════════════════════════
-//  AUTH UI
-// ══════════════════════════════════════════
+// ── AUTH UI ──
 let selAv=0;
 function renderAuth(){
   const login=S.authMode==='login';
-  return `
-  <div class="auth-screen fade-in">
+  return`<div class="auth-screen fade-in">
     <div style="font-size:52px;margin-bottom:12px">💳</div>
     <p style="font-size:26px;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px;text-align:center">Family Wallet</p>
     <p style="font-size:13px;color:var(--muted);margin-bottom:36px;text-align:center">Real-time shared spending tracker</p>
@@ -340,217 +285,140 @@ function renderAuth(){
     </div>
     <div id="authErr"></div>
     <div style="width:100%;max-width:360px">
-      ${!login?`<div style="margin-bottom:14px"><p class="label" style="margin-bottom:8px">Your Name</p>
-        <input class="auth-input" id="aName" type="text" placeholder="e.g. Ahmad, Sarah..."></div>`:''}
-      <div style="margin-bottom:14px"><p class="label" style="margin-bottom:8px">Email</p>
-        <input class="auth-input" id="aEmail" type="email" placeholder="you@email.com"></div>
-      <div style="margin-bottom:${login?22:14}px"><p class="label" style="margin-bottom:8px">Password</p>
-        <input class="auth-input" id="aPass" type="password" placeholder="••••••••">
-        ${!login?'<p style="font-size:11px;color:var(--dim);margin-top:5px">Min 6 characters</p>':''}</div>
-      ${!login?`<div style="margin-bottom:22px"><p class="label" style="margin-bottom:10px">Pick Avatar</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${AVATARS.map((a,i)=>`<button onclick="pickAv(${i})" id="av${i}" style="width:44px;height:44px;border-radius:12px;font-size:22px;background:rgba(255,255,255,0.06);border:2px solid ${i===0?'var(--accent)':'transparent'};transition:all 0.15s">${a}</button>`).join('')}
-        </div></div>`:''}
-      <button class="btn-primary" style="margin-top:4px" onclick="${login?'doLogin()':'doReg()'}">${login?'→ Sign In':'✓ Create Account'}</button>
+      ${!login?`<div style="margin-bottom:14px"><p class="label" style="margin-bottom:8px">Your Name</p><input class="auth-input" id="aName" type="text" placeholder="e.g. Ahmad, Sarah..."></div>`:''}
+      <div style="margin-bottom:14px"><p class="label" style="margin-bottom:8px">Email</p><input class="auth-input" id="aEmail" type="email" placeholder="you@email.com"></div>
+      <div style="margin-bottom:${login?22:14}px"><p class="label" style="margin-bottom:8px">Password</p><input class="auth-input" id="aPass" type="password" placeholder="••••••••">${!login?'<p style="font-size:11px;color:var(--dim);margin-top:5px">Min 6 characters</p>':''}</div>
+      ${!login?`<div style="margin-bottom:22px"><p class="label" style="margin-bottom:10px">Pick Avatar</p><div style="display:flex;gap:8px;flex-wrap:wrap">${AVATARS.slice(0,10).map((a,i)=>`<button onclick="pickAv(${i})" id="av${i}" style="width:44px;height:44px;border-radius:12px;font-size:22px;background:rgba(255,255,255,0.06);border:2px solid ${i===0?'var(--accent)':'transparent'};transition:all 0.15s">${a}</button>`).join('')}</div></div>`:''}
+      <button class="btn-primary" style="margin-top:4px" onclick="${login?'doLogin()':'doReg()'}"> ${login?'→ Sign In':'✓ Create Account'}</button>
     </div>
   </div>`;
 }
-window.pickAv=i=>{ selAv=i; document.querySelectorAll('[id^="av"]').forEach(b=>b.style.borderColor='transparent'); const b=document.getElementById('av'+i); if(b)b.style.borderColor='var(--accent)'; };
-window.setAM=m=>{ S.authMode=m; document.getElementById('authContainer').innerHTML=renderAuth(); };
-function aErr(msg){ const el=document.getElementById('authErr'); if(el)el.innerHTML=`<div class="auth-error" style="max-width:360px">${msg}</div>`; }
-
+window.pickAv=i=>{selAv=i;document.querySelectorAll('[id^="av"]').forEach(b=>b.style.borderColor='transparent');const b=document.getElementById('av'+i);if(b)b.style.borderColor='var(--accent)';};
+window.setAM=m=>{S.authMode=m;document.getElementById('authContainer').innerHTML=renderAuth();};
+function aErr(msg){const el=document.getElementById('authErr');if(el)el.innerHTML=`<div class="auth-error" style="max-width:360px">${msg}</div>`;}
 window.doReg=async()=>{
-  const name=document.getElementById('aName')?.value.trim();
-  const email=document.getElementById('aEmail')?.value.trim();
-  const pass=document.getElementById('aPass')?.value;
-  if(!name||!email||!pass){aErr('All fields required.');return;}
-  if(pass.length<6){aErr('Password min 6 characters.');return;}
-  try{
-    const cred=await createUserWithEmailAndPassword(auth,email,pass);
-    await updateProfile(cred.user,{displayName:name});
-    const color=M_COLORS[~~(Math.random()*M_COLORS.length)];
-    await set(ref(db,'users/'+cred.user.uid),{displayName:name,avatar:AVATARS[selAv],color});
-  }catch(e){ aErr(e.code==='auth/email-already-in-use'?'Email already registered — sign in instead.':'Error: '+e.message); }
+  const name=document.getElementById('aName')?.value.trim(),email=document.getElementById('aEmail')?.value.trim(),pass=document.getElementById('aPass')?.value;
+  if(!name||!email||!pass){aErr('All fields required.');return;}if(pass.length<6){aErr('Password min 6 characters.');return;}
+  try{const cred=await createUserWithEmailAndPassword(auth,email,pass);await updateProfile(cred.user,{displayName:name});const color=M_COLORS[~~(Math.random()*M_COLORS.length)];await set(ref(db,'users/'+cred.user.uid),{displayName:name,avatar:AVATARS[selAv],color});}
+  catch(e){aErr(e.code==='auth/email-already-in-use'?'Email already registered.':'Error: '+e.message);}
 };
 window.doLogin=async()=>{
-  const email=document.getElementById('aEmail')?.value.trim();
-  const pass=document.getElementById('aPass')?.value;
+  const email=document.getElementById('aEmail')?.value.trim(),pass=document.getElementById('aPass')?.value;
   if(!email||!pass){aErr('Enter email and password.');return;}
-  try{ await signInWithEmailAndPassword(auth,email,pass); }
-  catch(e){ aErr(e.code==='auth/invalid-credential'?'Wrong email or password.':'Error: '+e.message); }
+  try{await signInWithEmailAndPassword(auth,email,pass);}catch(e){aErr(e.code==='auth/invalid-credential'?'Wrong email or password.':'Error: '+e.message);}
 };
-window.doLogout=async()=>{
-  if(!confirm('Sign out?'))return;
-  S.listeners.forEach(({r,fn})=>{ try{off(r,'value',fn);}catch(e){} }); S.listeners=[];
-  await signOut(auth);
-};
+window.doLogout=async()=>{if(!confirm('Sign out?'))return;S.listeners.forEach(({r,fn})=>{try{off(r,'value',fn);}catch(e){}});S.listeners=[];await signOut(auth);};
 
-// ══════════════════════════════════════════
-//  LEDGER PICKER
-// ══════════════════════════════════════════
-window.openLedgerPicker=()=>{
-  document.getElementById('ledgerContainer').innerHTML=renderLedgerPicker();
-  document.getElementById('mainPage').innerHTML='';
-  document.getElementById('bottomNav').style.display='none';
-};
-window.closeLedgerPicker=()=>{
-  document.getElementById('ledgerContainer').innerHTML='';
-  document.getElementById('bottomNav').style.display='flex';
-  render();
-};
-
+// ── LEDGER PICKER ──
+window.openLedgerPicker=()=>{document.getElementById('ledgerContainer').innerHTML=renderLedgerPicker();document.getElementById('mainPage').innerHTML='';document.getElementById('bottomNav').style.display='none';};
+window.closeLedgerPicker=()=>{document.getElementById('ledgerContainer').innerHTML='';document.getElementById('bottomNav').style.display='flex';render();};
 let selIcon=0;
 function renderLedgerPicker(){
   const cards=Object.entries(S.ledgers).map(([id,l])=>`
     <div class="ledger-card ${id===S.activeLedgerId?'active-ledger':''}" onclick="pickLedger('${id}')">
       <div style="display:flex;align-items:center;gap:12px">
         <div style="width:46px;height:46px;border-radius:14px;background:rgba(108,99,255,0.15);display:flex;align-items:center;justify-content:center;font-size:22px">${l.icon||'💼'}</div>
-        <div style="flex:1">
-          <p style="font-size:16px;font-weight:700">${l.name}</p>
-          <p style="font-size:11px;color:var(--dim)">${l.role==='owner'?'👑 Owner':'👤 Member'}${id===S.activeLedgerId?' · Active':''}</p>
-        </div>
+        <div style="flex:1"><p style="font-size:16px;font-weight:700">${l.name}</p><p style="font-size:11px;color:var(--dim)">${l.role==='owner'?'👑 Owner':'👤 Member'}${id===S.activeLedgerId?' · Active':''}</p></div>
         ${id===S.activeLedgerId?'<span style="color:var(--accent);font-size:20px">✓</span>':''}
       </div>
     </div>`).join('');
-
-  return `
-  <div class="ledger-screen fade-in">
-    <div style="padding:50px 22px 0">
-      <button class="btn-ghost" onclick="closeLedgerPicker()" style="margin-bottom:22px">← Back</button>
+  return`<div class="ledger-screen fade-in">
+    <div style="padding:50px 22px 0"><button class="btn-ghost" onclick="closeLedgerPicker()" style="margin-bottom:22px">← Back</button>
       <h2 style="font-size:24px;font-weight:700;margin-bottom:4px">My Ledgers</h2>
       <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Switch, create, or join ledgers</p>
     </div>
     <div style="flex:1;overflow-y:auto;padding:0 22px 120px">
       ${cards}
-
       <div class="surface" style="padding:20px;margin-top:8px;border-radius:18px">
         <p style="font-size:15px;font-weight:700;margin-bottom:14px">➕ Create New Ledger</p>
-        <div style="margin-bottom:12px">
-          <p class="label" style="margin-bottom:8px">Name</p>
-          <input id="nlName" type="text" placeholder="e.g. Family, Bali Trip..."
-            style="width:100%;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none">
-        </div>
-        <div style="margin-bottom:16px">
-          <p class="label" style="margin-bottom:10px">Icon</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            ${LEDGER_ICONS.map((ic,i)=>`<button onclick="pickIcon(${i})" id="ic${i}" style="width:42px;height:42px;border-radius:11px;font-size:20px;background:rgba(255,255,255,0.06);border:2px solid ${i===0?'var(--accent)':'transparent'};transition:all 0.15s">${ic}</button>`).join('')}
-          </div>
-        </div>
+        <div style="margin-bottom:12px"><p class="label" style="margin-bottom:8px">Name</p><input id="nlName" type="text" placeholder="e.g. Family, Bali Trip..." class="fw-input"></div>
+        <div style="margin-bottom:12px"><p class="label" style="margin-bottom:8px">Currency</p>
+          <select id="nlCur" class="currency-selector">${Object.entries(CURRENCIES).map(([k,c])=>`<option value="${k}" ${k==='MYR'?'selected':''}>${c.flag} ${k} — ${c.name}</option>`).join('')}</select></div>
+        <div style="margin-bottom:16px"><p class="label" style="margin-bottom:10px">Icon</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${LEDGER_ICONS.map((ic,i)=>`<button onclick="pickIcon(${i})" id="ic${i}" style="width:42px;height:42px;border-radius:11px;font-size:20px;background:rgba(255,255,255,0.06);border:2px solid ${i===0?'var(--accent)':'transparent'};transition:all 0.15s">${ic}</button>`).join('')}</div></div>
         <button class="btn-primary" style="padding:14px" onclick="doCreateLedger()">Create Ledger</button>
         <div id="clMsg" style="margin-top:10px;font-size:13px;text-align:center"></div>
       </div>
-
       <div class="surface" style="padding:20px;margin-top:12px;border-radius:18px">
         <p style="font-size:15px;font-weight:700;margin-bottom:6px">🔑 Join a Ledger</p>
         <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Enter a 6-character invite code</p>
-        <div class="join-input-row">
-          <input id="jCode" type="text" placeholder="ABC123" maxlength="6" oninput="this.value=this.value.toUpperCase()">
-          <button class="join-btn" onclick="doJoin()">Join</button>
-        </div>
+        <div class="join-input-row"><input id="jCode" type="text" placeholder="ABC123" maxlength="6" oninput="this.value=this.value.toUpperCase()"><button class="join-btn" onclick="doJoin()">Join</button></div>
         <div id="jMsg" style="margin-top:10px;font-size:13px"></div>
       </div>
     </div>
   </div>`;
 }
-
-window.pickIcon=i=>{ selIcon=i; document.querySelectorAll('[id^="ic"]').forEach(b=>b.style.borderColor='transparent'); const b=document.getElementById('ic'+i); if(b)b.style.borderColor='var(--accent)'; };
-
+window.pickIcon=i=>{selIcon=i;document.querySelectorAll('[id^="ic"]').forEach(b=>b.style.borderColor='transparent');const b=document.getElementById('ic'+i);if(b)b.style.borderColor='var(--accent)';};
 window.doCreateLedger=async()=>{
-  const name=document.getElementById('nlName')?.value.trim();
-  const msg=document.getElementById('clMsg');
+  const name=document.getElementById('nlName')?.value.trim(),msg=document.getElementById('clMsg'),cur=document.getElementById('nlCur')?.value||'MYR';
   if(!name){if(msg){msg.style.color='var(--red)';msg.textContent='Enter a name.';}return;}
-  try{
-    const id=await mkLedger(name,LEDGER_ICONS[selIcon]);
-    S.ledgers[id]={name,icon:LEDGER_ICONS[selIcon],role:'owner'};
+  try{const id=await mkLedger(name,LEDGER_ICONS[selIcon],cur);S.ledgers[id]={name,icon:LEDGER_ICONS[selIcon],role:'owner'};
     if(msg){msg.style.color='var(--green)';msg.textContent='✓ Ledger created!';}
-    await switchLedger(id);
-    setTimeout(()=>{closeLedgerPicker();showApp();toast('✓ '+name+' created');},700);
+    await switchLedger(id);setTimeout(()=>{closeLedgerPicker();showApp();toast('✓ '+name+' created');},700);
   }catch(e){if(msg){msg.style.color='var(--red)';msg.textContent='Error: '+e.message;}}
 };
-
-async function joinByCode(code, msgEl){
+async function joinByCode(code,msgEl){
   if(!code||code.length!==6){if(msgEl){msgEl.style.color='var(--red)';msgEl.textContent='Enter a valid 6-character code.';}return;}
   try{
-    const snap=await get(ref(db,'ledgers'));
-    if(!snap.exists()){if(msgEl){msgEl.style.color='var(--red)';msgEl.textContent='No ledgers found.';}return;}
-    let tid=null,tl=null;
-    snap.forEach(c=>{if(c.val().inviteCode===code){tid=c.key;tl=c.val();}});
+    const snap=await get(ref(db,'ledgers'));if(!snap.exists()){if(msgEl){msgEl.style.color='var(--red)';msgEl.textContent='No ledgers found.';}return;}
+    let tid=null,tl=null;snap.forEach(c=>{if(c.val().inviteCode===code){tid=c.key;tl=c.val();}});
     if(!tid){if(msgEl){msgEl.style.color='var(--red)';msgEl.textContent='Invalid invite code.';}return;}
     if(S.ledgers[tid]){if(msgEl){msgEl.style.color='var(--accent2)';msgEl.textContent='Already a member!';}return;}
     const up={};
     up[`ledgers/${tid}/members/${S.user.uid}`]=true;
     up[`userLedgers/${S.user.uid}/${tid}`]={name:tl.name,icon:tl.icon||'💼',role:'member'};
     up[`ledgerMembers/${tid}/${S.user.uid}`]={displayName:S.profile.displayName,avatar:S.profile.avatar,color:S.profile.color,role:'member',joinedAt:Date.now()};
-    await update(ref(db),up);
-    S.ledgers[tid]={name:tl.name,icon:tl.icon||'💼',role:'member'};
+    await update(ref(db),up);S.ledgers[tid]={name:tl.name,icon:tl.icon||'💼',role:'member'};
     if(msgEl){msgEl.style.color='var(--green)';msgEl.textContent='✓ Joined "'+tl.name+'"!';}
-    await switchLedger(tid);
-    return tl.name;
+    await switchLedger(tid);return tl.name;
   }catch(e){if(msgEl){msgEl.style.color='var(--red)';msgEl.textContent='Error: '+e.message;}}
 }
+window.doJoin=async()=>{const code=document.getElementById('jCode')?.value.trim().toUpperCase(),msg=document.getElementById('jMsg');const name=await joinByCode(code,msg);if(name)setTimeout(()=>{closeLedgerPicker();showApp();toast('✓ Joined '+name);},700);};
+window.pickLedger=async id=>{showLoad();await switchLedger(id);hideLoad();closeLedgerPicker();showApp();};
 
-window.doJoin=async()=>{
-  const code=document.getElementById('jCode')?.value.trim().toUpperCase();
-  const msg=document.getElementById('jMsg');
-  const name=await joinByCode(code,msg);
-  if(name) setTimeout(()=>{closeLedgerPicker();showApp();toast('✓ Joined '+name);},700);
-};
-
-window.pickLedger=async id=>{
-  showLoad();
-  await switchLedger(id);
-  hideLoad(); closeLedgerPicker(); showApp();
-};
-
-// ══════════════════════════════════════════
-//  MAIN RENDER
-// ══════════════════════════════════════════
-function render(){ renderPage(); renderNav(); renderModal(); }
-
+// ── RENDER ──
+function render(){renderPage();renderNav();renderModal();}
 function renderNav(){
-  const nav=document.getElementById('bottomNav'); if(!nav)return;
+  const nav=document.getElementById('bottomNav');if(!nav)return;
   const{view,tab}=S;
   nav.innerHTML=`
-    <button class="nav-btn ${view==='home'&&tab==='transactions'?'active':''}" onclick="goHome('transactions')">
-      <span class="nav-icon">📋</span><span>Ledger</span>
-    </button>
+    <button class="nav-btn ${view==='home'&&tab==='transactions'?'active':''}" onclick="goHome('transactions')"><span class="nav-icon">📋</span><span>Ledger</span></button>
     <button class="fab" onclick="goAdd()">+</button>
-    <button class="nav-btn ${view==='home'&&tab==='analytics'?'active':''}" onclick="goHome('analytics')">
-      <span class="nav-icon">📊</span><span>Analytics</span>
-    </button>`;
+    <button class="nav-btn ${view==='home'&&tab==='analytics'?'active':''}" onclick="goHome('analytics')"><span class="nav-icon">📊</span><span>Analytics</span></button>`;
 }
-
 function renderPage(){
-  const pg=document.getElementById('mainPage'); if(!pg)return;
-  if(S.view==='add')      {pg.innerHTML=renderAdd();return;}
-  if(S.view==='settings') {pg.innerHTML=renderSettings();return;}
-  if(S.view==='invite')   {pg.innerHTML=renderInvite();return;}
+  const pg=document.getElementById('mainPage');if(!pg)return;
+  if(S.view==='add'){pg.innerHTML=renderAdd();return;}
+  if(S.view==='settings'){pg.innerHTML=renderSettings();return;}
+  if(S.view==='invite'){pg.innerHTML=renderInvite();return;}
+  if(S.view==='budget'){pg.innerHTML=renderBudgetPage();return;}
+  if(S.view==='categories'){pg.innerHTML=renderCategoriesPage();return;}
+  if(S.view==='guests'){pg.innerHTML=renderGuestsPage();return;}
   pg.innerHTML=renderHome();
 }
 
 // ── HOME ──
 function renderHome(){
-  const fil=filtered();
+  const fil=filtered();const cur=getCur();
   const inc=fil.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
   const exp=fil.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const bal=inc-exp; const isPos=bal>=0;
+  const bal=inc-exp;const isPos=bal>=0;
   const mems=S.members||{};
   const allM=[{id:'all',displayName:'All',avatar:'👨‍👩‍👧‍👦',color:'#6C63FF'},...Object.entries(mems).map(([id,m])=>({id,...m}))];
-  const pills=allM.map(m=>`
-    <button class="member-pill ${S.filterMember===m.id?'active':''}"
-      style="${S.filterMember===m.id?'background:'+m.color+';':''}"
-      onclick="setFilter('${m.id}')">
-      <span style="font-size:16px">${m.avatar}</span> ${m.displayName}
-    </button>`).join('');
+  const pills=allM.map(m=>`<button class="member-pill ${S.filterMember===m.id?'active':''}" style="${S.filterMember===m.id?'background:'+m.color+';':''}" onclick="setFilter('${m.id}')"><span style="font-size:16px">${m.avatar}</span> ${m.displayName}${m.guest?'<span style="font-size:9px;opacity:0.7"> 👻</span>':''}</button>`).join('');
   const linfo=S.ledgers[S.activeLedgerId]||{};
   const memCnt=Object.keys(mems).length;
+  const totalBudget=Object.values(S.budgets||{}).reduce((s,v)=>s+v,0);
+  const budgetBar=totalBudget>0?`<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px"><span>Monthly Budget</span><span>${fmt(exp)} / ${fmt(totalBudget)}</span></div>
+    <div class="budget-bar-track"><div class="budget-bar-fill" style="width:${Math.min(100,(exp/totalBudget)*100)}%;background:${exp>totalBudget?'var(--red)':exp/totalBudget>0.8?'var(--yellow)':'var(--green)'}"></div></div>
+    ${exp>totalBudget?`<p class="budget-over">⚠️ Over budget by ${fmt(exp-totalBudget)}</p>`:exp/totalBudget>0.8?`<p class="budget-warning">⚠️ ${Math.round((exp/totalBudget)*100)}% used</p>`:''}
+  </div>`:'';
   const tc=S.tab==='transactions'?renderTxs(fil):renderAnalytics(fil,exp);
-
-  return `
-  <div class="fade-in">
+  return`<div class="fade-in">
     <div style="padding:50px 22px 0;display:flex;justify-content:space-between;align-items:flex-start">
       <div>
-        <p class="label" style="margin-bottom:4px">Family Wallet</p>
+        <p class="label" style="margin-bottom:4px">Family Wallet · ${cur.flag} ${S.ledgerCurrency}</p>
         <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="openLedgerPicker()">
           <h1 style="font-size:23px;font-weight:700;letter-spacing:-0.02em">${linfo.icon||'💳'} ${linfo.name||'Ledger'}</h1>
           <span style="color:var(--dim);font-size:16px">⌄</span>
@@ -568,12 +436,13 @@ function renderHome(){
     <div class="member-scroll">${pills}</div>
     <div class="card balance-card slide-up">
       <p class="label" style="color:var(--accent);margin-bottom:6px">Net Balance</p>
-      <p class="balance-amount" style="color:${isPos?'var(--green)':'var(--red)'}"> ${fmt(Math.abs(bal))}</p>
+      <p class="balance-amount" style="color:${isPos?'var(--green)':'var(--red)'}">${fmt(Math.abs(bal))}</p>
       <p style="font-size:12px;color:var(--dim);margin-top:3px">${isPos?'▲ surplus':'▼ deficit'} · ${new Date().toLocaleDateString('en-MY',{month:'long',year:'numeric'})}</p>
       <div class="mini-cards">
         <div class="mini-card income"><p class="mc-label">INCOME</p><p class="mc-val">${fmt(inc)}</p></div>
         <div class="mini-card expense"><p class="mc-label">SPENT</p><p class="mc-val">${fmt(exp)}</p></div>
       </div>
+      ${budgetBar}
     </div>
     <div class="tab-bar">
       <button class="tab-btn ${S.tab==='transactions'?'active':''}" onclick="setTab('transactions')">Transactions</button>
@@ -585,103 +454,129 @@ function renderHome(){
 
 function renderTxs(fil){
   if(!fil.length)return'<div class="empty">No transactions yet.<br>Tap + to add one!</div>';
-  const g={};
-  fil.forEach(t=>{const l=dlabel(t.date);if(!g[l])g[l]=[];g[l].push(t);});
+  const g={};fil.forEach(t=>{const l=dlabel(t.date);if(!g[l])g[l]=[];g[l].push(t);});
+  const cats=getCats();
   return Object.entries(g).map(([lbl,txs])=>`
-    <div class="tx-group">
-      <p class="tx-date-label">${lbl}</p>
-      <div class="tx-list">
-        ${txs.map(t=>{
-          const cat=CATS[t.category]||CATS.other;
-          const mem=getMem(t.member);
-          const hs=t.splitWith?.length>0;
-          return `<div class="tx-row surface" onclick="${hs?`openSplit('${t._k}')`:`delTx('${t._k}')`}">
-            <div class="tx-icon" style="background:${cat.color}22">${cat.icon}</div>
-            <div class="tx-info">
-              <p class="tx-desc">${t.description}</p>
-              <div class="tx-meta">
-                <span class="tag" style="background:${(mem.color||'#999')}33;color:${mem.color||'#999'}">${mem.avatar} ${mem.displayName}</span>
-                ${hs?`<span class="tag" style="background:rgba(108,99,255,0.15);color:var(--accent)">÷${t.splitWith.length+1}</span>`:''}
-              </div>
+    <div class="tx-group"><p class="tx-date-label">${lbl}</p><div class="tx-list">
+      ${txs.map(t=>{
+        const cat=cats[t.category]||DEFAULT_CATS.other;
+        const mem=getMem(t.member);
+        const hs=(t.splitWith?.length>0)||(Object.keys(t.splitAmounts||{}).length>1);
+        const subcatLabel=t.subcat&&cat.subcats?.[t.subcat]?` · ${cat.subcats[t.subcat]}`:'';
+        return`<div class="tx-row surface" onclick="openTxModal('${t._k}')">
+          <div class="tx-icon" style="background:${cat.color}22">${cat.icon}</div>
+          <div class="tx-info">
+            <p class="tx-desc">${t.description}</p>
+            <div class="tx-meta">
+              <span class="tag" style="background:${(mem.color||'#999')}33;color:${mem.color||'#999'}">${mem.avatar} ${mem.displayName}</span>
+              ${subcatLabel?`<span class="tag" style="background:rgba(255,255,255,0.06);color:var(--muted)">${subcatLabel.trim()}</span>`:''}
+              ${hs?`<span class="tag" style="background:rgba(108,99,255,0.15);color:var(--accent)">÷split</span>`:''}
+              ${t.currency&&t.currency!==S.ledgerCurrency?`<span class="tag" style="background:rgba(78,205,196,0.15);color:var(--accent2)">${t.currency}</span>`:''}
             </div>
-            <p class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</p>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`).join('');
+          </div>
+          <p class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount,t.currency||S.ledgerCurrency)}</p>
+        </div>`;
+      }).join('')}
+    </div></div>`).join('');
 }
 
 function renderAnalytics(fil,totalExp){
-  const catData=Object.entries(CATS).filter(([k])=>k!=='income').map(([key,cat])=>({
-    key,...cat,total:fil.filter(t=>t.category===key&&t.type==='expense').reduce((s,t)=>s+t.amount,0)
-  })).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
-
-  const bars=catData.length?catData.map(c=>`
-    <div class="cat-bar-row">
+  const cats=getCats();
+  const catData=Object.entries(cats).filter(([k])=>k!=='income').map(([key,cat])=>({
+    key,...cat,
+    total:fil.filter(t=>t.category===key&&t.type==='expense').reduce((s,t)=>s+t.amount,0),
+    budget:S.budgets?.[key]||0
+  })).filter(c=>c.total>0||c.budget>0).sort((a,b)=>b.total-a.total);
+  const bars=catData.length?catData.map(c=>{
+    const budgetPct=c.budget>0?Math.min(100,(c.total/c.budget)*100):totalExp>0?Math.min(100,(c.total/totalExp)*100):0;
+    const overBudget=c.budget>0&&c.total>c.budget;
+    return`<div class="cat-bar-row">
       <div class="cat-bar-header">
         <span style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">${c.icon}</span><span style="color:var(--muted)">${c.label}</span></span>
-        <span style="font-family:'DM Mono',monospace;font-size:13px">${fmt(c.total)}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:13px">${fmt(c.total)}${c.budget>0?` <span style="color:var(--dim);font-size:11px">/ ${fmt(c.budget)}</span>`:''}</span>
       </div>
-      <div class="cat-bar-track"><div class="cat-bar-fill" style="background:${c.color};width:${Math.min(100,totalExp>0?(c.total/totalExp)*100:0)}%"></div></div>
-    </div>`).join(''):'<p class="empty">No expense data yet.</p>';
-
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="background:${overBudget?'var(--red)':c.color};width:${budgetPct}%"></div></div>
+      ${overBudget?`<p class="budget-over">Over by ${fmt(c.total-c.budget)}</p>`:c.budget>0&&budgetPct>80?`<p class="budget-warning">${Math.round(budgetPct)}% used</p>`:''}
+    </div>`;}).join(''):'<p class="empty">No expense data yet.</p>';
   const dbs=debts();
-  const dRows=dbs.length?dbs.map(d=>{
-    const f=getMem(d.from),t=getMem(d.to);
+  const dRows=dbs.length?dbs.map(d=>{const f=getMem(d.from),t=getMem(d.to);
     return`<div class="debt-row surface"><span style="font-size:20px">${f.avatar}</span><span style="font-size:13px;color:var(--muted);flex:1">${f.displayName} owes ${t.displayName}</span><span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--yellow);font-weight:600">${fmt(d.amount)}</span></div>`;
   }).join(''):'<p style="font-size:13px;color:var(--dim)">No split balances.</p>';
-
-  const allTx=txArr();
-  const mStats=Object.entries(S.members||{}).map(([id,m])=>({
-    id,...m,
-    spent:allTx.filter(t=>t.member===id&&t.type==='expense').reduce((s,t)=>s+t.amount,0),
-    earned:allTx.filter(t=>t.member===id&&t.type==='income').reduce((s,t)=>s+t.amount,0),
-  })).filter(m=>m.spent>0||m.earned>0);
-
-  return `
-    <div class="analytics-section"><p class="label" style="margin-bottom:12px">Spending by category</p>${bars}</div>
+  const mStats=Object.entries(S.members||{}).map(([id,m])=>({id,...m,spent:txArr().filter(t=>t.member===id&&t.type==='expense').reduce((s,t)=>s+t.amount,0),earned:txArr().filter(t=>t.member===id&&t.type==='income').reduce((s,t)=>s+t.amount,0)})).filter(m=>m.spent>0||m.earned>0);
+  return`
+    <div class="analytics-section"><p class="label" style="margin-bottom:12px">Spending by category</p>${bars}
+      <button onclick="goBudget()" style="margin-top:12px;width:100%;padding:12px;border-radius:12px;background:rgba(108,99,255,0.1);color:var(--accent);font-size:13px;font-weight:600;border:1px solid rgba(108,99,255,0.2)">💰 Manage Budgets</button>
+    </div>
     <div class="analytics-section" style="margin-top:8px"><p class="label" style="margin-bottom:12px">Split balances owed</p>${dRows}</div>
     <div class="analytics-section" style="margin-top:8px"><p class="label" style="margin-bottom:12px">Per member</p>
       ${mStats.map(m=>`<div class="settings-row surface" style="margin-bottom:8px">
-        <div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">${m.avatar}</span>
-          <div><p style="font-size:13px;font-weight:600">${m.displayName}</p><p style="font-size:11px;color:var(--dim)">Spent ${fmt(m.spent)}</p></div>
-        </div><p style="font-family:'DM Mono',monospace;font-size:13px;color:var(--green)">+${fmt(m.earned)}</p>
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">${m.avatar}</span><div><p style="font-size:13px;font-weight:600">${m.displayName}${m.guest?'<span class="guest-badge">GUEST</span>':''}</p><p style="font-size:11px;color:var(--dim)">Spent ${fmt(m.spent)}</p></div></div>
+        <p style="font-family:'DM Mono',monospace;font-size:13px;color:var(--green)">+${fmt(m.earned)}</p>
       </div>`).join('')||'<p style="font-size:13px;color:var(--dim)">No data yet.</p>'}
     </div>`;
 }
 
-// ── ADD PAGE ──
+// ══════════════════════════════════════════
+//  ADD / EDIT FORM
+// ══════════════════════════════════════════
 function renderAdd(){
   const f=S.addForm;
-  const mList=Object.entries(S.members||{}).map(([id,m])=>({id,...m}));
-  if(!f.member&&mList.length) f.member=mList[0].id;
+  const isEdit=!!S.editTxKey;
+  const mList=allMembers();
+  if(!f.member&&mList.length)f.member=mList[0].id;
+  if(!f.currency)f.currency=S.ledgerCurrency;
+  const cats=getCats();
+  const cat=cats[f.category]||DEFAULT_CATS.other;
+  const subcats=cat.subcats&&Object.keys(cat.subcats).length?cat.subcats:null;
 
-  const chips=Object.entries(CATS).filter(([k])=>k!=='income').map(([key,c])=>`
-    <button class="chip ${f.category===key?'active':''}" style="${f.category===key?'background:'+c.color+';':''}" onclick="setFF('category','${key}')">${c.icon} ${c.label}</button>`).join('');
+  const chips=Object.entries(cats).filter(([k])=>k!=='income').map(([key,c])=>`
+    <button class="chip ${f.category===key?'active':''}" style="${f.category===key?'background:'+c.color+';':''}" onclick="setFF('category','${key}');setFF('subcat','');renderPage()">${c.icon} ${c.label}</button>`).join('');
+
+  const subcatChips=subcats?`<div style="margin-top:10px">
+    <p class="label" style="margin-bottom:8px">Subcategory <span style="color:var(--dim);font-style:normal;text-transform:none;letter-spacing:0">(optional)</span></p>
+    <div class="chip-grid">
+      <button class="subcat-chip ${!f.subcat?'active':''}" style="${!f.subcat?'background:'+cat.color+'99;':''}" onclick="setFF('subcat','');renderPage()">All</button>
+      ${Object.entries(subcats).map(([k,v])=>`<button class="subcat-chip ${f.subcat===k?'active':''}" style="${f.subcat===k?'background:'+cat.color+'99;':''}" onclick="setFF('subcat','${k}');renderPage()">${v}</button>`).join('')}
+    </div>
+  </div>`:'';
 
   const paidBy=mList.map(m=>`
     <button class="member-box ${f.member===m.id?'active':''}" style="${f.member===m.id?'background:'+(m.color||'#888')+';':''}" onclick="setFM('${m.id}')">
-      <div class="m-avatar">${m.avatar}</div><div>${m.displayName}</div>
+      <div class="m-avatar">${m.avatar}</div>
+      <div>${m.displayName}</div>
+      ${m.guest?'<div class="guest-badge">GUEST</div>':''}
     </button>`).join('');
 
-  const splits=mList.filter(m=>m.id!==f.member).map(m=>`
-    <button class="member-box ${f.splitWith.includes(m.id)?'active':''}" style="${f.splitWith.includes(m.id)?'background:'+(m.color||'#888')+'CC;':''}" onclick="togSplit('${m.id}')">
-      <div class="m-avatar">${m.avatar}</div><div>${m.displayName}</div>
-      ${f.splitWith.includes(m.id)?'<div style="font-size:9px;margin-top:2px">✓</div>':''}
-    </button>`).join('');
+  const splitMembers=mList.filter(m=>m.id!==f.member);
+  const splitSection=f.type==='expense'?buildSplitSection(f,splitMembers):'';
 
-  const hint=f.splitWith.length>0&&f.amount?`<p class="split-hint">Each pays ${fmt(parseFloat(f.amount)/(f.splitWith.length+1))}</p>`:'';
+  const geminiKey=localStorage.getItem('fw_gemini_key')||'';
+  const scanBar=!isEdit?`
+    <input type="file" id="receiptInput" accept="image/*" capture="environment" style="display:none" onchange="handleReceiptScan(this)">
+    <button onclick="document.getElementById('receiptInput').click()" style="width:100%;padding:14px;border-radius:16px;background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.3);color:var(--accent2);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px">
+      📷 Scan Receipt with AI
+    </button>
+    ${!geminiKey?'<p style="font-size:11px;color:var(--yellow);text-align:center;margin-bottom:14px">⚠️ No Gemini API key — <button onclick="goSettings()" style="background:none;color:var(--accent);font-size:11px;font-weight:600;text-decoration:underline">add in Settings</button></p>':''}
+    <div id="scanStatus" style="display:none;margin-bottom:16px;padding:14px;border-radius:14px;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);text-align:center">
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div><span style="font-size:13px;color:var(--accent2)">Reading receipt...</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:11px;color:var(--dim)">OR FILL MANUALLY</span><div style="flex:1;height:1px;background:var(--border)"></div></div>`:'';
 
-  return `
-  <div class="add-page slide-up">
+  return`<div class="add-page slide-up">
     <button class="btn-ghost" onclick="goHome()" style="margin-bottom:22px">← Back</button>
-    <h2 style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-bottom:26px">New Entry</h2>
+    <h2 style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-bottom:26px">${isEdit?'✏️ Edit Entry':'New Entry'}</h2>
+    ${scanBar}
     <div class="type-toggle">
       <button class="type-btn ${f.type==='expense'?'active-expense':''}" onclick="setType('expense')">💸 Expense</button>
       <button class="type-btn ${f.type==='income'?'active-income':''}" onclick="setType('income')">💰 Income</button>
     </div>
     <div class="form-section"><div class="input-card surface">
-      <p class="label" style="margin-bottom:8px">Amount (RM)</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <p class="label">Amount</p>
+        <select onchange="setFF('currency',this.value)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(108,99,255,0.3);border-radius:10px;color:var(--text);font-family:'Sora',sans-serif;font-size:12px;font-weight:600;padding:5px 8px;outline:none">
+          ${Object.entries(CURRENCIES).map(([k,c])=>`<option value="${k}" ${k===f.currency?'selected':''}>${c.flag} ${k}</option>`).join('')}
+        </select>
+      </div>
       <input class="big-input" type="number" inputmode="decimal" placeholder="0.00" value="${f.amount}" oninput="setFF('amount',this.value)">
     </div></div>
     <div class="form-section"><div class="input-card surface">
@@ -692,43 +587,291 @@ function renderAdd(){
       <p class="label" style="margin-bottom:8px">Date</p>
       <input class="normal-input" type="date" value="${f.date}" oninput="setFF('date',this.value)">
     </div></div>
-    ${f.type==='expense'?`<div class="form-section"><p class="label" style="margin-bottom:10px">Category</p><div class="chip-grid">${chips}</div></div>`:''}
+    ${f.type==='expense'?`<div class="form-section"><p class="label" style="margin-bottom:10px">Category</p><div class="chip-grid">${chips}</div>${subcatChips}</div>`:''}
     <div class="form-section"><p class="label" style="margin-bottom:10px">Paid by</p>
-      <div class="member-grid">${paidBy||'<p style="color:var(--dim);font-size:13px">No members yet.</p>'}</div></div>
-    ${f.type==='expense'?`<div class="form-section"><p class="label" style="margin-bottom:10px">Split with</p><div class="member-grid">${splits}</div>${hint}</div>`:''}
-    <button class="btn-primary" onclick="submitForm()">Save Entry ✓</button>
+      <div class="member-grid">${paidBy||'<p style="color:var(--dim);font-size:13px">No members yet.</p>'}</div>
+    </div>
+    ${splitSection}
+    <button class="btn-primary" onclick="submitForm()">${isEdit?'✓ Save Changes':'Save Entry ✓'}</button>
+    ${isEdit?`<button onclick="deleteTxFromEdit()" style="margin-top:12px;width:100%;padding:14px;border-radius:14px;background:rgba(255,107,107,0.1);color:var(--red);font-size:14px;font-weight:600;border:1px solid rgba(255,107,107,0.2)">🗑 Delete Transaction</button>`:''}
   </div>`;
 }
 
+function buildSplitSection(f,splitMembers){
+  if(!splitMembers.length)return'';
+  const isEqual=f.splitMode!=='custom';
+  const sel=f.splitWith||[];
+  const totalAmt=parseFloat(f.amount)||0;
+  const equalShare=sel.length>0?totalAmt/(sel.length+1):0;
+
+  const memberBtns=splitMembers.map(m=>`
+    <button class="member-box ${sel.includes(m.id)?'active':''}" style="${sel.includes(m.id)?'background:'+(m.color||'#888')+'CC;':''}" onclick="togSplit('${m.id}')">
+      <div class="m-avatar">${m.avatar}</div>
+      <div>${m.displayName}</div>
+      ${m.guest?'<div class="guest-badge">GUEST</div>':''}
+      ${sel.includes(m.id)?'<div style="font-size:9px;margin-top:2px">✓</div>':''}
+    </button>`).join('');
+
+  let splitDetail='';
+  if(sel.length>0){
+    if(isEqual){
+      splitDetail=`<p class="split-hint">Each pays ${fmt(equalShare,f.currency)}</p>`;
+    }else{
+      const rows=[f.member,...sel].map(uid=>{
+        const m=getMem(uid);const val=f.customSplits[uid]!==undefined?f.customSplits[uid]:'';
+        return`<div class="split-member-row">
+          <span style="font-size:20px">${m.avatar}</span>
+          <span style="flex:1;font-size:13px;font-weight:600">${m.displayName}${uid===f.member?' (paid)':''}${m.guest?' 👻':''}</span>
+          <input type="number" inputmode="decimal" class="split-amount-input" placeholder="0.00" value="${val}" oninput="setCustomSplit('${uid}',this.value)">
+        </div>`;
+      }).join('');
+      const splitTotal=Object.values(f.customSplits).reduce((s,v)=>s+(parseFloat(v)||0),0);
+      const remaining=totalAmt-splitTotal;
+      splitDetail=`<div style="margin-top:10px">${rows}
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:${Math.abs(remaining)<0.01?'var(--green)':'var(--yellow)'}">
+          <span>Allocated</span><span>${fmt(splitTotal,f.currency)} / ${fmt(totalAmt,f.currency)}</span>
+        </div>
+        ${Math.abs(remaining)>0.01?`<p style="font-size:11px;color:var(--yellow);margin-top:4px">Remaining: ${fmt(remaining,f.currency)}</p>`:'<p style="font-size:11px;color:var(--green);margin-top:4px">✓ Balanced</p>'}
+      </div>`;
+    }
+  }
+
+  return`<div class="form-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <p class="label">Split with</p>
+      ${sel.length>0?`<div style="display:flex;gap:6px">
+        <button onclick="setSplitMode('equal')" style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${isEqual?'var(--accent)':'rgba(255,255,255,0.06)'};color:${isEqual?'#fff':'var(--muted)'}">Equal</button>
+        <button onclick="setSplitMode('custom')" style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${!isEqual?'var(--accent)':'rgba(255,255,255,0.06)'};color:${!isEqual?'#fff':'var(--muted)'}">Custom</button>
+      </div>`:''}
+    </div>
+    <div class="member-grid">${memberBtns}</div>
+    ${splitDetail}
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  TX MODAL — tap on any transaction
+// ══════════════════════════════════════════
+function renderModal(){
+  const mc=document.getElementById('modalContainer');if(!mc)return;
+  if(!S.splitModal){mc.innerHTML='';return;}
+  const t=S.splitModal;
+  const cats=getCats();
+  const cat=cats[t.category]||DEFAULT_CATS.other;
+  const txCur=t.currency||S.ledgerCurrency;
+  const subcatLabel=t.subcat&&cat.subcats?.[t.subcat]?cat.subcats[t.subcat]:'';
+
+  let rows='';
+  const hasSplit=(t.splitWith?.length>0)||(Object.keys(t.splitAmounts||{}).length>1);
+  if(hasSplit){
+    if(t.splitAmounts&&Object.keys(t.splitAmounts).length>1){
+      rows=Object.entries(t.splitAmounts).map(([uid,amt])=>{
+        const m=getMem(uid);const ip=uid===t.member;
+        return`<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <span style="font-size:24px">${m.avatar}</span>
+          <span style="font-size:14px;font-weight:500;flex:1">${m.displayName}${m.guest?'<span class="guest-badge">GUEST</span>':''}</span>
+          ${ip?`<span class="tag" style="background:rgba(108,99,255,0.15);color:var(--accent)">paid</span>`:''}
+          <span style="font-family:'DM Mono',monospace;font-size:14px;color:${ip?'var(--green)':'var(--red)'}">${fmt(amt,txCur)}</span>
+        </div>`;}).join('');
+    }else{
+      const all=[t.member,...(t.splitWith||[])];const sh=t.amount/all.length;
+      rows=all.map(uid=>{const m=getMem(uid);const ip=uid===t.member;
+        return`<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <span style="font-size:24px">${m.avatar}</span>
+          <span style="font-size:14px;font-weight:500;flex:1">${m.displayName}${m.guest?'<span class="guest-badge">GUEST</span>':''}</span>
+          ${ip?`<span class="tag" style="background:rgba(108,99,255,0.15);color:var(--accent)">paid</span>`:''}
+          <span style="font-family:'DM Mono',monospace;font-size:14px;color:${ip?'var(--green)':'var(--red)'}">${fmt(sh,txCur)}</span>
+        </div>`;}).join('');
+    }
+  }
+
+  mc.innerHTML=`<div class="modal-overlay fade-in" onclick="closeModal()">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
+        <div>
+          <p style="font-size:22px;font-family:'DM Mono',monospace;color:${t.type==='income'?'var(--green)':'var(--red)'};font-weight:700">${t.type==='income'?'+':'-'}${fmt(t.amount,txCur)}</p>
+          <p style="font-size:15px;font-weight:600;margin-top:4px">${t.description}</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:2px">${cat.icon} ${cat.label}${subcatLabel?' · '+subcatLabel:''} · ${t.date}${txCur!==S.ledgerCurrency?' · '+txCur:''}</p>
+        </div>
+        <button onclick="editTx('${t._k}')" style="background:rgba(108,99,255,0.15);color:var(--accent);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;flex-shrink:0;margin-left:12px">✏️ Edit</button>
+      </div>
+      ${hasSplit?`<div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:16px"><p class="label" style="margin-bottom:12px">Split breakdown</p>${rows}</div>`:''}
+      <button style="width:100%;padding:12px;border-radius:12px;background:rgba(255,107,107,0.12);color:var(--red);font-size:13px;font-weight:600;border:1px solid rgba(255,107,107,0.2);font-family:'Sora',sans-serif" onclick="delTxModal('${t._k}')">🗑 Delete Transaction</button>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  BUDGET PAGE
+// ══════════════════════════════════════════
+function renderBudgetPage(){
+  const cats=getCats();const cur=getCur();
+  const rows=Object.entries(cats).filter(([k])=>k!=='income').map(([key,c])=>`
+    <div class="settings-row surface" style="margin-bottom:8px;flex-direction:column;align-items:stretch;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:22px">${c.icon}</span>
+        <span style="font-size:14px;font-weight:600;flex:1">${c.label}</span>
+        <span style="font-size:12px;color:var(--dim)">${cur.symbol}</span>
+      </div>
+      <input type="number" inputmode="decimal" class="fw-input" placeholder="0.00 = no limit" value="${S.budgets?.[key]||''}" onchange="saveBudget('${key}',this.value)" style="font-family:'DM Mono',monospace">
+    </div>`).join('');
+  return`<div class="settings-page fade-in">
+    <button class="btn-ghost" onclick="goHome('analytics')" style="margin-bottom:22px">← Back</button>
+    <h2 style="font-size:24px;font-weight:700;margin-bottom:6px">Monthly Budget</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Set spending limits per category.</p>
+    ${rows}
+    <p style="font-size:12px;color:var(--dim);margin-top:16px;text-align:center">Budgets shared with all ledger members</p>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  CATEGORIES PAGE — with subcategory management
+// ══════════════════════════════════════════
+let editCatKey=null,selCatIcon=0,selCatColor=0,editSubcatKey=null;
+function renderCategoriesPage(){
+  const cats=getCats();
+  const rows=Object.entries(cats).map(([key,c])=>{
+    const subcatCount=Object.keys(c.subcats||{}).length;
+    return`<div class="surface" style="padding:14px 16px;border-radius:14px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:${subcatCount>0||editCatKey===key?'10px':'0'}">
+        <span style="font-size:22px">${c.icon}</span>
+        <div style="flex:1"><p style="font-size:14px;font-weight:600">${c.label}</p>${subcatCount>0?`<p style="font-size:11px;color:var(--dim)">${subcatCount} subcategories</p>`:''}</div>
+        <div style="display:flex;gap:6px">
+          <button class="edit-btn" onclick="startEditCat('${key}')">Edit</button>
+          ${key!=='income'&&key!=='other'?`<button class="delete-btn" onclick="deleteCat('${key}')">Del</button>`:''}
+        </div>
+      </div>
+      ${subcatCount>0?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${Object.entries(c.subcats).map(([sk,sv])=>`<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,0.05);border:1px solid var(--border)"><span style="font-size:11px;color:var(--muted)">${sv}</span><button onclick="deleteSubcat('${key}','${sk}')" style="background:none;color:var(--dim);font-size:12px;padding:0;line-height:1">×</button></div>`).join('')}</div>`:''}
+      <button onclick="startAddSubcat('${key}')" style="font-size:11px;color:var(--accent2);background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:4px 10px;font-weight:600">+ Add Subcategory</button>
+    </div>`;
+  }).join('');
+
+  const addSubcatForm=editSubcatKey?`
+    <div class="surface" style="padding:18px;border-radius:18px;margin-top:12px;border:1px solid rgba(78,205,196,0.3)">
+      <p style="font-size:14px;font-weight:700;margin-bottom:12px">Add subcategory to: ${cats[editSubcatKey]?.label}</p>
+      <input id="subcatName" class="fw-input" type="text" placeholder="e.g. Groceries, Petrol..." style="margin-bottom:12px">
+      <div style="display:flex;gap:10px">
+        <button onclick="saveSubcat('${editSubcatKey}')" style="flex:1;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;font-size:14px;font-weight:700">Add</button>
+        <button onclick="cancelSubcat()" style="padding:12px 16px;border-radius:12px;background:rgba(255,255,255,0.06);color:var(--muted);font-size:14px;font-weight:600">Cancel</button>
+      </div>
+    </div>`:'';
+
+  const editForm=editCatKey&&editCatKey!=='__subcat__'?`
+    <div class="surface" style="padding:18px;border-radius:18px;margin-top:12px;border:1px solid rgba(108,99,255,0.3)">
+      <p style="font-size:14px;font-weight:700;margin-bottom:14px">${editCatKey==='__new__'?'Add Category':'Edit: '+cats[editCatKey]?.label}</p>
+      <div style="margin-bottom:12px"><p class="label" style="margin-bottom:8px">Name</p>
+        <input id="catName" class="fw-input" type="text" placeholder="Category name" value="${editCatKey!=='__new__'?cats[editCatKey]?.label||'':''}"></div>
+      <div style="margin-bottom:12px"><p class="label" style="margin-bottom:10px">Icon</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${CAT_ICONS.map((ic,i)=>`<button onclick="selCatIcon=${i};document.querySelectorAll('.cat-ic-btn').forEach(b=>b.style.borderColor='transparent');this.style.borderColor='var(--accent)'" class="cat-ic-btn" style="width:38px;height:38px;border-radius:10px;font-size:18px;background:rgba(255,255,255,0.06);border:2px solid transparent">${ic}</button>`).join('')}</div></div>
+      <div style="margin-bottom:16px"><p class="label" style="margin-bottom:10px">Color</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${CAT_COLORS.map((col,i)=>`<div onclick="selCatColor=${i};document.querySelectorAll('.cat-col-dot').forEach(d=>d.classList.remove('selected'));this.classList.add('selected')" class="color-dot cat-col-dot" style="background:${col}"></div>`).join('')}</div></div>
+      <div style="display:flex;gap:10px">
+        <button onclick="saveCat()" style="flex:1;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px;font-weight:700">Save</button>
+        <button onclick="cancelEditCat()" style="padding:12px 16px;border-radius:12px;background:rgba(255,255,255,0.06);color:var(--muted);font-size:14px;font-weight:600">Cancel</button>
+      </div>
+    </div>`:'';
+
+  return`<div class="settings-page fade-in">
+    <button class="btn-ghost" onclick="goSettings()" style="margin-bottom:22px">← Back</button>
+    <h2 style="font-size:24px;font-weight:700;margin-bottom:6px">Categories</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Tap a category to edit subcategories</p>
+    ${rows}
+    ${addSubcatForm}${editForm}
+    ${!editCatKey&&!editSubcatKey?`<button onclick="startEditCat('__new__')" style="margin-top:8px;width:100%;padding:14px;border-radius:14px;background:rgba(108,99,255,0.1);color:var(--accent);font-size:14px;font-weight:600;border:1px solid rgba(108,99,255,0.2)">➕ Add New Category</button>`:''}
+    <button onclick="resetCats()" style="margin-top:10px;width:100%;padding:12px;border-radius:12px;background:rgba(255,107,107,0.08);color:var(--red);font-size:12px;font-weight:600;border:1px solid rgba(255,107,107,0.15)">Reset to Defaults</button>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  GUEST MEMBERS PAGE
+// ══════════════════════════════════════════
+function renderGuestsPage(){
+  const guests=Object.entries(S.members||{}).filter(([,m])=>m.guest).map(([id,m])=>({id,...m}));
+  const guestRows=guests.map(g=>`
+    <div class="settings-row surface" style="margin-bottom:8px">
+      <div class="sr-left"><span style="font-size:24px">${g.avatar}</span>
+        <div><p style="font-size:14px;font-weight:600">${g.displayName}</p><span class="guest-badge">GUEST</span></div>
+      </div>
+      <button class="delete-btn" onclick="removeGuest('${g.id}')">Remove</button>
+    </div>`).join('');
+
+  return`<div class="settings-page fade-in">
+    <button class="btn-ghost" onclick="goSettings()" style="margin-bottom:22px">← Back</button>
+    <h2 style="font-size:24px;font-weight:700;margin-bottom:6px">Guest Members 👻</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Family members who don't use the app. They appear in splits and balances.</p>
+    ${guestRows||'<p style="font-size:13px;color:var(--dim);margin-bottom:20px">No guest members yet.</p>'}
+    <div class="surface" style="padding:18px;border-radius:18px;margin-top:8px">
+      <p style="font-size:14px;font-weight:700;margin-bottom:14px">➕ Add Guest Member</p>
+      <div style="margin-bottom:12px"><p class="label" style="margin-bottom:8px">Name</p>
+        <input id="guestName" class="fw-input" type="text" placeholder="e.g. Grandma, Uncle Ali..."></div>
+      <div style="margin-bottom:12px"><p class="label" style="margin-bottom:10px">Avatar</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${AVATARS.map((a,i)=>`<button onclick="pickGuestAv(${i})" id="gav${i}" style="width:42px;height:42px;border-radius:12px;font-size:22px;background:rgba(255,255,255,0.06);border:2px solid ${i===0?'var(--accent)':'transparent'};transition:all 0.15s">${a}</button>`).join('')}</div></div>
+      <div style="margin-bottom:16px"><p class="label" style="margin-bottom:10px">Color</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${M_COLORS.map((col,i)=>`<div onclick="pickGuestColor(${i})" id="gc${i}" class="color-dot ${i===0?'selected':''}" style="background:${col}"></div>`).join('')}</div></div>
+      <button class="btn-primary" style="padding:14px" onclick="addGuest()">Add Guest Member</button>
+      <div id="guestMsg" style="margin-top:10px;font-size:13px;text-align:center"></div>
+    </div>
+  </div>`;
+}
+let selGuestAv=0,selGuestColor=0;
+window.pickGuestAv=i=>{selGuestAv=i;document.querySelectorAll('[id^="gav"]').forEach(b=>b.style.borderColor='transparent');const b=document.getElementById('gav'+i);if(b)b.style.borderColor='var(--accent)';};
+window.pickGuestColor=i=>{selGuestColor=i;document.querySelectorAll('[id^="gc"]').forEach(d=>d.classList.remove('selected'));const d=document.getElementById('gc'+i);if(d)d.classList.add('selected');};
+window.addGuest=async()=>{
+  const name=document.getElementById('guestName')?.value.trim();
+  const msg=document.getElementById('guestMsg');
+  if(!name){if(msg){msg.style.color='var(--red)';msg.textContent='Enter a name.';}return;}
+  const gid='guest_'+Date.now();
+  await set(ref(db,`ledgerMembers/${S.activeLedgerId}/${gid}`),{displayName:name,avatar:AVATARS[selGuestAv],color:M_COLORS[selGuestColor],role:'guest',guest:true,joinedAt:Date.now()});
+  toast('✓ '+name+' added as guest');
+  if(msg){msg.style.color='var(--green)';msg.textContent='✓ Added!';}
+  setTimeout(()=>renderPage(),600);
+};
+window.removeGuest=async id=>{if(!confirm('Remove this guest member?'))return;await remove(ref(db,`ledgerMembers/${S.activeLedgerId}/${id}`));toast('Guest removed');};
+
 // ── SETTINGS ──
 function renderSettings(){
-  const mems=S.members||{};
-  const rows=Object.entries(mems).map(([id,m])=>`
+  const mems=S.members||{};const cur=getCur();
+  const realMembers=Object.entries(mems).filter(([,m])=>!m.guest);
+  const guestCount=Object.values(mems).filter(m=>m.guest).length;
+  const rows=realMembers.map(([id,m])=>`
     <div class="settings-row surface">
       <div class="sr-left"><span style="font-size:22px">${m.avatar}</span>
         <div><span>${m.displayName}</span>${id===S.user.uid?'<span style="font-size:10px;color:var(--accent);margin-left:6px">YOU</span>':''}</div>
       </div>
       ${id!==S.user.uid?`<button class="delete-btn" onclick="removeMem('${id}')">Remove</button>`:''}
     </div>`).join('');
-
-  return `
-  <div class="settings-page fade-in">
+  return`<div class="settings-page fade-in">
     <button class="btn-ghost" onclick="goHome()" style="margin-bottom:22px">← Back</button>
-    <h2 style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-bottom:26px">Settings</h2>
+    <h2 style="font-size:24px;font-weight:700;margin-bottom:26px">Settings</h2>
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">Your Account</p>
       <div class="surface" style="padding:16px;border-radius:14px;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:12px">
           <span style="font-size:32px">${S.profile?.avatar||'👤'}</span>
-          <div><p style="font-size:16px;font-weight:700">${S.profile?.displayName||''}</p>
-            <p style="font-size:12px;color:var(--muted)">${S.user?.email||''}</p></div>
+          <div><p style="font-size:16px;font-weight:700">${S.profile?.displayName||''}</p><p style="font-size:12px;color:var(--muted)">${S.user?.email||''}</p></div>
         </div>
       </div>
       <button class="clear-btn" onclick="doLogout()">🚪 Sign Out</button>
     </div>
     <div class="settings-section">
-      <p class="label" style="margin-bottom:12px">Ledger Members</p>
+      <p class="label" style="margin-bottom:12px">Ledger Currency</p>
+      <div class="surface" style="padding:14px 16px;border-radius:14px">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Current: ${cur.flag} ${S.ledgerCurrency} — ${cur.name}</p>
+        <select onchange="changeCurrency(this.value)" class="currency-selector">
+          ${Object.entries(CURRENCIES).map(([k,c])=>`<option value="${k}" ${k===S.ledgerCurrency?'selected':''}>${c.flag} ${k} — ${c.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="settings-section">
+      <p class="label" style="margin-bottom:12px">App Members</p>
       ${rows||'<p style="font-size:13px;color:var(--dim)">No members yet.</p>'}
+    </div>
+    <div class="settings-section">
+      <p class="label" style="margin-bottom:12px">Customization</p>
+      <button onclick="goGuests()" class="export-btn" style="margin-bottom:8px">👻 Guest Members ${guestCount>0?`(${guestCount})`:''}</button>
+      <button onclick="goCategories()" class="export-btn" style="margin-bottom:8px">✏️ Edit Categories</button>
+      <button onclick="goBudget()" class="export-btn">💰 Manage Budget</button>
     </div>
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">Data</p>
@@ -736,88 +879,53 @@ function renderSettings(){
       <button class="clear-btn" onclick="clearAll()">🗑️ Clear all transactions</button>
     </div>
     <div class="settings-section">
+      <p class="label" style="margin-bottom:12px">AI Receipt Scanning</p>
+      <div class="surface" style="padding:16px;border-radius:14px">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">Powered by <strong style="color:var(--text)">Google Gemini</strong> (free tier). Get your key at <strong style="color:var(--accent)">aistudio.google.com</strong></p>
+        <input id="geminiKeyInput" class="fw-input" type="password" placeholder="Paste Gemini API key here..." value="${localStorage.getItem('fw_gemini_key')||''}" style="margin-bottom:10px;font-family:'DM Mono',monospace;font-size:13px">
+        <div style="display:flex;gap:8px">
+          <button onclick="saveGeminiKey()" style="flex:1;padding:11px;border-radius:12px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;font-size:13px;font-weight:700">Save Key</button>
+          <button onclick="clearGeminiKey()" style="padding:11px 14px;border-radius:12px;background:rgba(255,107,107,0.12);color:var(--red);font-size:13px;font-weight:600;border:1px solid rgba(255,107,107,0.2)">Clear</button>
+        </div>
+        <div id="geminiKeyMsg" style="margin-top:8px;font-size:12px;text-align:center"></div>
+        ${localStorage.getItem('fw_gemini_key')?'<p style="font-size:11px;color:var(--green);margin-top:8px;text-align:center">✓ API key saved — scanning enabled</p>':'<p style="font-size:11px;color:var(--dim);margin-top:8px;text-align:center">No key saved yet</p>'}
+      </div>
+    </div>
+    <div class="settings-section">
       <p class="label" style="margin-bottom:10px">About</p>
       <div class="surface" style="padding:16px;border-radius:14px">
-        <p style="font-size:13px;color:var(--muted);line-height:1.6">
-          <strong style="color:var(--text)">Family Wallet</strong> — real-time collaborative spending tracker powered by Firebase.<br>
-          Total entries: <strong style="color:var(--accent)">${txArr().length}</strong>
-        </p>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6"><strong style="color:var(--text)">Family Wallet</strong> — real-time collaborative spending tracker.<br>Total entries: <strong style="color:var(--accent)">${txArr().length}</strong></p>
       </div>
     </div>
   </div>`;
 }
 
-// ── INVITE / COLLABORATE ──
+// ── INVITE ──
 let _code=null;
 function renderInvite(){
-  if(!_code){
-    get(ref(db,'ledgers/'+S.activeLedgerId+'/inviteCode')).then(s=>{
-      _code=s.val()||'------';
-      const el=document.getElementById('invCode'); if(el)el.textContent=_code;
-    });
-  }
-  const mems=S.members||{};
-  const linfo=S.ledgers[S.activeLedgerId]||{};
+  if(!_code){get(ref(db,'ledgers/'+S.activeLedgerId+'/inviteCode')).then(s=>{_code=s.val()||'------';const el=document.getElementById('invCode');if(el)el.textContent=_code;});}
+  const mems=S.members||{},linfo=S.ledgers[S.activeLedgerId]||{};
   const rows=Object.entries(mems).map(([id,m])=>`
     <div class="collab-member-row surface">
       <span style="font-size:24px">${m.avatar}</span>
-      <div style="flex:1"><p style="font-size:14px;font-weight:600">${m.displayName}</p>
-        <p style="font-size:11px;color:var(--dim)">${m.role==='owner'?'Owner':'Member'}${id===S.user.uid?' · you':''}</p></div>
-      <span class="collab-badge ${m.role==='owner'?'owner':'member'}">${m.role==='owner'?'Owner':'Member'}</span>
+      <div style="flex:1"><p style="font-size:14px;font-weight:600">${m.displayName}</p><p style="font-size:11px;color:var(--dim)">${m.guest?'Guest (no login)':m.role==='owner'?'Owner':'Member'}${id===S.user.uid?' · you':''}</p></div>
+      <span class="collab-badge ${m.guest?'guest':m.role==='owner'?'owner':'member'}">${m.guest?'Guest':m.role==='owner'?'Owner':'Member'}</span>
     </div>`).join('');
-
-  return `
-  <div class="settings-page fade-in">
+  return`<div class="settings-page fade-in">
     <button class="btn-ghost" onclick="goHome()" style="margin-bottom:22px">← Back</button>
-    <h2 style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px">Collaborate</h2>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Share <strong style="color:var(--text)">${linfo.name||'this ledger'}</strong> with family</p>
+    <h2 style="font-size:24px;font-weight:700;margin-bottom:6px">Collaborate</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Share <strong style="color:var(--text)">${linfo.name||'this ledger'}</strong></p>
     <div class="invite-code-box">
       <p class="label" style="margin-bottom:6px">Invite Code</p>
       <p class="invite-code" id="invCode">${_code||'Loading...'}</p>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Share this code — family members enter it to join</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Share this code with family to join</p>
       <button class="copy-btn" onclick="copyCode()">📋 Copy Code</button>
     </div>
-    <div class="settings-section">
-      <p style="font-size:14px;font-weight:700;margin-bottom:12px">👥 Members (${Object.keys(mems).length})</p>
-      ${rows||'<p style="font-size:13px;color:var(--dim)">No members yet.</p>'}
-    </div>
+    <div class="settings-section"><p style="font-size:14px;font-weight:700;margin-bottom:12px">👥 Members (${Object.keys(mems).length})</p>${rows}</div>
     <div class="settings-section">
       <p style="font-size:14px;font-weight:700;margin-bottom:8px">🔑 Join Another Ledger</p>
-      <div class="join-input-row">
-        <input id="qjCode" type="text" placeholder="ABC123" maxlength="6" oninput="this.value=this.value.toUpperCase()">
-        <button class="join-btn" onclick="quickJoin()">Join</button>
-      </div>
+      <div class="join-input-row"><input id="qjCode" type="text" placeholder="ABC123" maxlength="6" oninput="this.value=this.value.toUpperCase()"><button class="join-btn" onclick="quickJoin()">Join</button></div>
       <div id="qjMsg" style="margin-top:10px;font-size:13px"></div>
-    </div>
-  </div>`;
-}
-
-// ── MODAL ──
-function renderModal(){
-  const mc=document.getElementById('modalContainer'); if(!mc)return;
-  if(!S.splitModal){mc.innerHTML='';return;}
-  const t=S.splitModal;
-  const cat=CATS[t.category]||CATS.other;
-  const all=[t.member,...(t.splitWith||[])];
-  const sh=t.amount/all.length;
-  const rows=all.map(mid=>{
-    const m=getMem(mid); const ip=mid===t.member;
-    return`<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <span style="font-size:24px">${m.avatar}</span>
-      <span style="font-size:15px;font-weight:500;flex:1">${m.displayName}</span>
-      ${ip?`<span class="tag" style="background:rgba(108,99,255,0.15);color:var(--accent)">paid</span>`:''}
-      <span style="font-family:'DM Mono',monospace;font-size:15px;color:${ip?'var(--green)':'var(--red)'}">${fmt(sh)}</span>
-    </div>`;}).join('');
-  mc.innerHTML=`
-  <div class="modal-overlay fade-in" onclick="closeModal()">
-    <div class="modal-sheet" onclick="event.stopPropagation()">
-      <div class="modal-handle"></div>
-      <h3 style="font-size:18px;font-weight:700;margin-bottom:18px">Split Details</h3>
-      <p style="font-size:22px;font-family:'DM Mono',monospace;color:var(--red);font-weight:700;margin-bottom:4px">${fmt(t.amount)}</p>
-      <p style="font-size:14px;color:var(--muted);margin-bottom:22px">${t.description} · ${cat.icon} ${cat.label}</p>
-      <div style="border-top:1px solid var(--border);padding-top:18px">${rows}</div>
-      <button style="margin-top:14px;width:100%;padding:12px;border-radius:12px;background:rgba(255,107,107,0.12);color:var(--red);font-size:13px;font-weight:600;border:1px solid rgba(255,107,107,0.2);font-family:'Sora',sans-serif"
-        onclick="delTxModal('${t._k}')">Delete Transaction</button>
     </div>
   </div>`;
 }
@@ -825,56 +933,246 @@ function renderModal(){
 // ══════════════════════════════════════════
 //  ACTIONS
 // ══════════════════════════════════════════
-window.goHome    =t=>{ S.view='home'; if(t)S.tab=t; render(); };
-window.goAdd     =()=>{ S.addForm={type:'expense',amount:'',category:'food',description:'',member:'',splitWith:[],date:td()}; S.view='add'; render(); };
-window.goSettings=()=>{ S.view='settings'; render(); };
-window.goInvite  =()=>{ _code=null; S.view='invite'; render(); };
-window.setFilter =id=>{ S.filterMember=id; render(); };
-window.setTab    =t=>{ S.tab=t; render(); };
-window.setType   =type=>{ S.addForm.type=type; S.addForm.splitWith=[]; S.addForm.category=type==='income'?'income':'food'; renderPage(); };
-window.setFF     =(k,v)=>{ S.addForm[k]=v; };
-window.setFM     =id=>{ S.addForm.member=id; S.addForm.splitWith=S.addForm.splitWith.filter(s=>s!==id); renderPage(); };
-window.togSplit  =id=>{ const sw=S.addForm.splitWith; S.addForm.splitWith=sw.includes(id)?sw.filter(s=>s!==id):[...sw,id]; renderPage(); };
+window.goHome      =t=>{S.view='home';if(t)S.tab=t;render();};
+window.goAdd       =()=>{S.addForm=blankForm();S.editTxKey=null;S.view='add';render();};
+window.goSettings  =()=>{S.view='settings';render();};
+window.goInvite    =()=>{_code=null;S.view='invite';render();};
+window.goBudget    =()=>{S.view='budget';render();};
+window.goCategories=()=>{editCatKey=null;editSubcatKey=null;S.view='categories';render();};
+window.goGuests    =()=>{S.view='guests';render();};
+window.setFilter   =id=>{S.filterMember=id;render();};
+window.setTab      =t=>{S.tab=t;render();};
+window.setType     =type=>{S.addForm.type=type;S.addForm.splitWith=[];S.addForm.splitMode='equal';S.addForm.customSplits={};S.addForm.subcat='';S.addForm.category=type==='income'?'income':'food';renderPage();};
+window.setFF       =(k,v)=>{if(S.addForm)S.addForm[k]=v;};
+window.setFM       =id=>{S.addForm.member=id;S.addForm.splitWith=S.addForm.splitWith.filter(s=>s!==id);S.addForm.customSplits={};renderPage();};
+window.togSplit    =id=>{const sw=S.addForm.splitWith;S.addForm.splitWith=sw.includes(id)?sw.filter(s=>s!==id):[...sw,id];S.addForm.customSplits={};renderPage();};
+window.setSplitMode=mode=>{S.addForm.splitMode=mode;renderPage();};
+window.setCustomSplit=(uid,val)=>{if(S.addForm)S.addForm.customSplits[uid]=parseFloat(val)||0;};
+window.renderPage=renderPage; // expose for inline onclick
+
+// Edit transaction — open form pre-filled
+window.editTx=key=>{
+  const t=txArr().find(x=>x._k===key);if(!t)return;
+  S.addForm={
+    type:t.type,amount:String(t.amount),category:t.category||'food',subcat:t.subcat||'',
+    description:t.description,member:t.member,
+    splitWith:[...(t.splitWith||[])],
+    splitMode:t.splitAmounts&&Object.keys(t.splitAmounts).length>1?'custom':'equal',
+    customSplits:t.splitAmounts?{...t.splitAmounts}:{},
+    date:t.date,currency:t.currency||S.ledgerCurrency,
+  };
+  S.editTxKey=key;
+  S.splitModal=null;
+  S.view='add';
+  render();
+};
+window.deleteTxFromEdit=async()=>{
+  if(!confirm('Delete this transaction?'))return;
+  await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+S.editTxKey));
+  S.editTxKey=null;S.addForm=null;S.view='home';render();toast('Transaction deleted','var(--red)');
+};
 
 window.submitForm=async()=>{
   const f=S.addForm;
   if(!f.amount||isNaN(parseFloat(f.amount))){alert('Enter an amount.');return;}
   if(!f.description.trim()){alert('Enter a description.');return;}
   if(!f.member){alert('Select who paid.');return;}
+  let splitAmounts={};
+  if(f.type==='expense'&&f.splitWith.length>0){
+    if(f.splitMode==='custom'){
+      const all=[f.member,...f.splitWith];
+      const total=all.reduce((s,uid)=>s+(parseFloat(f.customSplits[uid])||0),0);
+      if(Math.abs(total-parseFloat(f.amount))>0.01){alert('Custom split must equal the total amount.');return;}
+      all.forEach(uid=>splitAmounts[uid]=parseFloat(f.customSplits[uid])||0);
+    }else{
+      const all=[f.member,...f.splitWith];const sh=parseFloat(f.amount)/all.length;
+      all.forEach(uid=>splitAmounts[uid]=sh);
+    }
+  }
+  const data={
+    type:f.type,amount:parseFloat(f.amount),
+    category:f.type==='income'?'income':f.category,
+    subcat:f.subcat||null,
+    description:f.description.trim(),
+    member:f.member,splitWith:[...f.splitWith],
+    splitAmounts:Object.keys(splitAmounts).length?splitAmounts:null,
+    date:f.date||td(),currency:f.currency||S.ledgerCurrency,
+    ts:Date.now(),addedBy:S.user.uid,
+  };
   try{
-    await push(ref(db,'ledgerTransactions/'+S.activeLedgerId),{
-      type:f.type, amount:parseFloat(f.amount),
-      category:f.type==='income'?'income':f.category,
-      description:f.description.trim(),
-      member:f.member, splitWith:[...f.splitWith],
-      date:f.date||td(), addedBy:S.user.uid, ts:Date.now(),
-    });
-    S.view='home'; S.tab='transactions'; render(); toast('✓ Entry saved');
+    if(S.editTxKey){
+      await update(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+S.editTxKey),data);
+      toast('✓ Changes saved');
+    }else{
+      await push(ref(db,'ledgerTransactions/'+S.activeLedgerId),data);
+      toast('✓ Entry saved');
+    }
+    S.editTxKey=null;S.addForm=null;S.view='home';S.tab='transactions';render();
   }catch(e){alert('Error: '+e.message);}
 };
 
-window.delTx=async k=>{ if(!confirm('Delete this transaction?'))return; await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+k)); };
-window.delTxModal=async k=>{ if(!confirm('Delete this transaction?'))return; await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+k)); S.splitModal=null; renderModal(); };
-window.openSplit =k=>{ S.splitModal=txArr().find(t=>t._k===k); renderModal(); };
-window.closeModal=()=>{ S.splitModal=null; renderModal(); };
+window.openTxModal =k=>{S.splitModal=txArr().find(t=>t._k===k);renderModal();};
+window.closeModal  =()=>{S.splitModal=null;renderModal();};
+window.delTx       =async k=>{if(!confirm('Delete this transaction?'))return;await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+k));};
+window.delTxModal  =async k=>{if(!confirm('Delete this transaction?'))return;await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+k));S.splitModal=null;renderModal();};
 
-window.removeMem=async uid=>{ if(!confirm('Remove this member?'))return;
-  await remove(ref(db,'ledgerMembers/'+S.activeLedgerId+'/'+uid));
-  await remove(ref(db,'ledgers/'+S.activeLedgerId+'/members/'+uid));
-  await remove(ref(db,'userLedgers/'+uid+'/'+S.activeLedgerId));
+window.removeMem   =async uid=>{if(!confirm('Remove this member?'))return;await remove(ref(db,'ledgerMembers/'+S.activeLedgerId+'/'+uid));await remove(ref(db,'ledgers/'+S.activeLedgerId+'/members/'+uid));await remove(ref(db,'userLedgers/'+uid+'/'+S.activeLedgerId));};
+window.clearAll    =async()=>{if(!confirm('Delete ALL transactions? Cannot be undone.'))return;await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId));S.view='home';render();};
+window.exportCSV   =()=>{
+  const rows=txArr().map(t=>[t.date,t.type,t.amount,t.currency||S.ledgerCurrency,t.category,t.subcat||'','"'+t.description.replace(/"/g,'""')+'"',t.member,(t.splitWith||[]).join(';')].join(','));
+  const csv=['Date,Type,Amount,Currency,Category,Subcategory,Description,Member,SplitWith',...rows].join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='family-wallet-'+td()+'.csv';a.click();
 };
-window.clearAll=async()=>{ if(!confirm('Delete ALL transactions? Cannot be undone.'))return; await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId)); S.view='home'; render(); };
-window.exportCSV=()=>{
-  const rows=txArr().map(t=>[t.date,t.type,t.amount,t.category,'"'+t.description.replace(/"/g,'""')+'"',t.member,(t.splitWith||[]).join(';')].join(','));
-  const csv=['Date,Type,Amount,Category,Description,Member,SplitWith',...rows].join('\n');
-  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='family-wallet-'+td()+'.csv'; a.click();
+window.copyCode    =()=>{const c=document.getElementById('invCode')?.textContent||'';navigator.clipboard.writeText(c).then(()=>toast('📋 Copied: '+c)).catch(()=>prompt('Copy:',c));};
+window.quickJoin   =async()=>{const code=document.getElementById('qjCode')?.value.trim().toUpperCase(),msg=document.getElementById('qjMsg');const name=await joinByCode(code,msg);if(name)setTimeout(()=>{S.view='home';render();toast('✓ Joined '+name);},700);};
+
+window.saveBudget=async(key,val)=>{const amount=parseFloat(val)||0;if(amount<=0){await remove(ref(db,'ledgerBudgets/'+S.activeLedgerId+'/'+key));}else{await set(ref(db,'ledgerBudgets/'+S.activeLedgerId+'/'+key),amount);}toast('✓ Budget saved');};
+window.changeCurrency=async val=>{await set(ref(db,'ledgers/'+S.activeLedgerId+'/currency'),val);S.ledgerCurrency=val;toast('✓ Currency updated');renderPage();};
+
+// Category actions
+window.startEditCat=key=>{editCatKey=key;editSubcatKey=null;selCatIcon=0;selCatColor=0;renderPage();};
+window.cancelEditCat=()=>{editCatKey=null;renderPage();};
+window.saveCat=async()=>{
+  const name=document.getElementById('catName')?.value.trim();
+  if(!name){alert('Enter a name.');return;}
+  const cats=getCats();
+  const key=editCatKey==='__new__'?name.toLowerCase().replace(/\s+/g,'_')+'_'+Date.now():editCatKey;
+  const existing=cats[key]||{};
+  const updated={...cats,[key]:{icon:CAT_ICONS[selCatIcon],label:name,color:CAT_COLORS[selCatColor],subcats:existing.subcats||{}}};
+  delete updated.income;updated.income=DEFAULT_CATS.income;
+  await set(ref(db,'ledgerCategories/'+S.activeLedgerId),updated);
+  toast('✓ Category saved');editCatKey=null;renderPage();
 };
-window.copyCode=()=>{ const c=document.getElementById('invCode')?.textContent||''; navigator.clipboard.writeText(c).then(()=>toast('📋 Copied: '+c)).catch(()=>prompt('Copy:',c)); };
-window.quickJoin=async()=>{
-  const code=document.getElementById('qjCode')?.value.trim().toUpperCase();
-  const msg=document.getElementById('qjMsg');
-  const name=await joinByCode(code,msg);
-  if(name) setTimeout(()=>{ S.view='home'; render(); toast('✓ Joined '+name); },700);
+window.deleteCat=async key=>{if(!confirm('Delete this category?'))return;const cats={...getCats()};delete cats[key];await set(ref(db,'ledgerCategories/'+S.activeLedgerId),cats);toast('✓ Deleted');renderPage();};
+window.resetCats=async()=>{if(!confirm('Reset to default categories?'))return;await remove(ref(db,'ledgerCategories/'+S.activeLedgerId));toast('✓ Reset');renderPage();};
+
+// Subcategory actions
+window.startAddSubcat=key=>{editSubcatKey=key;editCatKey=null;renderPage();};
+window.cancelSubcat=()=>{editSubcatKey=null;renderPage();};
+window.saveSubcat=async catKey=>{
+  const name=document.getElementById('subcatName')?.value.trim();
+  if(!name){alert('Enter a subcategory name.');return;}
+  const cats=getCats();const cat={...cats[catKey]};
+  const sk=name.toLowerCase().replace(/\s+/g,'_');
+  cat.subcats={...(cat.subcats||{}),[sk]:name};
+  const updated={...cats,[catKey]:cat};
+  await set(ref(db,'ledgerCategories/'+S.activeLedgerId),updated);
+  toast('✓ Subcategory added');editSubcatKey=null;renderPage();
+};
+window.deleteSubcat=async(catKey,subcatKey)=>{
+  const cats=getCats();const cat={...cats[catKey],subcats:{...(cats[catKey].subcats||{})}};
+  delete cat.subcats[subcatKey];
+  const updated={...cats,[catKey]:cat};
+  await set(ref(db,'ledgerCategories/'+S.activeLedgerId),updated);
+  toast('✓ Subcategory removed');renderPage();
+};
+
+// ══════════════════════════════════════════
+//  GEMINI AI RECEIPT SCANNING
+// ══════════════════════════════════════════
+window.saveGeminiKey=()=>{
+  const val=document.getElementById('geminiKeyInput')?.value.trim();
+  if(!val){toast('Enter an API key first','var(--red)');return;}
+  localStorage.setItem('fw_gemini_key',val);
+  toast('✓ API key saved');
+  renderPage(); // refresh to show green status
+};
+window.clearGeminiKey=()=>{
+  localStorage.removeItem('fw_gemini_key');
+  const inp=document.getElementById('geminiKeyInput');
+  if(inp)inp.value='';
+  toast('Key cleared','var(--muted)');
+  renderPage();
+};
+
+window.handleReceiptScan=async(input)=>{
+  const file=input.files?.[0];
+  if(!file)return;
+  const key=localStorage.getItem('fw_gemini_key');
+  if(!key){
+    toast('⚠️ Add your Gemini API key in Settings first','var(--yellow)');
+    input.value='';
+    return;
+  }
+
+  // Show spinner
+  const status=document.getElementById('scanStatus');
+  if(status)status.style.display='block';
+
+  try{
+    // Convert image to base64
+    const base64=await new Promise((res,rej)=>{
+      const reader=new FileReader();
+      reader.onload=()=>res(reader.result.split(',')[1]);
+      reader.onerror=rej;
+      reader.readAsDataURL(file);
+    });
+
+    // Get category keys for prompt
+    const cats=getCats();
+    const catKeys=Object.keys(cats).filter(k=>k!=='income').join(', ');
+
+    // Call Gemini API
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[
+          {inline_data:{mime_type:file.type,data:base64}},
+          {text:`You are a receipt reader for a family expense tracker. Analyze this receipt image and extract the following details.
+
+Return ONLY a valid JSON object with these exact fields:
+{
+  "amount": <number, total amount paid>,
+  "description": <string, short merchant name or item description, max 40 chars>,
+  "date": <string, date in YYYY-MM-DD format, use today if unclear>,
+  "category": <string, pick ONE from: ${catKeys}>,
+  "currency": <string, 3-letter currency code like MYR, USD, SGD etc>
+}
+
+Rules:
+- amount must be a number (e.g. 25.50), not a string
+- description should be concise like "McDonald's", "Grab ride", "Mydin groceries"
+- If you cannot read the receipt clearly, make your best guess
+- Return ONLY the JSON, no markdown, no explanation`}
+        ]}]
+      })
+    });
+
+    if(!resp.ok){
+      const err=await resp.json().catch(()=>({}));
+      throw new Error(err?.error?.message||'API error '+resp.status);
+    }
+
+    const data=await resp.json();
+    const text=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+
+    // Parse JSON from response (strip any accidental markdown fences)
+    const clean=text.replace(/```json|```/g,'').trim();
+    let parsed;
+    try{parsed=JSON.parse(clean);}
+    catch(e){throw new Error('Could not parse receipt data. Try a clearer photo.');}
+
+    // Fill the form
+    if(parsed.amount)  S.addForm.amount=String(parseFloat(parsed.amount)||'');
+    if(parsed.description) S.addForm.description=parsed.description;
+    if(parsed.date)    S.addForm.date=parsed.date;
+    if(parsed.category && cats[parsed.category]) S.addForm.category=parsed.category;
+    if(parsed.currency && CURRENCIES[parsed.currency]) S.addForm.currency=parsed.currency;
+    S.addForm.type='expense';
+    S.addForm.subcat='';
+
+    if(status)status.style.display='none';
+    renderPage();
+    toast('✓ Receipt scanned! Review & save.');
+
+  }catch(e){
+    if(status)status.style.display='none';
+    console.error('Scan error:',e);
+    toast('❌ '+e.message,'var(--red)');
+  }finally{
+    input.value=''; // reset so same file can be re-scanned
+  }
 };
 </script>
 </body>
