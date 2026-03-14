@@ -32,9 +32,9 @@ body.light-mode {
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{height:100%;height:-webkit-fill-available}
-body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:stretch;min-height:100vh;min-height:-webkit-fill-available;transition:background 0.3s,color 0.3s}
-#app{width:100%;max-width:430px;height:100vh;height:-webkit-fill-available;position:relative;overflow:hidden;display:flex;flex-direction:column}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:stretch;transition:background 0.3s,color 0.3s}
+#app{width:100%;max-width:430px;height:100%;position:relative;overflow:hidden;display:flex;flex-direction:column}
 .page{flex:1;overflow-y:auto;padding-bottom:90px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .page::-webkit-scrollbar{display:none}
 
@@ -126,7 +126,7 @@ button:active{transform:scale(0.95);opacity:0.85}
 .split-hint{font-size:12px;color:var(--accent);text-align:center;margin-top:10px}
 
 /* Bottom nav */
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 30px;padding-bottom:max(24px, env(safe-area-inset-bottom));display:flex;justify-content:space-around;align-items:center;z-index:50}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 30px 24px;display:flex;justify-content:space-around;align-items:center;z-index:50}
 .nav-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;color:var(--dim);font-size:10px;font-weight:600;padding:4px 10px}
 .nav-btn.active{color:var(--accent)}
 .nav-btn .nav-icon{font-size:22px;line-height:1}
@@ -134,7 +134,7 @@ button:active{transform:scale(0.95);opacity:0.85}
 
 /* Modals */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100;display:flex;align-items:flex-end;justify-content:center}
-.modal-sheet{width:100%;max-width:430px;background:var(--bg2);border-radius:24px 24px 0 0;padding:26px 22px;padding-bottom:max(48px, calc(env(safe-area-inset-bottom) + 24px));border:1px solid rgba(255,255,255,0.09);animation:slideUp 0.3s cubic-bezier(.22,.68,0,1.15) both;max-height:90vh;overflow-y:auto}
+.modal-sheet{width:100%;max-width:430px;background:var(--bg2);border-radius:24px 24px 0 0;padding:26px 22px 48px;border:1px solid rgba(255,255,255,0.09);animation:slideUp 0.3s cubic-bezier(.22,.68,0,1.15) both;max-height:90vh;overflow-y:auto}
 .modal-handle{width:40px;height:4px;border-radius:999px;background:rgba(255,255,255,0.2);margin:0 auto 22px}
 
 /* Calendar */
