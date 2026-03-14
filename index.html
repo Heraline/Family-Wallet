@@ -176,7 +176,31 @@ const app=initializeApp({apiKey:"AIzaSyBhrlxbni_T4OHTf-_VlvBtOQ0Tm5XNicE",authDo
 const auth=getAuth(app),db=getDatabase(app);
 
 // ── CURRENCIES ──
-const CURRENCIES={MYR:{symbol:'RM',name:'Malaysian Ringgit',flag:'🇲🇾'},USD:{symbol:'$',name:'US Dollar',flag:'🇺🇸'},SGD:{symbol:'S$',name:'Singapore Dollar',flag:'🇸🇬'},GBP:{symbol:'£',name:'British Pound',flag:'🇬🇧'},EUR:{symbol:'€',name:'Euro',flag:'🇪🇺'},JPY:{symbol:'¥',name:'Japanese Yen',flag:'🇯🇵'},AUD:{symbol:'A$',name:'Australian Dollar',flag:'🇦🇺'},IDR:{symbol:'Rp',name:'Indonesian Rupiah',flag:'🇮🇩'},THB:{symbol:'฿',name:'Thai Baht',flag:'🇹🇭'},CNY:{symbol:'¥',name:'Chinese Yuan',flag:'🇨🇳'}};
+const CURRENCIES={
+  MYR:{symbol:'RM', name:'Malaysian Ringgit',  flag:'🇲🇾', rateToMYR:1},
+  USD:{symbol:'$',  name:'US Dollar',           flag:'🇺🇸', rateToMYR:4.72},
+  SGD:{symbol:'S$', name:'Singapore Dollar',    flag:'🇸🇬', rateToMYR:3.52},
+  GBP:{symbol:'£',  name:'British Pound',       flag:'🇬🇧', rateToMYR:5.98},
+  EUR:{symbol:'€',  name:'Euro',                flag:'🇪🇺', rateToMYR:5.12},
+  JPY:{symbol:'¥',  name:'Japanese Yen',        flag:'🇯🇵', rateToMYR:0.0314},
+  AUD:{symbol:'A$', name:'Australian Dollar',   flag:'🇦🇺', rateToMYR:3.07},
+  IDR:{symbol:'Rp', name:'Indonesian Rupiah',   flag:'🇮🇩', rateToMYR:0.000286},
+  THB:{symbol:'฿',  name:'Thai Baht',           flag:'🇹🇭', rateToMYR:0.138},
+  CNY:{symbol:'¥',  name:'Chinese Yuan',        flag:'🇨🇳', rateToMYR:0.653},
+};
+// Convert amount from any currency to ledger currency (via MYR as base)
+function convertToLedger(amount, fromCurrency){
+  if(!fromCurrency||fromCurrency===S.ledgerCurrency)return amount;
+  const from=CURRENCIES[fromCurrency];
+  const to=CURRENCIES[S.ledgerCurrency];
+  if(!from||!to)return amount;
+  const inMYR=amount*(from.rateToMYR||1);
+  return inMYR/(to.rateToMYR||1);
+}
+function fmtConverted(amount, fromCurrency){
+  const converted=convertToLedger(amount,fromCurrency);
+  return fmt(converted,S.ledgerCurrency);
+}
 
 // ── DEFAULT CATEGORIES (with subcategories) ──
 const DEFAULT_CATS={
@@ -233,7 +257,7 @@ function debts(){
   });
   return Object.entries(d).map(([k,v])=>{const[f,t]=k.split('->');return{from:f,to:t,amount:v};});
 }
-function blankForm(){return{type:'expense',amount:'',category:'food',subcat:'',description:'',member:'',splitWith:[],splitMode:'equal',customSplits:{},date:td(),currency:S.ledgerCurrency};}
+function blankForm(){return{type:'expense',amount:'',category:'food',subcat:'',description:'',member:'',splitWith:[],splitMode:'equal',customSplits:{},date:td(),currency:S.ledgerCurrency,assetId:''};}
 function toast(msg,col='var(--green)'){const el=document.createElement('div');el.className='toast';el.textContent=msg;el.style.color=col;document.body.appendChild(el);setTimeout(()=>el.remove(),2500);}
 function showLoad(){document.getElementById('loadingScreen').style.display='flex';}
 function hideLoad(){document.getElementById('loadingScreen').style.display='none';}
@@ -275,10 +299,12 @@ async function switchLedger(lid){
   listen('ledgerCategories/'+lid,s=>{S.cats=s.exists()?s.val():{};safeRender();});
   listen('ledgerBudgets/'+lid,s=>{S.budgets=s.exists()?s.val():{};safeRender();});
   listen('ledgers/'+lid+'/currency',s=>{S.ledgerCurrency=s.exists()?s.val():'MYR';safeRender();});
-  listen('ledgerAssets/'+lid,s=>{S.assets=s.exists()?s.val():{};safeRender();});
-  listen('ledgerRecurring/'+lid,s=>{S.recurring=s.exists()?s.val():{};safeRender();});
+  listen('ledgers/'+lid+'/assets',s=>{S.assets=s.exists()?s.val():{};safeRender();});
+  listen('ledgers/'+lid+'/recurring',s=>{S.recurring=s.exists()?s.val():{};safeRender();});
   const ms=await get(ref(db,`ledgerMembers/${lid}/${S.user.uid}`));
   if(!ms.exists())await set(ref(db,`ledgerMembers/${lid}/${S.user.uid}`),{displayName:S.profile.displayName,avatar:S.profile.avatar,color:S.profile.color,role:'member',joinedAt:Date.now()});
+  // Small delay so listeners populate S.recurring before we process
+  setTimeout(()=>processRecurring(),1500);
 }
 
 // ── SHOW/HIDE ──
@@ -490,10 +516,15 @@ function renderTxs(fil){
               <span class="tag" style="background:${(mem.color||'#999')}33;color:${mem.color||'#999'}">${mem.avatar} ${mem.displayName}</span>
               ${subcatLabel?`<span class="tag" style="background:rgba(255,255,255,0.06);color:var(--muted)">${subcatLabel.trim()}</span>`:''}
               ${hs?`<span class="tag" style="background:rgba(108,99,255,0.15);color:var(--accent)">÷split</span>`:''}
+              ${t.fromRecurringId?`<span class="tag" style="background:rgba(78,205,196,0.12);color:var(--accent2)">🔄 recur</span>`:''}
               ${t.currency&&t.currency!==S.ledgerCurrency?`<span class="tag" style="background:rgba(78,205,196,0.15);color:var(--accent2)">${t.currency}</span>`:''}
+              ${t.assetId&&S.assets[t.assetId]?`<span class="tag" style="background:rgba(108,99,255,0.12);color:var(--accent)">${getAssetType(S.assets[t.assetId].type).icon} ${S.assets[t.assetId].name}</span>`:''}
             </div>
           </div>
-          <p class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount,t.currency||S.ledgerCurrency)}</p>
+          <div style="text-align:right;flex-shrink:0">
+            <p class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount,S.ledgerCurrency)}</p>
+            ${t.origAmount&&t.currency&&t.currency!==S.ledgerCurrency?`<p style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px">${t.type==='income'?'+':'-'}${fmt(t.origAmount,t.currency)}</p>`:''}
+          </div>
         </div>`;
       }).join('')}
     </div></div>`).join('');
@@ -571,15 +602,64 @@ function renderAdd(){
 
   const geminiKey=localStorage.getItem('fw_gemini_key')||'';
   const scanBar=!isEdit?`
-    <input type="file" id="receiptInput" accept="image/*" capture="environment" style="display:none" onchange="handleReceiptScan(this)">
-    <button onclick="document.getElementById('receiptInput').click()" style="width:100%;padding:14px;border-radius:16px;background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.3);color:var(--accent2);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px">
-      📷 Scan Receipt with AI
-    </button>
-    ${!geminiKey?'<p style="font-size:11px;color:var(--yellow);text-align:center;margin-bottom:14px">⚠️ No Gemini API key — <button onclick="goSettings()" style="background:none;color:var(--accent);font-size:11px;font-weight:600;text-decoration:underline">add in Settings</button></p>':''}
-    <div id="scanStatus" style="display:none;margin-bottom:16px;padding:14px;border-radius:14px;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);text-align:center">
-      <div style="display:flex;align-items:center;justify-content:center;gap:10px"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div><span style="font-size:13px;color:var(--accent2)">Reading receipt...</span></div>
+    <!-- Hidden file inputs: one for camera, one for library -->
+    <input type="file" id="receiptCamera"  accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelected(this)">
+    <input type="file" id="receiptLibrary" accept="image/*"                        style="display:none" onchange="handlePhotoSelected(this)">
+
+    ${!geminiKey?`
+    <div style="background:rgba(255,230,109,0.1);border:1px solid rgba(255,230,109,0.25);border-radius:14px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">⚠️</span>
+      <div style="flex:1">
+        <p style="font-size:12px;color:var(--yellow);font-weight:600">No Gemini API key</p>
+        <p style="font-size:11px;color:var(--dim);margin-top:2px">Add your key in Settings to enable AI scanning</p>
+      </div>
+      <button onclick="goSettings()" style="background:rgba(108,99,255,0.2);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;border:none">Set up</button>
+    </div>`:''}
+
+    <!-- Photo source buttons -->
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <button onclick="document.getElementById('receiptCamera').click()" style="flex:1;padding:14px 10px;border-radius:16px;background:rgba(108,99,255,0.12);border:1.5px solid rgba(108,99,255,0.3);color:var(--accent);font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer">
+        <span style="font-size:24px">📷</span>Take Photo
+      </button>
+      <button onclick="document.getElementById('receiptLibrary').click()" style="flex:1;padding:14px 10px;border-radius:16px;background:rgba(78,205,196,0.1);border:1.5px solid rgba(78,205,196,0.3);color:var(--accent2);font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer">
+        <span style="font-size:24px">🖼️</span>Choose Photo
+      </button>
     </div>
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:11px;color:var(--dim)">OR FILL MANUALLY</span><div style="flex:1;height:1px;background:var(--border)"></div></div>`:'';
+
+    <!-- Photo preview (hidden until photo selected) -->
+    <div id="photoPreviewWrap" style="display:none;margin-bottom:14px">
+      <div style="position:relative;border-radius:16px;overflow:hidden;border:1.5px solid rgba(108,99,255,0.3)">
+        <img id="photoPreviewImg" src="" alt="Receipt preview" style="width:100%;max-height:240px;object-fit:cover;display:block">
+        <button onclick="clearPhotoPreview()" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+      </div>
+      <button id="scanNowBtn" onclick="scanSelectedPhoto()" style="width:100%;margin-top:10px;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span>✨</span> Scan with AI
+      </button>
+    </div>
+
+    <!-- Scanning progress overlay -->
+    <div id="scanStatus" style="display:none;margin-bottom:14px;padding:18px;border-radius:16px;background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);text-align:center">
+      <div class="spinner" style="width:28px;height:28px;border-width:3px;margin:0 auto 10px"></div>
+      <p style="font-size:14px;font-weight:600;color:var(--accent)">Reading receipt...</p>
+      <p style="font-size:11px;color:var(--dim);margin-top:4px">AI is extracting transaction details</p>
+    </div>
+
+    <!-- Scan result preview card (shown after successful scan) -->
+    <div id="scanResultCard" style="display:none;margin-bottom:14px;padding:16px;border-radius:16px;background:rgba(105,210,160,0.08);border:1.5px solid rgba(105,210,160,0.3)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span style="font-size:18px">✅</span>
+        <p style="font-size:13px;font-weight:700;color:var(--green)">Receipt scanned — review below</p>
+        <button onclick="clearScanResult()" style="margin-left:auto;background:none;color:var(--dim);font-size:18px;border:none;cursor:pointer;line-height:1">×</button>
+      </div>
+      <div id="scanResultBody" style="font-size:12px;color:var(--muted);line-height:1.8"></div>
+      <p style="font-size:11px;color:var(--dim);margin-top:10px">Form has been filled. Review and save, or scan again.</p>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:11px;color:var(--dim)">OR FILL MANUALLY</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>`:'';
 
   return`<div class="add-page slide-up">
     <button class="btn-ghost" onclick="goHome()" style="margin-bottom:22px">← Back</button>
@@ -592,11 +672,28 @@ function renderAdd(){
     <div class="form-section"><div class="input-card surface">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <p class="label">Amount</p>
-        <select onchange="setFF('currency',this.value)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(108,99,255,0.3);border-radius:10px;color:var(--text);font-family:'Sora',sans-serif;font-size:12px;font-weight:600;padding:5px 8px;outline:none">
-          ${Object.entries(CURRENCIES).map(([k,c])=>`<option value="${k}" ${k===f.currency?'selected':''}>${c.flag} ${k}</option>`).join('')}
-        </select>
+        ${(()=>{
+          // If an asset is selected, currency is locked to that asset's currency
+          const selAst=f.assetId?S.assets[f.assetId]:null;
+          const lockedCur=selAst?.currency||null;
+          if(lockedCur){
+            return`<span style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);border-radius:10px;color:var(--accent);font-size:12px;font-weight:700;padding:5px 10px">${CURRENCIES[lockedCur]?.flag||''} ${lockedCur}</span>`;
+          }
+          return`<select onchange="setFF('currency',this.value);renderPage()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(108,99,255,0.3);border-radius:10px;color:var(--text);font-family:'Sora',sans-serif;font-size:12px;font-weight:600;padding:5px 8px;outline:none">
+            ${Object.entries(CURRENCIES).map(([k,c])=>`<option value="${k}" ${k===f.currency?'selected':''}>${c.flag} ${k}</option>`).join('')}
+          </select>`;
+        })()}
       </div>
-      <input class="big-input" type="number" inputmode="decimal" placeholder="0.00" value="${f.amount}" oninput="setFF('amount',this.value)">
+      <input class="big-input" type="number" inputmode="decimal" placeholder="0.00" value="${f.amount}" oninput="setFF('amount',this.value);updateConversionDisplay(this.value)">
+      ${(()=>{
+        // Show live conversion if currency differs from ledger currency
+        const dispCur=f.assetId&&S.assets[f.assetId]?S.assets[f.assetId].currency||S.ledgerCurrency:f.currency;
+        if(dispCur&&dispCur!==S.ledgerCurrency&&parseFloat(f.amount)>0){
+          const converted=convertToLedger(parseFloat(f.amount),dispCur);
+          return`<p id="convDisplay" style="font-size:12px;color:var(--accent2);margin-top:6px;font-family:'DM Mono',monospace">≈ ${fmt(converted,S.ledgerCurrency)} <span style="color:var(--dim);font-size:10px;font-family:'Sora',sans-serif">in ${S.ledgerCurrency}</span></p>`;
+        }
+        return'';
+      })()}
     </div></div>
     <div class="form-section"><div class="input-card surface">
       <p class="label" style="margin-bottom:8px">Description</p>
@@ -611,6 +708,7 @@ function renderAdd(){
       <div class="member-grid">${paidBy||'<p style="color:var(--dim);font-size:13px">No members yet.</p>'}</div>
     </div>
     ${splitSection}
+    ${buildAssetPicker(f)}
     <button class="btn-primary" onclick="submitForm()">${isEdit?'✓ Save Changes':'Save Entry ✓'}</button>
     ${isEdit?`<button onclick="deleteTxFromEdit()" style="margin-top:12px;width:100%;padding:14px;border-radius:14px;background:rgba(255,107,107,0.1);color:var(--red);font-size:14px;font-weight:600;border:1px solid rgba(255,107,107,0.2)">🗑 Delete Transaction</button>`:''}
   </div>`;
@@ -668,6 +766,47 @@ function buildSplitSection(f,splitMembers){
   </div>`;
 }
 
+// ── ASSET PICKER for Add/Edit form ──
+function buildAssetPicker(f){
+  const assetArr=Object.entries(S.assets||{}).map(([id,a])=>({id,...a}));
+  if(!assetArr.length)return'';
+  const selectedAsset=assetArr.find(a=>a.id===f.assetId);
+  const t_sel=selectedAsset?getAssetType(selectedAsset.type):null;
+  const options=assetArr.map(a=>{
+    const t=getAssetType(a.type);
+    const bal=parseFloat(a.balance)||0;
+    const isCredit=a.type==='credit';
+    return`<button class="member-box ${f.assetId===a.id?'active':''}"
+      style="min-width:80px;${f.assetId===a.id?'background:'+t.color+'33;border:1.5px solid '+t.color+';':''}"
+      onclick="pickAsset('${a.id}','${a.currency||S.ledgerCurrency}')">
+      <div class="m-avatar" style="font-size:18px">${t.icon}</div>
+      <div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:72px">${a.name}</div>
+      <div style="font-size:10px;color:${isCredit&&bal>0?'var(--red)':bal<0?'var(--red)':'var(--accent2)'};font-family:'DM Mono',monospace;margin-top:2px">${fmt(Math.abs(bal),a.currency||S.ledgerCurrency)}</div>
+    </button>`;
+  }).join('');
+  const noneBtn=`<button class="member-box ${!f.assetId?'active':''}"
+    style="${!f.assetId?'background:rgba(255,255,255,0.1);':''}"
+    onclick="setFF('assetId','');renderPage()">
+    <div class="m-avatar" style="font-size:18px">💼</div>
+    <div style="font-size:11px;font-weight:700">None</div>
+    <div style="font-size:10px;color:var(--dim);margin-top:2px">—</div>
+  </button>`;
+  const selAssetCur=selectedAsset?.currency||S.ledgerCurrency;
+  const txAmtInAssetCur=parseFloat(f.amount)||0;
+  const txAmtInLedgerCur=f.currency!==S.ledgerCurrency?convertToLedger(txAmtInAssetCur,f.currency):txAmtInAssetCur;
+  const hint=selectedAsset?`<p style="font-size:11px;color:var(--accent2);text-align:center;margin-top:8px;line-height:1.7">
+    ${t_sel.icon} ${selectedAsset.name} balance will be ${f.type==='expense'?'reduced by':'increased by'}
+    <strong>${fmt(txAmtInAssetCur,selAssetCur)}</strong>
+    ${selAssetCur!==S.ledgerCurrency&&f.currency===selAssetCur?`<br>Recorded as <strong>${fmtConverted(txAmtInAssetCur,selAssetCur)}</strong> in ${S.ledgerCurrency}`:''}
+  </p>`:'';
+  return`<div class="form-section">
+    <p class="label" style="margin-bottom:10px">Asset Account <span style="color:var(--dim);text-transform:none;letter-spacing:0;font-size:11px">(optional)</span></p>
+    <div class="member-grid">${noneBtn}${options}</div>
+    ${hint}
+  </div>`;
+}
+
+
 // ══════════════════════════════════════════
 //  TX MODAL — tap on any transaction
 // ══════════════════════════════════════════
@@ -709,9 +848,10 @@ function renderModal(){
       <div class="modal-handle"></div>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
         <div>
-          <p style="font-size:22px;font-family:'DM Mono',monospace;color:${t.type==='income'?'var(--green)':'var(--red)'};font-weight:700">${t.type==='income'?'+':'-'}${fmt(t.amount,txCur)}</p>
+          <p style="font-size:22px;font-family:'DM Mono',monospace;color:${t.type==='income'?'var(--green)':'var(--red)'};font-weight:700">${t.type==='income'?'+':'-'}${fmt(t.amount,S.ledgerCurrency)}</p>
+          ${t.origAmount&&t.currency&&t.currency!==S.ledgerCurrency?`<p style="font-size:13px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px">${t.type==='income'?'+':'-'}${fmt(t.origAmount,t.currency)}</p>`:''}
           <p style="font-size:15px;font-weight:600;margin-top:4px">${t.description}</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:2px">${cat.icon} ${cat.label}${subcatLabel?' · '+subcatLabel:''} · ${t.date}${txCur!==S.ledgerCurrency?' · '+txCur:''}</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:2px">${cat.icon} ${cat.label}${subcatLabel?' · '+subcatLabel:''} · ${t.date}</p>
         </div>
         <button onclick="editTx('${t._k}')" style="background:rgba(108,99,255,0.15);color:var(--accent);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;flex-shrink:0;margin-left:12px">✏️ Edit</button>
       </div>
@@ -853,27 +993,51 @@ function renderSettings(){
   const mems=S.members||{};const cur=getCur();
   const realMembers=Object.entries(mems).filter(([,m])=>!m.guest);
   const guestCount=Object.values(mems).filter(m=>m.guest).length;
-  const rows=realMembers.map(([id,m])=>`
-    <div class="settings-row surface">
+  const myMem=mems[S.user.uid]||{};
+  const otherMemRows=realMembers.filter(([id])=>id!==S.user.uid).map(([id,m])=>`
+    <div class="settings-row surface" style="margin-bottom:8px">
       <div class="sr-left"><span style="font-size:22px">${m.avatar}</span>
-        <div><span>${m.displayName}</span>${id===S.user.uid?'<span style="font-size:10px;color:var(--accent);margin-left:6px">YOU</span>':''}</div>
+        <div><p style="font-size:14px;font-weight:600">${m.displayName}</p><p style="font-size:11px;color:var(--dim)">${m.role==='owner'?'Owner':'Member'}</p></div>
       </div>
-      ${id!==S.user.uid?`<button class="delete-btn" onclick="removeMem('${id}')">Remove</button>`:''}
+      <button class="delete-btn" onclick="removeMem('${id}')">Remove</button>
     </div>`).join('');
   return`<div class="settings-page fade-in">
     <button class="btn-ghost" onclick="goHome()" style="margin-bottom:22px">← Back</button>
     <h2 style="font-size:24px;font-weight:700;margin-bottom:26px">Settings</h2>
+
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">Your Account</p>
       <div class="surface" style="padding:16px;border-radius:14px;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-size:32px">${S.profile?.avatar||'👤'}</span>
-          <div style="flex:1"><p style="font-size:16px;font-weight:700">${S.profile?.displayName||''}</p><p style="font-size:12px;color:var(--muted)">${S.user?.email||''}</p></div>
-          <button onclick="goProfile()" style="padding:8px 14px;border-radius:11px;background:rgba(108,99,255,0.15);color:var(--accent);font-size:12px;font-weight:700;border:none">Edit</button>
+          <span style="font-size:30px">${S.profile?.avatar||'👤'}</span>
+          <div style="flex:1">
+            <p style="font-size:15px;font-weight:700">${S.profile?.displayName||''}</p>
+            <p style="font-size:11px;color:var(--muted)">${S.user?.email||''}</p>
+          </div>
+          <button onclick="goProfile()" style="padding:7px 13px;border-radius:10px;background:rgba(108,99,255,0.15);color:var(--accent);font-size:12px;font-weight:700;border:none">Edit</button>
         </div>
       </div>
       <button class="clear-btn" onclick="doLogout()">🚪 Sign Out</button>
     </div>
+
+    <div class="settings-section">
+      <p class="label" style="margin-bottom:6px">Ledger Nickname</p>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:12px">How you appear inside this ledger</p>
+      <div class="surface" style="padding:16px;border-radius:14px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:30px">${myMem.avatar||S.profile?.avatar||'👤'}</span>
+          <div style="flex:1">
+            <p style="font-size:15px;font-weight:700">${myMem.displayName||S.profile?.displayName||''}</p>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:2px">
+              ${myMem.color?`<span style="width:10px;height:10px;border-radius:50%;background:${myMem.color};display:inline-block"></span>`:''}
+              <p style="font-size:11px;color:var(--dim)">${myMem.role==='owner'?'Owner':'Member'}</p>
+            </div>
+          </div>
+          <button onclick="goProfile()" style="padding:7px 13px;border-radius:10px;background:rgba(78,205,196,0.15);color:var(--accent2);font-size:12px;font-weight:700;border:none">Edit</button>
+        </div>
+      </div>
+    </div>
+
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">Ledger Currency</p>
       <div class="surface" style="padding:14px 16px;border-radius:14px">
@@ -883,10 +1047,12 @@ function renderSettings(){
         </select>
       </div>
     </div>
+
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">App Members</p>
-      ${rows||'<p style="font-size:13px;color:var(--dim)">No members yet.</p>'}
+      ${otherMemRows||'<p style="font-size:13px;color:var(--dim)">No other members yet. Share your invite code!</p>'}
     </div>
+
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">Customization</p>
       <button onclick="goGuests()" class="export-btn" style="margin-bottom:8px">👻 Guest Members ${guestCount>0?`(${guestCount})`:''}</button>
@@ -912,7 +1078,6 @@ function renderSettings(){
           <button onclick="saveGeminiKey()" style="flex:1;padding:11px;border-radius:12px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;font-size:13px;font-weight:700">Save Key</button>
           <button onclick="clearGeminiKey()" style="padding:11px 14px;border-radius:12px;background:rgba(255,107,107,0.12);color:var(--red);font-size:13px;font-weight:600;border:1px solid rgba(255,107,107,0.2)">Clear</button>
         </div>
-        <div id="geminiKeyMsg" style="margin-top:8px;font-size:12px;text-align:center"></div>
         ${localStorage.getItem('fw_gemini_key')?'<p style="font-size:11px;color:var(--green);margin-top:8px;text-align:center">✓ API key saved — scanning enabled</p>':'<p style="font-size:11px;color:var(--dim);margin-top:8px;text-align:center">No key saved yet</p>'}
       </div>
     </div>
@@ -966,12 +1131,30 @@ window.goBudget    =()=>{S.view='budget';render();};
 window.goCategories=()=>{editCatKey=null;editSubcatKey=null;S.view='categories';render();};
 window.goGuests    =()=>{S.view='guests';render();};
 window.goAssets    =()=>{S.view='assets';render();};
-window.goRecurring =()=>{S.view='recurring';render();};
+window.goRecurring =()=>{S.view='recurring';render();processRecurring();};
 window.goProfile   =()=>{S.view='profile';render();};
+window.goAssetForm =()=>{S.editAssetId=null;selAssetType=0;S.view='assetForm';render();};
+window.goRecurForm =()=>{S.editRecurId=null;selRecurFreq=2;S.view='recurForm';render();};
 window.setFilter   =id=>{S.filterMember=id;render();};
 window.setTab      =t=>{S.tab=t;render();};
 window.setType     =type=>{S.addForm.type=type;S.addForm.splitWith=[];S.addForm.splitMode='equal';S.addForm.customSplits={};S.addForm.subcat='';S.addForm.category=type==='income'?'income':'food';renderPage();};
 window.setFF       =(k,v)=>{if(S.addForm)S.addForm[k]=v;};
+window.updateConversionDisplay=(val)=>{
+  if(!S.addForm)return;
+  const el=document.getElementById('convDisplay');
+  if(!el)return; // not visible (same currency as ledger)
+  const dispCur=S.addForm.assetId&&S.assets[S.addForm.assetId]
+    ?S.assets[S.addForm.assetId].currency||S.ledgerCurrency
+    :S.addForm.currency;
+  if(!dispCur||dispCur===S.ledgerCurrency){el.style.display='none';return;}
+  const n=parseFloat(val)||0;
+  if(n<=0){el.style.display='none';return;}
+  el.style.display='';
+  const converted=convertToLedger(n,dispCur);
+  const cur=CURRENCIES[S.ledgerCurrency];
+  el.innerHTML=`≈ ${cur?cur.symbol:''}${converted.toFixed(2)} <span style="color:var(--dim);font-size:10px;font-family:'Sora',sans-serif">in ${S.ledgerCurrency}</span>`;
+};
+window.pickAsset   =(id,cur)=>{if(!S.addForm)return;S.addForm.assetId=id;if(id&&cur)S.addForm.currency=cur;else if(!id)S.addForm.currency=S.ledgerCurrency;renderPage();};
 window.setFM       =id=>{S.addForm.member=id;S.addForm.splitWith=S.addForm.splitWith.filter(s=>s!==id);S.addForm.customSplits={};renderPage();};
 window.togSplit    =id=>{const sw=S.addForm.splitWith;S.addForm.splitWith=sw.includes(id)?sw.filter(s=>s!==id):[...sw,id];S.addForm.customSplits={};renderPage();};
 window.setSplitMode=mode=>{S.addForm.splitMode=mode;renderPage();};
@@ -987,7 +1170,7 @@ window.editTx=key=>{
     splitWith:[...(t.splitWith||[])],
     splitMode:t.splitAmounts&&Object.keys(t.splitAmounts).length>1?'custom':'equal',
     customSplits:t.splitAmounts?{...t.splitAmounts}:{},
-    date:t.date,currency:t.currency||S.ledgerCurrency,
+    date:t.date,currency:t.currency||S.ledgerCurrency,assetId:t.assetId||'',origAmount:t.origAmount||null,
   };
   S.editTxKey=key;
   S.splitModal=null;
@@ -996,6 +1179,12 @@ window.editTx=key=>{
 };
 window.deleteTxFromEdit=async()=>{
   if(!confirm('Delete this transaction?'))return;
+  const t=txArr().find(x=>x._k===S.editTxKey);
+  if(t?.assetId&&S.assets[t.assetId]){
+    const reversal=t.type==='expense'?(t.origAmount||t.amount):-(t.origAmount||t.amount);
+    await update(ref(db,'ledgers/'+S.activeLedgerId+'/assets/'+t.assetId),
+      {balance:(parseFloat(S.assets[t.assetId].balance)||0)+reversal});
+  }
   await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+S.editTxKey));
   S.editTxKey=null;S.addForm=null;S.view='home';render();toast('Transaction deleted','var(--red)');
 };
@@ -1017,23 +1206,45 @@ window.submitForm=async()=>{
       all.forEach(uid=>splitAmounts[uid]=sh);
     }
   }
+  // Determine actual currency: if asset selected, use asset's currency
+  const txAsset=f.assetId?S.assets[f.assetId]:null;
+  const txCurrency=txAsset?.currency||f.currency||S.ledgerCurrency;
+  const origAmount=parseFloat(f.amount);
+  const ledgerAmount=convertToLedger(origAmount,txCurrency);
   const data={
-    type:f.type,amount:parseFloat(f.amount),
+    type:f.type,
+    amount:ledgerAmount,          // amount in ledger currency (used for totals)
+    origAmount:origAmount,        // original entered amount
+    currency:txCurrency,          // original currency
     category:f.type==='income'?'income':f.category,
     subcat:f.subcat||null,
     description:f.description.trim(),
     member:f.member,splitWith:[...f.splitWith],
     splitAmounts:Object.keys(splitAmounts).length?splitAmounts:null,
-    date:f.date||td(),currency:f.currency||S.ledgerCurrency,
+    date:f.date||td(),
+    assetId:f.assetId||null,
     ts:Date.now(),addedBy:S.user.uid,
   };
   try{
+    // If editing, reverse old asset balance change first
     if(S.editTxKey){
+      const oldTx=txArr().find(t=>t._k===S.editTxKey);
+      if(oldTx?.assetId&&S.assets[oldTx.assetId]){
+        const reversal=oldTx.type==='expense'?(oldTx.origAmount||oldTx.amount):-(oldTx.origAmount||oldTx.amount);
+        await update(ref(db,'ledgers/'+S.activeLedgerId+'/assets/'+oldTx.assetId),
+          {balance:(parseFloat(S.assets[oldTx.assetId].balance)||0)+reversal});
+      }
       await update(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+S.editTxKey),data);
       toast('✓ Changes saved');
     }else{
       await push(ref(db,'ledgerTransactions/'+S.activeLedgerId),data);
       toast('✓ Entry saved');
+    }
+    // Update asset balance — use original amount in asset's own currency
+    if(f.assetId&&S.assets[f.assetId]){
+      const delta=f.type==='expense'?-origAmount:origAmount;
+      await update(ref(db,'ledgers/'+S.activeLedgerId+'/assets/'+f.assetId),
+        {balance:(parseFloat(S.assets[f.assetId].balance)||0)+delta});
     }
     S.editTxKey=null;S.addForm=null;S.view='home';S.tab='transactions';render();
   }catch(e){alert('Error: '+e.message);}
@@ -1042,7 +1253,17 @@ window.submitForm=async()=>{
 window.openTxModal =k=>{S.splitModal=txArr().find(t=>t._k===k);renderModal();};
 window.closeModal  =()=>{S.splitModal=null;renderModal();};
 window.delTx       =async k=>{if(!confirm('Delete this transaction?'))return;await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+k));};
-window.delTxModal  =async k=>{if(!confirm('Delete this transaction?'))return;await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+k));S.splitModal=null;renderModal();};
+window.delTxModal  =async k=>{
+  if(!confirm('Delete this transaction?'))return;
+  const t=txArr().find(x=>x._k===k);
+  if(t?.assetId&&S.assets[t.assetId]){
+    const reversal=t.type==='expense'?(t.origAmount||t.amount):-(t.origAmount||t.amount);
+    await update(ref(db,'ledgers/'+S.activeLedgerId+'/assets/'+t.assetId),
+      {balance:(parseFloat(S.assets[t.assetId].balance)||0)+reversal});
+  }
+  await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+k));
+  S.splitModal=null;renderModal();
+};
 
 window.removeMem   =async uid=>{if(!confirm('Remove this member?'))return;await remove(ref(db,'ledgerMembers/'+S.activeLedgerId+'/'+uid));await remove(ref(db,'ledgers/'+S.activeLedgerId+'/members/'+uid));await remove(ref(db,'userLedgers/'+uid+'/'+S.activeLedgerId));};
 window.clearAll    =async()=>{if(!confirm('Delete ALL transactions? Cannot be undone.'))return;await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId));S.view='home';render();};
@@ -1113,93 +1334,136 @@ window.clearGeminiKey=()=>{
   renderPage();
 };
 
-window.handleReceiptScan=async(input)=>{
+// Stored file reference for the selected photo
+let _scanFile=null;
+
+window.handlePhotoSelected=(input)=>{
   const file=input.files?.[0];
   if(!file)return;
+  _scanFile=file;
+  // Show preview
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const wrap=document.getElementById('photoPreviewWrap');
+    const img=document.getElementById('photoPreviewImg');
+    const resultCard=document.getElementById('scanResultCard');
+    if(img)img.src=e.target.result;
+    if(wrap)wrap.style.display='block';
+    if(resultCard)resultCard.style.display='none';
+  };
+  reader.readAsDataURL(file);
+  input.value=''; // reset so same file can be re-selected
+};
+
+window.clearPhotoPreview=()=>{
+  _scanFile=null;
+  const wrap=document.getElementById('photoPreviewWrap');
+  const img=document.getElementById('photoPreviewImg');
+  const resultCard=document.getElementById('scanResultCard');
+  if(wrap)wrap.style.display='none';
+  if(img)img.src='';
+  if(resultCard)resultCard.style.display='none';
+};
+
+window.clearScanResult=()=>{
+  document.getElementById('scanResultCard').style.display='none';
+};
+
+window.scanSelectedPhoto=async()=>{
+  if(!_scanFile){toast('No photo selected','var(--red)');return;}
   const key=localStorage.getItem('fw_gemini_key');
   if(!key){
     toast('⚠️ Add your Gemini API key in Settings first','var(--yellow)');
-    input.value='';
     return;
   }
-
-  // Show spinner
   const status=document.getElementById('scanStatus');
+  const previewWrap=document.getElementById('photoPreviewWrap');
+  const scanNowBtn=document.getElementById('scanNowBtn');
+  const resultCard=document.getElementById('scanResultCard');
+  const resultBody=document.getElementById('scanResultBody');
   if(status)status.style.display='block';
-
+  if(previewWrap)previewWrap.style.display='none';
+  if(scanNowBtn)scanNowBtn.disabled=true;
   try{
-    // Convert image to base64
     const base64=await new Promise((res,rej)=>{
       const reader=new FileReader();
       reader.onload=()=>res(reader.result.split(',')[1]);
       reader.onerror=rej;
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(_scanFile);
     });
-
-    // Get category keys for prompt
     const cats=getCats();
     const catKeys=Object.keys(cats).filter(k=>k!=='income').join(', ');
-
-    // Call Gemini API
+    const mimeType=_scanFile.type||'image/jpeg';
     const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         contents:[{parts:[
-          {inline_data:{mime_type:file.type,data:base64}},
-          {text:`You are a receipt reader for a family expense tracker. Analyze this receipt image and extract the following details.
+          {inline_data:{mime_type:mimeType,data:base64}},
+          {text:`You are a receipt/invoice reader for a family expense tracker.
+Analyze this image carefully and extract transaction details.
 
 Return ONLY a valid JSON object with these exact fields:
 {
-  "amount": <number, total amount paid>,
-  "description": <string, short merchant name or item description, max 40 chars>,
-  "date": <string, date in YYYY-MM-DD format, use today if unclear>,
-  "category": <string, pick ONE from: ${catKeys}>,
-  "currency": <string, 3-letter currency code like MYR, USD, SGD etc>
+  "amount": <number — total amount paid, e.g. 25.50>,
+  "description": <string — merchant name or item, max 40 chars, e.g. "McDonald's", "Grab ride">,
+  "date": <string — YYYY-MM-DD format, use today's date if unclear>,
+  "category": <string — pick ONE from: ${catKeys}>,
+  "currency": <string — 3-letter code e.g. MYR, USD, SGD>,
+  "notes": <string — any extra useful info like item details, max 60 chars, or empty string>
 }
 
 Rules:
-- amount must be a number (e.g. 25.50), not a string
-- description should be concise like "McDonald's", "Grab ride", "Mydin groceries"
-- If you cannot read the receipt clearly, make your best guess
-- Return ONLY the JSON, no markdown, no explanation`}
+- amount must be a plain number, not a string
+- If the image is not a receipt, do your best with visible price/text
+- Return ONLY the JSON object, no markdown, no explanation`}
         ]}]
       })
     });
-
     if(!resp.ok){
       const err=await resp.json().catch(()=>({}));
       throw new Error(err?.error?.message||'API error '+resp.status);
     }
-
     const data=await resp.json();
     const text=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
-
-    // Parse JSON from response (strip any accidental markdown fences)
     const clean=text.replace(/```json|```/g,'').trim();
     let parsed;
     try{parsed=JSON.parse(clean);}
-    catch(e){throw new Error('Could not parse receipt data. Try a clearer photo.');}
-
-    // Fill the form
-    if(parsed.amount)  S.addForm.amount=String(parseFloat(parsed.amount)||'');
-    if(parsed.description) S.addForm.description=parsed.description;
-    if(parsed.date)    S.addForm.date=parsed.date;
-    if(parsed.category && cats[parsed.category]) S.addForm.category=parsed.category;
-    if(parsed.currency && CURRENCIES[parsed.currency]) S.addForm.currency=parsed.currency;
+    catch(e){throw new Error('Could not read receipt. Try a clearer photo.');}
+    // Fill form fields
+    const prevCurrency=S.addForm.currency;
+    if(parsed.amount)     S.addForm.amount=String(parseFloat(parsed.amount)||'');
+    if(parsed.description)S.addForm.description=parsed.description;
+    if(parsed.date)       S.addForm.date=parsed.date;
+    if(parsed.category&&cats[parsed.category])S.addForm.category=parsed.category;
+    if(parsed.currency&&CURRENCIES[parsed.currency])S.addForm.currency=parsed.currency;
+    if(parsed.notes&&parsed.notes.trim()&&!S.addForm.description.includes(parsed.notes.trim()))
+      S.addForm.description+=(S.addForm.description?' — ':'')+parsed.notes.trim();
     S.addForm.type='expense';
     S.addForm.subcat='';
-
+    // Hide status, show result card
     if(status)status.style.display='none';
+    // Build result summary
+    const cats2=getCats();const cat2=cats2[S.addForm.category]||DEFAULT_CATS.other;
+    if(resultBody)resultBody.innerHTML=`
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center">
+        <span style="color:var(--dim)">Amount</span><strong style="color:var(--text);font-family:'DM Mono',monospace">${fmt(parseFloat(S.addForm.amount)||0,S.addForm.currency)}</strong>
+        <span style="color:var(--dim)">Merchant</span><strong style="color:var(--text)">${S.addForm.description}</strong>
+        <span style="color:var(--dim)">Category</span><strong style="color:var(--text)">${cat2.icon} ${cat2.label}</strong>
+        <span style="color:var(--dim)">Date</span><strong style="color:var(--text)">${S.addForm.date}</strong>
+        <span style="color:var(--dim)">Currency</span><strong style="color:var(--text)">${S.addForm.currency}</strong>
+      </div>`;
+    if(resultCard)resultCard.style.display='block';
+    _scanFile=null;
+    // Re-render form to show filled values
     renderPage();
-    toast('✓ Receipt scanned! Review & save.');
-
+    toast('✓ Receipt scanned — review the details');
   }catch(e){
     if(status)status.style.display='none';
+    if(previewWrap)previewWrap.style.display='block';
+    if(scanNowBtn){scanNowBtn.disabled=false;}
     console.error('Scan error:',e);
     toast('❌ '+e.message,'var(--red)');
-  }finally{
-    input.value=''; // reset so same file can be re-scanned
   }
 };
 // ══════════════════════════════════════════
@@ -1214,7 +1478,7 @@ const ASSET_TYPES=[
   {key:'other',  icon:'💼', label:'Other',        color:'#C9C9C9'},
 ];
 function getAssetType(k){return ASSET_TYPES.find(t=>t.key===k)||ASSET_TYPES[0];}
-function totalAssets(){return Object.values(S.assets||{}).reduce((s,a)=>s+(parseFloat(a.balance)||0),0);}
+function totalAssets(){return Object.values(S.assets||{}).reduce((s,a)=>s+convertToLedger(parseFloat(a.balance)||0,a.currency||S.ledgerCurrency),0);}
 
 function renderAssetsPage(){
   const cur=getCur();
@@ -1232,7 +1496,10 @@ function renderAssetsPage(){
         </div>
       </div>
       <p style="font-size:15px;font-weight:700;margin-bottom:2px">${a.name}</p>
-      <p class="asset-balance" style="color:${isCredit&&bal>0?'var(--red)':bal<0?'var(--red)':'var(--text)'}">${isCredit&&bal>0?'-':''}${fmt(Math.abs(bal))}</p>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <p class="asset-balance" style="color:${isCredit&&bal>0?'var(--red)':bal<0?'var(--red)':'var(--text)'}">${isCredit&&bal>0?'-':''}${fmt(Math.abs(bal),a.currency||S.ledgerCurrency)}</p>
+        ${a.currency&&a.currency!==S.ledgerCurrency?`<span style="font-size:11px;color:var(--muted)">≈ ${fmtConverted(Math.abs(bal),a.currency)}</span>`:''}
+      </div>
       ${a.note?`<p style="font-size:11px;color:var(--dim);margin-top:4px">${a.note}</p>`:''}
     </div>`;
   }).join(''):'<div class="empty" style="padding:30px 0">No asset accounts yet.<br>Add one below!</div>';
@@ -1246,7 +1513,7 @@ function renderAssetsPage(){
       <span style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--accent)">${fmt(totalAssets())}</span>
     </div>
     ${cards}
-    <button onclick="S.editAssetId=null;S.view='assetForm';render()" style="width:100%;padding:14px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:15px;font-weight:700;margin-top:8px;border:none;cursor:pointer">＋ Add Asset Account</button>
+    <button onclick="goAssetForm()" style="width:100%;padding:14px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:15px;font-weight:700;margin-top:8px;border:none;cursor:pointer">＋ Add Asset Account</button>
   </div>`;
 }
 
@@ -1256,7 +1523,7 @@ function renderAssetForm(){
   const a=isEdit?(S.assets[S.editAssetId]||{}):{};
   const curType=a.type||ASSET_TYPES[selAssetType]?.key||'bank';
   const typeBtns=ASSET_TYPES.map((t,i)=>`
-    <button onclick="selAssetType=${i};document.querySelectorAll('.at-btn').forEach(b=>{b.style.borderColor='transparent';b.style.background='rgba(255,255,255,0.05)'});this.style.borderColor='${t.color}';this.style.background='${t.color}22'" class="at-btn" style="flex:1;min-width:80px;padding:10px 6px;border-radius:12px;font-size:11px;font-weight:600;border:2px solid ${curType===t.key?t.color:'transparent'};background:${curType===t.key?t.color+'22':'rgba(255,255,255,0.05)'};color:var(--text);cursor:pointer">
+    <button onclick="pickAssetType(${i},'${t.color}')" class="at-btn" style="flex:1;min-width:80px;padding:10px 6px;border-radius:12px;font-size:11px;font-weight:600;border:2px solid ${curType===t.key?t.color:'transparent'};background:${curType===t.key?t.color+'22':'rgba(255,255,255,0.05)'};color:var(--text);cursor:pointer">
       <div style="font-size:20px;margin-bottom:4px">${t.icon}</div>${t.label}
     </button>`).join('');
   return`<div class="add-page slide-up">
@@ -1270,7 +1537,12 @@ function renderAssetForm(){
       <input class="normal-input" id="assetName" type="text" placeholder="e.g. Maybank Savings, Touch n Go..." value="${a.name||''}">
     </div></div>
     <div class="form-section"><div class="input-card surface">
-      <p class="label" style="margin-bottom:8px">Current Balance</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <p class="label">Current Balance</p>
+        <select id="assetCurrency" style="background:rgba(255,255,255,0.08);border:1px solid rgba(108,99,255,0.3);border-radius:10px;color:var(--text);font-family:'Sora',sans-serif;font-size:12px;font-weight:600;padding:5px 8px;outline:none">
+          ${Object.entries(CURRENCIES).map(([k,c])=>`<option value="${k}" ${(a.currency||S.ledgerCurrency)===k?'selected':''}>${c.flag} ${k}</option>`).join('')}
+        </select>
+      </div>
       <input class="big-input" id="assetBal" type="number" inputmode="decimal" placeholder="0.00" value="${a.balance||''}">
     </div></div>
     <div class="form-section"><div class="input-card surface">
@@ -1283,22 +1555,25 @@ function renderAssetForm(){
 }
 
 window.editAsset=id=>{S.editAssetId=id;selAssetType=ASSET_TYPES.findIndex(t=>t.key===(S.assets[id]?.type||'bank'));if(selAssetType<0)selAssetType=0;S.view='assetForm';render();};
-window.deleteAsset=async id=>{if(!confirm('Delete this asset account?'))return;await remove(ref(db,'ledgerAssets/'+S.activeLedgerId+'/'+id));S.view='assets';toast('Account removed','var(--red)');render();};
+window.deleteAsset=async id=>{if(!confirm('Delete this asset account?'))return;await remove(ref(db,'ledgers/'+S.activeLedgerId+'/assets/'+id));S.view='assets';toast('Account removed','var(--red)');render();};
 window.saveAsset=async()=>{
   const name=document.getElementById('assetName')?.value.trim();
   const bal=document.getElementById('assetBal')?.value;
   const note=document.getElementById('assetNote')?.value.trim()||'';
   if(!name){alert('Enter an account name.');return;}
   const type=ASSET_TYPES[selAssetType]?.key||'bank';
-  const data={name,type,balance:parseFloat(bal)||0,note,updatedAt:Date.now()};
-  if(S.editAssetId){
-    await update(ref(db,'ledgerAssets/'+S.activeLedgerId+'/'+S.editAssetId),data);
-    toast('✓ Asset updated');
-  }else{
-    await push(ref(db,'ledgerAssets/'+S.activeLedgerId),data);
-    toast('✓ Asset added');
-  }
-  S.editAssetId=null;S.view='assets';render();
+  const currency=document.getElementById('assetCurrency')?.value||S.ledgerCurrency;
+  const data={name,type,balance:parseFloat(bal)||0,currency,note,updatedAt:Date.now()};
+  try{
+    if(S.editAssetId){
+      await update(ref(db,'ledgers/'+S.activeLedgerId+'/assets/'+S.editAssetId),data);
+      toast('✓ Asset updated');
+    }else{
+      await push(ref(db,'ledgers/'+S.activeLedgerId+'/assets'),data);
+      toast('✓ Asset added');
+    }
+    S.editAssetId=null;S.view='assets';render();
+  }catch(e){alert('Error saving asset: '+e.message);}
 };
 
 // ══════════════════════════════════════════
@@ -1341,6 +1616,7 @@ function renderRecurringPage(){
       <div style="text-align:right;flex-shrink:0">
         <p style="font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:var(--red)">-${fmt(r.amount)}</p>
         <div style="display:flex;gap:5px;margin-top:6px;justify-content:flex-end">
+          ${r.nextDate<=td()?`<button onclick="postRecurringNow('${r.id}')" style="font-size:11px;background:rgba(105,210,160,0.15);color:var(--green);border-radius:8px;padding:4px 10px;font-weight:600;border:none">Post</button>`:''}
           <button class="edit-btn" onclick="editRecurring('${r.id}')">Edit</button>
           <button class="delete-btn" onclick="deleteRecurring('${r.id}')">Del</button>
         </div>
@@ -1357,7 +1633,7 @@ function renderRecurringPage(){
       <span style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--red)">${fmt(monthlyTotal)}</span>
     </div>`:''}
     ${rows}
-    <button onclick="S.editRecurId=null;S.view='recurForm';render()" style="width:100%;padding:14px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:15px;font-weight:700;margin-top:8px;border:none;cursor:pointer">＋ Add Recurring</button>
+    <button onclick="goRecurForm()" style="width:100%;padding:14px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:15px;font-weight:700;margin-top:8px;border:none;cursor:pointer">＋ Add Recurring</button>
   </div>`;
 }
 
@@ -1368,9 +1644,9 @@ function renderRecurForm(){
   const cats=getCats();
   const selCatKey=r.category||'entertainment';
   const catChips=Object.entries(cats).filter(([k])=>k!=='income').map(([key,c])=>`
-    <button class="chip ${selCatKey===key?'active':''}" style="${selCatKey===key?'background:'+c.color+';':''}" onclick="document.getElementById('rCatHidden').value='${key}';document.querySelectorAll('.rcat-chip').forEach(b=>{b.classList.remove('active');b.style.background=''});this.classList.add('active');this.style.background='${c.color}'" class="rcat-chip chip">${c.icon} ${c.label}</button>`).join('');
+    <button class="chip ${selCatKey===key?'active':''}" style="${selCatKey===key?'background:'+c.color+';':''}" onclick="pickRecurCat('${key}','${c.color}')" data-catkey="${key}" class="rcat-chip chip">${c.icon} ${c.label}</button>`).join('');
   const freqBtns=RECUR_FREQS.map((f,i)=>`
-    <button onclick="selRecurFreq=${i};document.querySelectorAll('.freq-btn').forEach(b=>{b.style.background='rgba(255,255,255,0.05)';b.style.borderColor='transparent'});this.style.background='rgba(108,99,255,0.2)';this.style.borderColor='var(--accent)'" class="freq-btn" style="flex:1;padding:10px 6px;border-radius:12px;font-size:12px;font-weight:600;border:2px solid ${(r.freq||'monthly')===f.key?'var(--accent)':'transparent'};background:${(r.freq||'monthly')===f.key?'rgba(108,99,255,0.2)':'rgba(255,255,255,0.05)'};color:var(--text);cursor:pointer">
+    <button onclick="pickRecurFreq(${i})" class="freq-btn" style="flex:1;padding:10px 6px;border-radius:12px;font-size:12px;font-weight:600;border:2px solid ${(r.freq||'monthly')===f.key?'var(--accent)':'transparent'};background:${(r.freq||'monthly')===f.key?'rgba(108,99,255,0.2)':'rgba(255,255,255,0.05)'};color:var(--text);cursor:pointer">
       <div style="font-size:18px;margin-bottom:3px">${f.icon}</div>${f.label}
     </button>`).join('');
   const mList=allMembers();
@@ -1406,8 +1682,27 @@ function renderRecurForm(){
   </div>`;
 }
 
+window.postRecurringNow=async id=>{
+  const r=S.recurring?.[id];
+  if(!r){toast('Recurring not found','var(--red)');return;}
+  try{
+    const txData={
+      type:'expense',amount:parseFloat(r.amount)||0,
+      category:r.category||'other',subcat:null,
+      description:r.name+' (manual)',
+      member:r.member||S.user.uid,
+      splitWith:[],splitAmounts:null,
+      date:td(),currency:S.ledgerCurrency,assetId:null,
+      ts:Date.now(),addedBy:S.user.uid,fromRecurringId:id,
+    };
+    await push(ref(db,'ledgerTransactions/'+S.activeLedgerId),txData);
+    const next=advanceDate(r.nextDate||td(),r.freq||'monthly');
+    await update(ref(db,'ledgers/'+S.activeLedgerId+'/recurring/'+id),{nextDate:next});
+    toast('✓ Posted — next due: '+next);
+  }catch(e){alert('Error: '+e.message);}
+};
 window.editRecurring=id=>{S.editRecurId=id;const r=S.recurring[id]||{};selRecurFreq=RECUR_FREQS.findIndex(f=>f.key===(r.freq||'monthly'));if(selRecurFreq<0)selRecurFreq=2;S.view='recurForm';render();};
-window.deleteRecurring=async id=>{if(!confirm('Delete this recurring transaction?'))return;await remove(ref(db,'ledgerRecurring/'+S.activeLedgerId+'/'+id));S.view='recurring';toast('Recurring removed','var(--red)');render();};
+window.deleteRecurring=async id=>{if(!confirm('Delete this recurring transaction?'))return;await remove(ref(db,'ledgers/'+S.activeLedgerId+'/recurring/'+id));S.view='recurring';toast('Recurring removed','var(--red)');render();};
 window.saveRecurring=async()=>{
   const name=document.getElementById('rName')?.value.trim();
   const amount=document.getElementById('rAmount')?.value;
@@ -1417,61 +1712,200 @@ window.saveRecurring=async()=>{
   if(!name){alert('Enter a name.');return;}
   if(!amount||isNaN(parseFloat(amount))){alert('Enter an amount.');return;}
   const data={name,amount:parseFloat(amount),freq:RECUR_FREQS[selRecurFreq]?.key||'monthly',nextDate:nextDate||td(),category,member,updatedAt:Date.now()};
-  if(S.editRecurId){
-    await update(ref(db,'ledgerRecurring/'+S.activeLedgerId+'/'+S.editRecurId),data);
-    toast('✓ Recurring updated');
-  }else{
-    await push(ref(db,'ledgerRecurring/'+S.activeLedgerId),data);
-    toast('✓ Recurring added');
-  }
-  S.editRecurId=null;S.view='recurring';render();
+  try{
+    if(S.editRecurId){
+      await update(ref(db,'ledgers/'+S.activeLedgerId+'/recurring/'+S.editRecurId),data);
+      toast('✓ Recurring updated');
+    }else{
+      await push(ref(db,'ledgers/'+S.activeLedgerId+'/recurring'),data);
+      toast('✓ Recurring added');
+    }
+    S.editRecurId=null;S.view='recurring';render();
+  }catch(e){alert('Error saving recurring: '+e.message);}
 };
 
+// ── AUTO-PROCESS RECURRING TRANSACTIONS ──
+async function processRecurring(){
+  const today=td();
+  const recArr=Object.entries(S.recurring||{}).map(([id,r])=>({id,...r}));
+  const due=recArr.filter(r=>r.nextDate&&r.nextDate<=today);
+  if(!due.length)return;
+  let posted=0;
+  for(const r of due){
+    try{
+      // Post the transaction
+      const txData={
+        type:'expense',
+        amount:parseFloat(r.amount)||0,
+        category:r.category||'other',
+        subcat:null,
+        description:r.name+(r.name.toLowerCase().includes('auto')?'':' (auto)'),
+        member:r.member||S.user.uid,
+        splitWith:[],splitAmounts:null,
+        date:r.nextDate,
+        currency:S.ledgerCurrency,
+        assetId:null,
+        ts:Date.now(),addedBy:S.user.uid,
+        fromRecurringId:r.id,
+      };
+      await push(ref(db,'ledgerTransactions/'+S.activeLedgerId),txData);
+      // Advance nextDate based on frequency
+      const next=advanceDate(r.nextDate,r.freq||'monthly');
+      await update(ref(db,'ledgers/'+S.activeLedgerId+'/recurring/'+r.id),{nextDate:next});
+      posted++;
+    }catch(e){console.warn('Recurring post failed:',r.id,e);}
+  }
+  if(posted>0)toast('🔄 '+posted+' recurring transaction'+(posted>1?'s':'')+' auto-posted');
+}
+
+function advanceDate(dateStr,freq){
+  const d=new Date(dateStr+'T00:00:00');
+  switch(freq){
+    case'daily':  d.setDate(d.getDate()+1);break;
+    case'weekly': d.setDate(d.getDate()+7);break;
+    case'yearly': d.setFullYear(d.getFullYear()+1);break;
+    default:      d.setMonth(d.getMonth()+1);break; // monthly
+  }
+  return d.toISOString().slice(0,10);
+}
+
+
 // ══════════════════════════════════════════
-//  PROFILE EDIT — avatar + nickname per ledger
+//  PROFILE EDIT — two tabs: app account + ledger nickname
 // ══════════════════════════════════════════
-let selProfAv=0,selProfColor=0;
+let selProfAv=0,selProfColor=0,profTab='ledger';
 function renderProfilePage(){
   const mem=S.members?.[S.user.uid]||{};
-  const curAvIdx=AVATARS.indexOf(mem.avatar||S.profile?.avatar||'👤');
-  const initAv=curAvIdx>=0?curAvIdx:0;
-  const curColIdx=M_COLORS.indexOf(mem.color||S.profile?.color||M_COLORS[0]);
-  const initCol=curColIdx>=0?curColIdx:0;
+  const ledgerInfo=S.ledgers[S.activeLedgerId]||{};
+  const ledgerTab=profTab!=='app';
+
+  if(ledgerTab){
+    // Init pickers from ledger member record
+    const ci=AVATARS.indexOf(mem.avatar||S.profile?.avatar||'👤');
+    selProfAv=ci>=0?ci:0;
+    const cc=M_COLORS.indexOf(mem.color||S.profile?.color||M_COLORS[0]);
+    selProfColor=cc>=0?cc:0;
+  }else{
+    // Init pickers from global app profile
+    const ci=AVATARS.indexOf(S.profile?.avatar||'👤');
+    selProfAv=ci>=0?ci:0;
+    const cc=M_COLORS.indexOf(S.profile?.color||M_COLORS[0]);
+    selProfColor=cc>=0?cc:0;
+  }
+
   return`<div class="settings-page fade-in">
     <button class="btn-ghost" onclick="goSettings()" style="margin-bottom:22px">← Back</button>
-    <h2 style="font-size:24px;font-weight:700;margin-bottom:6px">Edit Your Profile</h2>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Customize how you appear in <strong style="color:var(--text)">${S.ledgers[S.activeLedgerId]?.name||'this ledger'}</strong></p>
-    <div class="settings-section">
-      <div class="surface" style="padding:18px;border-radius:18px">
-        <p class="label" style="margin-bottom:10px">Display Name</p>
-        <input id="profName" class="fw-input" type="text" placeholder="Your name" value="${mem.displayName||S.profile?.displayName||''}" style="margin-bottom:18px">
-        <p class="label" style="margin-bottom:10px">Avatar</p>
-        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px">
-          ${AVATARS.map((a,i)=>`<button onclick="selProfAv=${i};document.querySelectorAll('.av-pick-btn').forEach(b=>b.classList.remove('sel'));this.classList.add('sel')" class="av-pick-btn ${i===initAv?'sel':''}">${a}</button>`).join('')}
-        </div>
-        <p class="label" style="margin-bottom:10px">Color</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px">
-          ${M_COLORS.map((col,i)=>`<div onclick="selProfColor=${i};document.querySelectorAll('.prof-col-dot').forEach(d=>d.classList.remove('selected'));this.classList.add('selected')" class="color-dot prof-col-dot ${i===initCol?'selected':''}" style="background:${col}"></div>`).join('')}
-        </div>
-        <button class="btn-primary" onclick="saveProfile()">✓ Save Profile</button>
-      </div>
+    <h2 style="font-size:24px;font-weight:700;margin-bottom:16px">Edit Profile</h2>
+
+    <div style="display:flex;background:rgba(255,255,255,0.05);border-radius:14px;padding:4px;margin-bottom:22px">
+      <button onclick="setProfTab('ledger')" style="flex:1;padding:10px;border-radius:11px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:${ledgerTab?'rgba(108,99,255,0.8)':'transparent'};color:${ledgerTab?'#fff':'var(--dim)'}">
+        ${ledgerInfo.icon||'💳'} Ledger Nickname
+      </button>
+      <button onclick="setProfTab('app')" style="flex:1;padding:10px;border-radius:11px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:${!ledgerTab?'rgba(108,99,255,0.8)':'transparent'};color:${!ledgerTab?'#fff':'var(--dim)'}">
+        👤 App Account
+      </button>
     </div>
+
+    ${ledgerTab?`
+    <p style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">
+      Your nickname, avatar and color <strong style="color:var(--text)">inside ${ledgerInfo.name||'this ledger'}</strong>. Other ledgers are not affected.
+    </p>
+    <div class="surface" style="padding:18px;border-radius:18px">
+      <p class="label" style="margin-bottom:8px">Nickname</p>
+      <input id="profLedgerName" class="fw-input" type="text" placeholder="Your nickname in this ledger" value="${mem.displayName||S.profile?.displayName||''}" style="margin-bottom:18px">
+      <p class="label" style="margin-bottom:10px">Avatar</p>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px">
+        ${AVATARS.map((a,i)=>`<button onclick="pickProfAv(${i})" class="av-pick-btn ${i===selProfAv?'sel':''}">${a}</button>`).join('')}
+      </div>
+      <p class="label" style="margin-bottom:10px">Color</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px">
+        ${M_COLORS.map((col,i)=>`<div onclick="pickProfColor(${i})" class="color-dot prof-col-dot ${i===selProfColor?'selected':''}" style="background:${col}"></div>`).join('')}
+      </div>
+      <button class="btn-primary" onclick="saveLedgerProfile()">✓ Save Ledger Nickname</button>
+    </div>
+    `:`
+    <p style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">
+      Your global avatar and name used across all ledgers and on sign-in.
+    </p>
+    <div class="surface" style="padding:18px;border-radius:18px">
+      <p class="label" style="margin-bottom:8px">Display Name</p>
+      <input id="profAppName" class="fw-input" type="text" placeholder="Your name" value="${S.profile?.displayName||''}" style="margin-bottom:18px">
+      <p style="font-size:11px;color:var(--muted);margin-bottom:16px">Email: <strong style="color:var(--text)">${S.user?.email||''}</strong></p>
+      <p class="label" style="margin-bottom:10px">Avatar</p>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px">
+        ${AVATARS.map((a,i)=>`<button onclick="pickProfAv(${i})" class="av-pick-btn ${i===selProfAv?'sel':''}">${a}</button>`).join('')}
+      </div>
+      <p class="label" style="margin-bottom:10px">Color</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px">
+        ${M_COLORS.map((col,i)=>`<div onclick="pickProfColor(${i})" class="color-dot prof-col-dot ${i===selProfColor?'selected':''}" style="background:${col}"></div>`).join('')}
+      </div>
+      <button class="btn-primary" onclick="saveAppProfile()">✓ Save App Account</button>
+    </div>
+    `}
   </div>`;
 }
 
-window.saveProfile=async()=>{
-  const name=document.getElementById('profName')?.value.trim();
+
+window.saveLedgerProfile=async()=>{
+  const name=document.getElementById('profLedgerName')?.value.trim();
+  if(!name){alert('Enter a nickname.');return;}
+  const avatar=AVATARS[selProfAv]||AVATARS[0];
+  const color=M_COLORS[selProfColor]||M_COLORS[0];
+  try{
+    await update(ref(db,'ledgerMembers/'+S.activeLedgerId+'/'+S.user.uid),{displayName:name,avatar,color});
+    toast('✓ Ledger nickname updated');
+    S.view='settings';render();
+  }catch(e){alert('Error: '+e.message);}
+};
+
+window.saveAppProfile=async()=>{
+  const name=document.getElementById('profAppName')?.value.trim();
   if(!name){alert('Enter a display name.');return;}
   const avatar=AVATARS[selProfAv]||AVATARS[0];
   const color=M_COLORS[selProfColor]||M_COLORS[0];
-  // Update global profile
-  await update(ref(db,'users/'+S.user.uid),{displayName:name,avatar,color});
-  S.profile={...S.profile,displayName:name,avatar,color};
-  // Update ledger member record
-  await update(ref(db,'ledgerMembers/'+S.activeLedgerId+'/'+S.user.uid),{displayName:name,avatar,color});
-  toast('✓ Profile updated');
-  S.view='settings';render();
+  try{
+    await update(ref(db,'users/'+S.user.uid),{displayName:name,avatar,color});
+    S.profile={...S.profile,displayName:name,avatar,color};
+    toast('✓ App account updated');
+    S.view='settings';render();
+  }catch(e){alert('Error: '+e.message);}
 };
+
+// Keep saveProfile as alias for ledger profile save (used by old references)
+window.saveProfile=window.saveLedgerProfile;
+
+// ── WINDOW-EXPOSED PICKER HELPERS (module scope fix) ──
+window.pickAssetType=(i,color)=>{
+  selAssetType=i;
+  document.querySelectorAll('.at-btn').forEach(b=>{b.style.borderColor='transparent';b.style.background='rgba(255,255,255,0.05)';});
+  const btn=document.querySelectorAll('.at-btn')[i];
+  if(btn){btn.style.borderColor=color;btn.style.background=color+'22';}
+};
+window.pickRecurFreq=i=>{
+  selRecurFreq=i;
+  document.querySelectorAll('.freq-btn').forEach(b=>{b.style.background='rgba(255,255,255,0.05)';b.style.borderColor='transparent';});
+  const btn=document.querySelectorAll('.freq-btn')[i];
+  if(btn){btn.style.background='rgba(108,99,255,0.2)';btn.style.borderColor='var(--accent)';}
+};
+window.pickRecurCat=(key,color)=>{
+  const hidden=document.getElementById('rCatHidden');
+  if(hidden)hidden.value=key;
+  document.querySelectorAll('.rcat-chip').forEach(b=>{b.classList.remove('active');b.style.background='';});
+  document.querySelectorAll('.rcat-chip[data-catkey="'+key+'"]').forEach(b=>{b.classList.add('active');b.style.background=color;});
+};
+window.pickProfAv=i=>{
+  selProfAv=i;
+  document.querySelectorAll('.av-pick-btn').forEach(b=>b.classList.remove('sel'));
+  const btn=document.querySelectorAll('.av-pick-btn')[i];
+  if(btn)btn.classList.add('sel');
+};
+window.pickProfColor=i=>{
+  selProfColor=i;
+  document.querySelectorAll('.prof-col-dot').forEach(d=>d.classList.remove('selected'));
+  const dot=document.querySelectorAll('.prof-col-dot')[i];
+  if(dot)dot.classList.add('selected');
+};
+window.setProfTab=tab=>{profTab=tab;renderPage();};
 
 </script>
 </body>
