@@ -640,8 +640,19 @@ function renderAdd(){
     <!-- Scanning progress overlay -->
     <div id="scanStatus" style="display:none;margin-bottom:14px;padding:18px;border-radius:16px;background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);text-align:center">
       <div class="spinner" style="width:28px;height:28px;border-width:3px;margin:0 auto 10px"></div>
-      <p style="font-size:14px;font-weight:600;color:var(--accent)">Reading receipt...</p>
+      <p id="scanStatusMsg" style="font-size:14px;font-weight:600;color:var(--accent)">Reading receipt...</p>
       <p style="font-size:11px;color:var(--dim);margin-top:4px">AI is extracting transaction details</p>
+    </div>
+    <!-- Persistent error box -->
+    <div id="scanErrorBox" style="display:none;margin-bottom:14px;padding:14px 16px;border-radius:14px;background:rgba(255,107,107,0.1);border:1.5px solid rgba(255,107,107,0.3)">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:18px;flex-shrink:0">❌</span>
+        <div style="flex:1">
+          <p style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:4px">Scan failed</p>
+          <p id="scanErrorMsg" style="font-size:12px;color:var(--muted);line-height:1.5"></p>
+        </div>
+        <button onclick="document.getElementById('scanErrorBox').style.display='none'" style="background:none;color:var(--dim);font-size:18px;border:none;cursor:pointer;flex-shrink:0;line-height:1">×</button>
+      </div>
     </div>
 
     <!-- Scan result preview card (shown after successful scan) -->
@@ -1369,101 +1380,145 @@ window.clearScanResult=()=>{
   document.getElementById('scanResultCard').style.display='none';
 };
 
+// Compress image using canvas before sending to API (max 1024px, quality 0.85)
+async function compressImage(file){
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      const MAX=1024;
+      let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){
+        if(w>h){h=Math.round(h*(MAX/w));w=MAX;}
+        else{w=Math.round(w*(MAX/h));h=MAX;}
+      }
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      // Always output as JPEG for consistency
+      const dataUrl=canvas.toDataURL('image/jpeg',0.85);
+      res({base64:dataUrl.split(',')[1],mimeType:'image/jpeg'});
+    };
+    img.onerror=rej;
+    img.src=url;
+  });
+}
+
 window.scanSelectedPhoto=async()=>{
   if(!_scanFile){toast('No photo selected','var(--red)');return;}
-  const key=localStorage.getItem('fw_gemini_key');
+  const key=(localStorage.getItem('fw_gemini_key')||'').trim();
   if(!key){
     toast('⚠️ Add your Gemini API key in Settings first','var(--yellow)');
     return;
   }
   const status=document.getElementById('scanStatus');
+  const statusMsg=document.getElementById('scanStatusMsg');
   const previewWrap=document.getElementById('photoPreviewWrap');
   const scanNowBtn=document.getElementById('scanNowBtn');
   const resultCard=document.getElementById('scanResultCard');
   const resultBody=document.getElementById('scanResultBody');
+  const errorBox=document.getElementById('scanErrorBox');
   if(status)status.style.display='block';
   if(previewWrap)previewWrap.style.display='none';
+  if(errorBox)errorBox.style.display='none';
   if(scanNowBtn)scanNowBtn.disabled=true;
   try{
-    const base64=await new Promise((res,rej)=>{
-      const reader=new FileReader();
-      reader.onload=()=>res(reader.result.split(',')[1]);
-      reader.onerror=rej;
-      reader.readAsDataURL(_scanFile);
-    });
+    // Step 1: Compress image
+    if(statusMsg)statusMsg.textContent='Compressing image...';
+    const {base64,mimeType}=await compressImage(_scanFile);
+    // Step 2: Call Gemini API
+    if(statusMsg)statusMsg.textContent='Reading receipt with AI...';
     const cats=getCats();
     const catKeys=Object.keys(cats).filter(k=>k!=='income').join(', ');
-    const mimeType=_scanFile.type||'image/jpeg';
-    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        contents:[{parts:[
-          {inline_data:{mime_type:mimeType,data:base64}},
-          {text:`You are a receipt/invoice reader for a family expense tracker.
-Analyze this image carefully and extract transaction details.
-
-Return ONLY a valid JSON object with these exact fields:
-{
-  "amount": <number — total amount paid, e.g. 25.50>,
-  "description": <string — merchant name or item, max 40 chars, e.g. "McDonald's", "Grab ride">,
-  "date": <string — YYYY-MM-DD format, use today's date if unclear>,
-  "category": <string — pick ONE from: ${catKeys}>,
-  "currency": <string — 3-letter code e.g. MYR, USD, SGD>,
-  "notes": <string — any extra useful info like item details, max 60 chars, or empty string>
-}
-
-Rules:
-- amount must be a plain number, not a string
-- If the image is not a receipt, do your best with visible price/text
-- Return ONLY the JSON object, no markdown, no explanation`}
-        ]}]
-      })
-    });
+    const resp=await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{parts:[
+            {inline_data:{mime_type:mimeType,data:base64}},
+            {text:'You are a receipt/invoice reader for a family expense tracker.\nAnalyze this image and extract transaction details.\n\nReturn ONLY a valid JSON object:\n{\n  "amount": <number, total paid>,\n  "description": <string, merchant name max 40 chars>,\n  "date": <string, YYYY-MM-DD, use today if unclear>,\n  "category": <string, ONE of: '+catKeys+'>,\n  "currency": <string, 3-letter code e.g. MYR USD SGD>,\n  "notes": <string, extra item details max 60 chars or "">\n}\nRules: amount is a plain number. Return ONLY the JSON, no markdown.'}
+          ]}]
+        })
+      }
+    );
+    // Step 3: Handle response
+    const responseText=await resp.text();
     if(!resp.ok){
-      const err=await resp.json().catch(()=>({}));
-      throw new Error(err?.error?.message||'API error '+resp.status);
+      let errMsg='API error '+resp.status;
+      try{
+        const errJson=JSON.parse(responseText);
+        errMsg=errJson?.error?.message||errMsg;
+        // Common error codes
+        if(resp.status===400)errMsg='Invalid request or bad image. '+errMsg;
+        if(resp.status===401||resp.status===403)errMsg='Invalid API key. Check your key in Settings.';
+        if(resp.status===429)errMsg='Rate limit reached. Wait a moment and try again.';
+        if(resp.status===503)errMsg='Gemini service unavailable. Try again shortly.';
+      }catch(e2){}
+      throw new Error(errMsg);
     }
-    const data=await resp.json();
+    const data=JSON.parse(responseText);
     const text=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    if(!text)throw new Error('Empty response from AI. Try a clearer photo.');
+    // Step 4: Parse JSON
     const clean=text.replace(/```json|```/g,'').trim();
     let parsed;
     try{parsed=JSON.parse(clean);}
-    catch(e){throw new Error('Could not read receipt. Try a clearer photo.');}
-    // Fill form fields
-    const prevCurrency=S.addForm.currency;
-    if(parsed.amount)     S.addForm.amount=String(parseFloat(parsed.amount)||'');
-    if(parsed.description)S.addForm.description=parsed.description;
-    if(parsed.date)       S.addForm.date=parsed.date;
+    catch(e){
+      // Try to extract JSON from the response
+      const match=clean.match(/\{[\s\S]*\}/);
+      if(match)try{parsed=JSON.parse(match[0]);}catch(e2){}
+      if(!parsed)throw new Error('Could not parse AI response. Try a clearer photo of the receipt.');
+    }
+    // Step 5: Fill form
+    if(parsed.amount)      S.addForm.amount=String(parseFloat(parsed.amount)||'');
+    if(parsed.description) S.addForm.description=parsed.description.substring(0,40);
+    if(parsed.date)        S.addForm.date=parsed.date;
     if(parsed.category&&cats[parsed.category])S.addForm.category=parsed.category;
     if(parsed.currency&&CURRENCIES[parsed.currency])S.addForm.currency=parsed.currency;
-    if(parsed.notes&&parsed.notes.trim()&&!S.addForm.description.includes(parsed.notes.trim()))
-      S.addForm.description+=(S.addForm.description?' — ':'')+parsed.notes.trim();
-    S.addForm.type='expense';
-    S.addForm.subcat='';
-    // Hide status, show result card
+    if(parsed.notes&&parsed.notes.trim()){
+      const note=parsed.notes.trim().substring(0,60);
+      if(!S.addForm.description.includes(note))
+        S.addForm.description=(S.addForm.description+' — '+note).substring(0,80);
+    }
+    S.addForm.type='expense';S.addForm.subcat='';
     if(status)status.style.display='none';
-    // Build result summary
+    // Step 6: Show result card
     const cats2=getCats();const cat2=cats2[S.addForm.category]||DEFAULT_CATS.other;
-    if(resultBody)resultBody.innerHTML=`
-      <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center">
-        <span style="color:var(--dim)">Amount</span><strong style="color:var(--text);font-family:'DM Mono',monospace">${fmt(parseFloat(S.addForm.amount)||0,S.addForm.currency)}</strong>
-        <span style="color:var(--dim)">Merchant</span><strong style="color:var(--text)">${S.addForm.description}</strong>
-        <span style="color:var(--dim)">Category</span><strong style="color:var(--text)">${cat2.icon} ${cat2.label}</strong>
-        <span style="color:var(--dim)">Date</span><strong style="color:var(--text)">${S.addForm.date}</strong>
-        <span style="color:var(--dim)">Currency</span><strong style="color:var(--text)">${S.addForm.currency}</strong>
-      </div>`;
+    if(resultBody){
+      const dispCur=S.addForm.currency||S.ledgerCurrency;
+      const dispAmt=parseFloat(S.addForm.amount)||0;
+      resultBody.innerHTML=
+        '<table style="width:100%;border-collapse:collapse">'+
+        '<tr><td style="color:var(--dim);padding:3px 0;width:80px;font-size:12px">Amount</td>'+
+        '<td style="font-family:\'DM Mono\',monospace;font-weight:700;color:var(--green);font-size:14px">'+fmt(dispAmt,dispCur)+'</td></tr>'+
+        '<tr><td style="color:var(--dim);padding:3px 0;font-size:12px">Merchant</td>'+
+        '<td style="font-weight:600;font-size:13px;color:var(--text)">'+S.addForm.description+'</td></tr>'+
+        '<tr><td style="color:var(--dim);padding:3px 0;font-size:12px">Category</td>'+
+        '<td style="font-size:13px;color:var(--text)">'+cat2.icon+' '+cat2.label+'</td></tr>'+
+        '<tr><td style="color:var(--dim);padding:3px 0;font-size:12px">Date</td>'+
+        '<td style="font-size:13px;color:var(--text)">'+S.addForm.date+'</td></tr>'+
+        '<tr><td style="color:var(--dim);padding:3px 0;font-size:12px">Currency</td>'+
+        '<td style="font-size:13px;color:var(--text)">'+dispCur+'</td></tr>'+
+        '</table>';
+    }
     if(resultCard)resultCard.style.display='block';
     _scanFile=null;
-    // Re-render form to show filled values
     renderPage();
-    toast('✓ Receipt scanned — review the details');
+    toast('✓ Receipt scanned — review and save');
   }catch(e){
     if(status)status.style.display='none';
     if(previewWrap)previewWrap.style.display='block';
-    if(scanNowBtn){scanNowBtn.disabled=false;}
+    if(scanNowBtn)scanNowBtn.disabled=false;
     console.error('Scan error:',e);
-    toast('❌ '+e.message,'var(--red)');
+    // Show persistent error box instead of just a toast
+    if(errorBox){
+      errorBox.style.display='block';
+      document.getElementById('scanErrorMsg').textContent=e.message;
+    }
   }
 };
 // ══════════════════════════════════════════
