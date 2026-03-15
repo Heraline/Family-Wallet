@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Family Wallet</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
   :root{--bg:#0A0A14;--bg2:#12121E;--bg3:#1A1A2E;--accent:#6C63FF;--accent2:#4ECDC4;--green:#69D2A0;--red:#FF6B6B;--yellow:#FFE66D;--text:#F0EEF6;--muted:#8A88AA;--dim:#5A587A;--border:rgba(255,255,255,0.07)}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;overflow:hidden}
-  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:stretch}
-  #app{width:100%;max-width:430px;height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column}
-  .page{flex:1;overflow-y:auto;padding-bottom:90px;-webkit-overflow-scrolling:touch}
+  html{height:100%;overflow:hidden}
+  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:stretch;height:100%;height:-webkit-fill-available;overflow:hidden}
+  #app{width:100%;max-width:430px;height:100%;position:relative;display:flex;flex-direction:column;overflow:hidden}
+  .page{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(90px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
   .page::-webkit-scrollbar{display:none}
   .glow1{position:fixed;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(108,99,255,0.15),transparent 70%);pointer-events:none;z-index:0}
   .glow2{position:fixed;bottom:60px;left:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(78,205,196,0.10),transparent 70%);pointer-events:none;z-index:0}
@@ -56,7 +56,7 @@
   .cat-bar-track{height:8px;border-radius:999px;background:rgba(255,255,255,0.07);overflow:hidden}
   .cat-bar-fill{height:100%;border-radius:999px;transition:width 0.5s ease}
   .debt-row{display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:14px;margin-bottom:8px}
-  .add-page{padding:50px 22px 120px}
+  .add-page{padding:50px 22px calc(120px + env(safe-area-inset-bottom))}
   .form-section{margin-bottom:16px}
   .input-card{padding:16px 18px;border-radius:17px}
   .input-card input,.input-card select{background:none;border:none;outline:none;color:var(--text);font-family:'Sora',sans-serif;width:100%}
@@ -76,13 +76,13 @@
   .member-box .m-avatar{font-size:20px;margin-bottom:3px}
   .member-box.active{color:#fff}
   .split-hint{font-size:12px;color:var(--accent);text-align:center;margin-top:10px}
-  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(10,10,20,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 30px 24px;display:flex;justify-content:space-around;align-items:center;z-index:50}
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(10,10,20,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 30px calc(24px + env(safe-area-inset-bottom));display:flex;justify-content:space-around;align-items:center;z-index:50}
   .nav-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;color:var(--dim);font-size:11px;font-weight:600;padding:4px 12px}
   .nav-btn.active{color:var(--accent)}
   .nav-btn .nav-icon{font-size:22px}
   .fab{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(108,99,255,0.4);margin-top:-18px;color:#fff}
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:flex-end;justify-content:center}
-  .modal-sheet{width:100%;max-width:430px;background:var(--bg2);border-radius:24px 24px 0 0;padding:26px 22px 48px;border:1px solid rgba(255,255,255,0.09);animation:slideUp 0.3s cubic-bezier(.22,.68,0,1.15) both;max-height:90vh;overflow-y:auto}
+  .modal-sheet{width:100%;max-width:430px;background:var(--bg2);border-radius:24px 24px 0 0;padding:26px 22px calc(48px + env(safe-area-inset-bottom));border:1px solid rgba(255,255,255,0.09);animation:slideUp 0.3s cubic-bezier(.22,.68,0,1.15) both;max-height:90svh;max-height:90dvh;overflow-y:auto}
   .modal-handle{width:40px;height:4px;border-radius:999px;background:rgba(255,255,255,0.2);margin:0 auto 22px}
   @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -92,7 +92,7 @@
   .empty{text-align:center;color:var(--dim);padding:50px 20px;font-size:14px}
   .delete-btn{font-size:11px;background:rgba(255,107,107,0.15);color:var(--red);border-radius:8px;padding:4px 10px;font-weight:600}
   .edit-btn{font-size:11px;background:rgba(108,99,255,0.15);color:var(--accent);border-radius:8px;padding:4px 10px;font-weight:600}
-  .settings-page{padding:50px 22px 100px}
+  .settings-page{padding:50px 22px calc(100px + env(safe-area-inset-bottom))}
   .settings-section{margin-bottom:24px}
   .settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:14px;margin-bottom:8px}
   .settings-row .sr-left{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:500}
@@ -124,7 +124,7 @@
   .collab-badge.guest{background:rgba(255,230,109,0.2);color:var(--yellow)}
   .loading-screen{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
   .spinner{width:36px;height:36px;border:3px solid rgba(108,99,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
-  .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid rgba(108,99,255,0.3);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:600;z-index:500;animation:fadeIn 0.2s ease;white-space:nowrap;pointer-events:none}
+  .toast{position:fixed;bottom:calc(100px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid rgba(108,99,255,0.3);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:600;z-index:500;animation:fadeIn 0.2s ease;white-space:nowrap;pointer-events:none}
   .budget-bar-track{height:6px;border-radius:999px;background:rgba(255,255,255,0.07);overflow:hidden}
   .budget-bar-fill{height:100%;border-radius:999px;transition:width 0.5s ease}
   .budget-warning{color:var(--yellow);font-size:11px;margin-top:3px}
@@ -224,11 +224,18 @@ const S={
   user:null,profile:null,
   ledgers:{},activeLedgerId:null,
   txs:{},members:{},cats:{},budgets:{},ledgerCurrency:'MYR',
-  assets:{},recurring:{},
+  assets:{},recurring:{},settlements:{},
   view:'home',tab:'transactions',filterMember:'all',
-  addForm:null,   // null = new, else pre-filled for edit
-  editTxKey:null, // key of tx being edited
-  splitModal:null,
+  budgetMonth:new Date().toISOString().slice(0,7),
+  historyMonth:new Date().toISOString().slice(0,7),
+  calendarMonth:new Date().toISOString().slice(0,7),
+  calendarDay:null,
+  statsMonth:new Date().toISOString().slice(0,7),
+  statsTab:'overview', // overview | budget | members | trend
+  statsMember:'all',
+  addForm:null,
+  editTxKey:null,
+  splitModal:null,settleModal:null,
   authMode:'login',
   listeners:[],
 };
@@ -255,7 +262,37 @@ function debts(){
       t.splitWith.forEach(p=>{const k=p+'->'+t.member;d[k]=(d[k]||0)+sh;});
     }
   });
-  return Object.entries(d).map(([k,v])=>{const[f,t]=k.split('->');return{from:f,to:t,amount:v};});
+  // subtract settlements
+  Object.values(S.settlements||{}).forEach(s=>{
+    const k=s.from+'->'+s.to;
+    d[k]=(d[k]||0)-s.amount;
+    // also reduce the reverse direction if negative
+  });
+  // net out: if A owes B and B owes A, simplify
+  const netted={};
+  Object.entries(d).forEach(([k,v])=>{
+    const[f,t]=k.split('->');
+    const rev=t+'->'+f;
+    if(netted[rev]!==undefined){
+      if(v>netted[rev]){netted[k]=v-netted[rev];delete netted[rev];}
+      else{netted[rev]=netted[rev]-v;if(netted[rev]<=0.005)delete netted[rev];}
+    } else { netted[k]=v; }
+  });
+  return Object.entries(netted).filter(([,v])=>v>0.005).map(([k,v])=>{const[f,t]=k.split('->');return{from:f,to:t,amount:v};});
+}
+function allTimeTotals(){
+  const all=txArr();
+  const inc=all.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp=all.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  return{inc,exp,bal:inc-exp};
+}
+function monthlyTotals(ym){
+  const now=new Date();
+  const month=ym||(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
+  const m=txArr().filter(t=>t.date&&t.date.startsWith(month));
+  const inc=m.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp=m.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  return{inc,exp,bal:inc-exp,month};
 }
 function blankForm(){return{type:'expense',amount:'',category:'food',subcat:'',description:'',member:'',splitWith:[],splitMode:'equal',customSplits:{},date:td(),currency:S.ledgerCurrency,assetId:''};}
 function toast(msg,col='var(--green)'){const el=document.createElement('div');el.className='toast';el.textContent=msg;el.style.color=col;document.body.appendChild(el);setTimeout(()=>el.remove(),2500);}
@@ -265,19 +302,21 @@ function safeRender(){const pg=document.getElementById('mainPage');if(pg&&!docum
 
 // ── AUTH STATE ──
 onAuthStateChanged(auth,async user=>{
-  if(user){
-    S.user=user;
-    const snap=await get(ref(db,'users/'+user.uid));
-    S.profile=snap.exists()?snap.val():{displayName:user.displayName||'User',avatar:'👤',color:M_COLORS[0]};
-    if(!snap.exists())await set(ref(db,'users/'+user.uid),S.profile);
-    const lsnap=await get(ref(db,'userLedgers/'+user.uid));
-    S.ledgers=lsnap.exists()?lsnap.val():{};
-    if(!Object.keys(S.ledgers).length){const id=await mkLedger('Family','👨‍👩‍👧‍👦');S.ledgers[id]={name:'Family',icon:'👨‍👩‍👧‍👦',role:'owner'};}
-    const last=localStorage.getItem('fw_lid_'+user.uid);
-    const pick=(last&&S.ledgers[last])?last:Object.keys(S.ledgers)[0];
-    await switchLedger(pick);
-    hideLoad();showApp();
-  }else{S.user=null;S.profile=null;hideLoad();showAuth();}
+  try{
+    if(user){
+      S.user=user;
+      const snap=await get(ref(db,'users/'+user.uid));
+      S.profile=snap.exists()?snap.val():{displayName:user.displayName||'User',avatar:'👤',color:M_COLORS[0]};
+      if(!snap.exists())await set(ref(db,'users/'+user.uid),S.profile);
+      const lsnap=await get(ref(db,'userLedgers/'+user.uid));
+      S.ledgers=lsnap.exists()?lsnap.val():{};
+      if(!Object.keys(S.ledgers).length){const id=await mkLedger('Family','👨‍👩‍👧‍👦');S.ledgers[id]={name:'Family',icon:'👨‍👩‍👧‍👦',role:'owner'};}
+      const last=localStorage.getItem('fw_lid_'+S.user.uid);
+      const pick=(last&&S.ledgers[last])?last:Object.keys(S.ledgers)[0];
+      await switchLedger(pick);
+      hideLoad();showApp();
+    }else{S.user=null;S.profile=null;hideLoad();showAuth();}
+  }catch(e){hideLoad();showErr('Auth error: '+e.message);}
 });
 
 // ── LEDGER OPS ──
@@ -293,21 +332,33 @@ async function switchLedger(lid){
   S.listeners.forEach(({r,fn})=>{try{off(r,'value',fn);}catch(e){}});
   S.listeners=[];S.activeLedgerId=lid;S.filterMember='all';S.view='home';
   localStorage.setItem('fw_lid_'+S.user.uid,lid);
-  const listen=(path,cb)=>{const r=ref(db,path);const fn=s=>cb(s);onValue(r,fn);S.listeners.push({r,fn});};
+  const listen=(path,cb,tag)=>{const r=ref(db,path);const fn=s=>cb(s);onValue(r,fn);S.listeners.push({r,fn,tag});};
   listen('ledgerTransactions/'+lid,s=>{S.txs=s.exists()?s.val():{};safeRender();});
   listen('ledgerMembers/'+lid,s=>{S.members=s.exists()?s.val():{};safeRender();});
   listen('ledgerCategories/'+lid,s=>{S.cats=s.exists()?s.val():{};safeRender();});
-  listen('ledgerBudgets/'+lid,s=>{S.budgets=s.exists()?s.val():{};safeRender();});
+  listen('ledgers/'+lid+'/budgets/'+S.budgetMonth,s=>{S.budgets=s.exists()?s.val():{};safeRender();},'budget');
   listen('ledgers/'+lid+'/currency',s=>{S.ledgerCurrency=s.exists()?s.val():'MYR';safeRender();});
   listen('ledgers/'+lid+'/assets',s=>{S.assets=s.exists()?s.val():{};safeRender();});
   listen('ledgers/'+lid+'/recurring',s=>{S.recurring=s.exists()?s.val():{};safeRender();});
+  listen('ledgers/'+lid+'/settlements',s=>{S.settlements=s.exists()?s.val():{};safeRender();});
   const ms=await get(ref(db,`ledgerMembers/${lid}/${S.user.uid}`));
   if(!ms.exists())await set(ref(db,`ledgerMembers/${lid}/${S.user.uid}`),{displayName:S.profile.displayName,avatar:S.profile.avatar,color:S.profile.color,role:'member',joinedAt:Date.now()});
   // Small delay so listeners populate S.recurring before we process
   setTimeout(()=>processRecurring(),1500);
 }
 
-// ── SHOW/HIDE ──
+// Re-subscribe budget listener when month changes
+function switchBudgetMonth(ym){
+  // Remove old budget listeners by tag
+  S.listeners=S.listeners.filter(({r,fn,tag})=>{
+    if(tag==='budget'){try{off(r,'value',fn);}catch(e){}return false;}
+    return true;
+  });
+  S.budgetMonth=ym;S.budgets={};
+  const r=ref(db,'ledgers/'+S.activeLedgerId+'/budgets/'+ym);
+  const fn=s=>{S.budgets=s.exists()?s.val():{};if(S.view==='budget'||S.view==='stats')renderPage();};
+  onValue(r,fn);S.listeners.push({r,fn,tag:'budget'});
+}
 function showAuth(){document.getElementById('authContainer').innerHTML=renderAuth();document.getElementById('ledgerContainer').innerHTML='';document.getElementById('bottomNav').style.display='none';document.getElementById('mainPage').innerHTML='';}
 function showApp(){document.getElementById('authContainer').innerHTML='';document.getElementById('ledgerContainer').innerHTML='';document.getElementById('bottomNav').style.display='flex';render();}
 
@@ -417,84 +468,1153 @@ window.doJoin=async()=>{const code=document.getElementById('jCode')?.value.trim(
 window.pickLedger=async id=>{showLoad();await switchLedger(id);hideLoad();closeLedgerPicker();showApp();};
 
 // ── RENDER ──
-function render(){renderPage();renderNav();renderModal();}
+function showErr(msg){
+  const pg=document.getElementById('mainPage');
+  if(pg)pg.innerHTML=`<div style="padding:60px 24px;color:#FF6B6B;font-size:13px;font-family:monospace;white-space:pre-wrap;word-break:break-all">${msg}</div>`;
+  console.error(msg);
+}
+function render(){try{renderPage();}catch(e){showErr('render: '+e.stack||e.message);}renderNav();renderModal();}
 function renderNav(){
   const nav=document.getElementById('bottomNav');if(!nav)return;
   const{view,tab}=S;
   nav.innerHTML=`
-    <button class="nav-btn ${view==='home'&&tab==='transactions'?'active':''}" onclick="goHome('transactions')"><span class="nav-icon">📋</span><span>Ledger</span></button>
+    <button class="nav-btn ${view==='home'?'active':''}" onclick="goHome('transactions')"><span class="nav-icon">🏠</span><span>Today</span></button>
+    <button class="nav-btn ${view==='calendar'?'active':''}" onclick="goCalendar()"><span class="nav-icon">📅</span><span>Calendar</span></button>
     <button class="fab" onclick="goAdd()">+</button>
-    <button class="nav-btn ${view==='home'&&tab==='analytics'?'active':''}" onclick="goHome('analytics')"><span class="nav-icon">📊</span><span>Analytics</span></button>`;
+    <button class="nav-btn ${view==='stats'?'active':''}" onclick="goStats()"><span class="nav-icon">📊</span><span>Statistics</span></button>
+    <button class="nav-btn ${view==='settings'||view==='history'?'active':''}" onclick="goSettings()"><span class="nav-icon">···</span><span>More</span></button>`;
 }
 function renderPage(){
   const pg=document.getElementById('mainPage');if(!pg)return;
-  if(S.view==='add'){pg.innerHTML=renderAdd();return;}
-  if(S.view==='settings'){pg.innerHTML=renderSettings();return;}
-  if(S.view==='invite'){pg.innerHTML=renderInvite();return;}
-  if(S.view==='budget'){pg.innerHTML=renderBudgetPage();return;}
-  if(S.view==='categories'){pg.innerHTML=renderCategoriesPage();return;}
-  if(S.view==='guests'){pg.innerHTML=renderGuestsPage();return;}
-  if(S.view==='assets'){pg.innerHTML=renderAssetsPage();return;}
-  if(S.view==='assetForm'){pg.innerHTML=renderAssetForm();return;}
-  if(S.view==='recurring'){pg.innerHTML=renderRecurringPage();return;}
-  if(S.view==='recurForm'){pg.innerHTML=renderRecurForm();return;}
-  if(S.view==='profile'){pg.innerHTML=renderProfilePage();return;}
-  pg.innerHTML=renderHome();
+  try{
+    if(S.view==='add'){pg.innerHTML=renderAdd();return;}
+    if(S.view==='calendar'){pg.innerHTML=renderCalendar();attachCalendarListeners();return;}
+    if(S.view==='stats'){pg.innerHTML=renderStats();attachStatsListeners();return;}
+    if(S.view==='history'){pg.innerHTML=renderHistory();attachHistoryListeners();return;}
+    if(S.view==='settings'){pg.innerHTML=renderSettings();return;}
+    if(S.view==='invite'){pg.innerHTML=renderInvite();return;}
+    if(S.view==='budget'){pg.innerHTML=renderBudgetPage();attachBudgetListeners();return;}
+    if(S.view==='categories'){pg.innerHTML=renderCategoriesPage();return;}
+    if(S.view==='guests'){pg.innerHTML=renderGuestsPage();return;}
+    if(S.view==='assets'){pg.innerHTML=renderAssetsPage();return;}
+    if(S.view==='assetForm'){pg.innerHTML=renderAssetForm();return;}
+    if(S.view==='recurring'){pg.innerHTML=renderRecurringPage();return;}
+    if(S.view==='recurForm'){pg.innerHTML=renderRecurForm();return;}
+    if(S.view==='profile'){pg.innerHTML=renderProfilePage();return;}
+    pg.innerHTML=renderHome();
+  }catch(e){showErr('renderPage ['+S.view+']: '+(e.stack||e.message));}
 }
 
 // ── HOME ──
 function renderHome(){
   const fil=filtered();const cur=getCur();
-  const inc=fil.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const exp=fil.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const bal=inc-exp;const isPos=bal>=0;
+  const mth=monthlyTotals();
+  const all=allTimeTotals();
   const mems=S.members||{};
   const allM=[{id:'all',displayName:'All',avatar:'👨‍👩‍👧‍👦',color:'#6C63FF'},...Object.entries(mems).map(([id,m])=>({id,...m}))];
   const pills=allM.map(m=>`<button class="member-pill ${S.filterMember===m.id?'active':''}" style="${S.filterMember===m.id?'background:'+m.color+';':''}" onclick="setFilter('${m.id}')"><span style="font-size:16px">${m.avatar}</span> ${m.displayName}${m.guest?'<span style="font-size:9px;opacity:0.7"> 👻</span>':''}</button>`).join('');
   const linfo=S.ledgers[S.activeLedgerId]||{};
   const memCnt=Object.keys(mems).length;
-  const totalBudget=Object.values(S.budgets||{}).reduce((s,v)=>s+v,0);
-  const budgetBar=totalBudget>0?`<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px"><span>Monthly Budget</span><span>${fmt(exp)} / ${fmt(totalBudget)}</span></div>
-    <div class="budget-bar-track"><div class="budget-bar-fill" style="width:${Math.min(100,(exp/totalBudget)*100)}%;background:${exp>totalBudget?'var(--red)':exp/totalBudget>0.8?'var(--yellow)':'var(--green)'}"></div></div>
-    ${exp>totalBudget?`<p class="budget-over">⚠️ Over budget by ${fmt(exp-totalBudget)}</p>`:exp/totalBudget>0.8?`<p class="budget-warning">⚠️ ${Math.round((exp/totalBudget)*100)}% used</p>`:''}
-  </div>`:'';
-  const tc=S.tab==='transactions'?renderTxs(fil):renderAnalytics(fil,exp);
+
+  // Budget for current month
+  const nowYm=new Date().toISOString().slice(0,7);
+  const homeMonthBudgets=S.budgetMonth===nowYm?S.budgets:{};
+  const catBudgetTotal=Object.entries(homeMonthBudgets).filter(([k])=>k!=='_total').reduce((s,[,v])=>s+(parseFloat(v)||0),0);
+  const manualBudgetTotal=parseFloat(homeMonthBudgets._total)||0;
+  const totalBudget=manualBudgetTotal>0?manualBudgetTotal:catBudgetTotal;
+  const budgetUsedPct=totalBudget>0?Math.min(100,(mth.exp/totalBudget)*100):0;
+  const budgetBarColor=mth.exp>totalBudget?'var(--red)':budgetUsedPct>80?'var(--yellow)':'#6C63FF';
+  const remaining=totalBudget-mth.exp;
+
+  // Member spending breakdown (current month) — using actual split shares
+  const nowTxs=txArr().filter(t=>t.type==='expense'&&t.date?.startsWith(nowYm));
+
+  // Calculate each member's true share:
+  // - If tx has splitAmounts: use their slice from splitAmounts
+  // - If tx has splitWith (equal split): divide equally
+  // - If tx has no split: full amount to t.member (payer)
+  const memberShareMap={};
+  nowTxs.forEach(t=>{
+    if(t.splitAmounts&&Object.keys(t.splitAmounts).length>1){
+      // Custom or equal split with amounts recorded per member
+      Object.entries(t.splitAmounts).forEach(([uid,amt])=>{
+        memberShareMap[uid]=(memberShareMap[uid]||0)+amt;
+      });
+    } else if(t.splitWith?.length>0){
+      // Equal split, no splitAmounts stored
+      const all=[t.member,...t.splitWith];
+      const share=t.amount/all.length;
+      all.forEach(uid=>{memberShareMap[uid]=(memberShareMap[uid]||0)+share;});
+    } else {
+      // No split — full amount to payer
+      memberShareMap[t.member]=(memberShareMap[t.member]||0)+t.amount;
+    }
+  });
+
+  // Shared expenses (split across multiple people)
+  const sharedTotal=nowTxs.filter(t=>(t.splitWith?.length>0)||(Object.keys(t.splitAmounts||{}).length>1)).reduce((s,t)=>s+t.amount,0);
+
+  const memberSpend=Object.entries(mems).map(([id,m])=>({
+    id,...m,spent:memberShareMap[id]||0
+  })).filter(m=>m.spent>0).sort((a,b)=>b.spent-a.spent);
+
+  const totalMemberSpend=memberSpend.reduce((s,m)=>s+m.spent,0);
+
+  // Compare to last month
+  const [y,mo]=nowYm.split('-').map(Number);
+  const prevYm=`${mo===1?y-1:y}-${String(mo===1?12:mo-1).padStart(2,'0')}`;
+  const prevExp=txArr().filter(t=>t.type==='expense'&&t.date?.startsWith(prevYm)).reduce((s,t)=>s+t.amount,0);
+  const vsLastMonth=prevExp>0?((mth.exp-prevExp)/prevExp*100):null;
+
+  // Today's spending
+  const todayStr=td();
+  const spentToday=txArr().filter(t=>t.type==='expense'&&t.date===todayStr).reduce((s,t)=>s+t.amount,0);
+
+  const monthName=new Date().toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+  const tc=S.tab==='transactions'?renderTxs(fil):renderAnalytics(fil,mth.exp);
+
   return`<div class="fade-in">
-    <div style="padding:50px 22px 0;display:flex;justify-content:space-between;align-items:flex-start">
+
+    <!-- TOP HEADER: date + ledger name -->
+    <div style="padding:52px 20px 0;display:flex;justify-content:space-between;align-items:flex-start">
       <div>
-        <p class="label" style="margin-bottom:4px">Family Wallet · ${cur.flag} ${S.ledgerCurrency}</p>
-        <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="openLedgerPicker()">
-          <h1 style="font-size:23px;font-weight:700;letter-spacing:-0.02em">${linfo.icon||'💳'} ${linfo.name||'Ledger'}</h1>
-          <span style="color:var(--dim);font-size:16px">⌄</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
-          <div class="user-badge"><span>${S.profile?.avatar||'👤'}</span><span>${S.profile?.displayName||''}</span></div>
-          ${memCnt>1?`<span style="font-size:11px;color:var(--accent2)">👥 ${memCnt}</span>`:''}
-        </div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:2px">${new Date().toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</p>
+        <p style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Today</p>
       </div>
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <button onclick="goInvite()" style="background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.25);border-radius:12px;padding:8px 12px;font-size:18px">🔗</button>
-        <button onclick="goSettings()" style="background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 12px;font-size:18px">⚙️</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="openLedgerPicker()" style="background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:20px;padding:7px 13px;font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px">
+          <span>${linfo.icon||'🏠'}</span><span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${linfo.name||'Ledger'}</span><span style="color:var(--dim);font-size:12px">⌄</span>
+        </button>
+        <button onclick="goSettings()" style="background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 10px;font-size:16px">⚙️</button>
       </div>
     </div>
-    <div class="member-scroll">${pills}</div>
-    <div class="card balance-card slide-up">
-      <p class="label" style="color:var(--accent);margin-bottom:6px">Net Balance</p>
-      <p class="balance-amount" style="color:${isPos?'var(--green)':'var(--red)'}">${fmt(Math.abs(bal))}</p>
-      <p style="font-size:12px;color:var(--dim);margin-top:3px">${isPos?'▲ surplus':'▼ deficit'} · ${new Date().toLocaleDateString('en-MY',{month:'long',year:'numeric'})}</p>
-      <div class="mini-cards">
-        <div class="mini-card income"><p class="mc-label">INCOME</p><p class="mc-val">${fmt(inc)}</p></div>
-        <div class="mini-card expense"><p class="mc-label">SPENT</p><p class="mc-val">${fmt(exp)}</p></div>
+
+    <!-- SPENT TODAY + TOTAL BALANCE ROW -->
+    <div style="padding:18px 20px 0;display:flex;align-items:flex-end;justify-content:space-between">
+      <div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:4px">Spent Today</p>
+        <p style="font-family:'DM Mono',monospace;font-size:36px;font-weight:700;letter-spacing:-0.03em;color:var(--text)">${fmt(spentToday)}</p>
       </div>
-      ${budgetBar}
+      <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:20px;padding:7px 13px;margin-bottom:6px;cursor:pointer" onclick="goInvite()">
+        <span style="font-size:11px;color:var(--muted);font-weight:500">Total Balance</span>
+        <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:${all.bal>=0?'var(--accent)':'var(--red)'}"> ${fmt(Math.abs(all.bal))}</span>
+      </div>
     </div>
+
+    <!-- MEMBER FILTER PILLS -->
+    <div class="member-scroll" style="padding:14px 20px 0">${pills}</div>
+
+    <!-- MAIN MONTHLY SUMMARY CARD -->
+    <div class="card balance-card slide-up" style="margin:14px 20px 0;padding:20px">
+
+      <!-- Card header: month + budget pill -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <p style="font-size:15px;font-weight:700">${new Date().toLocaleDateString('en-MY',{month:'long'})} Expenses</p>
+        ${totalBudget>0?`<div style="background:rgba(255,255,255,0.08);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--text)">Budget ${fmt(totalBudget)}</div>`:`<button onclick="goBudget()" style="background:rgba(108,99,255,0.12);border:1px solid rgba(108,99,255,0.25);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--accent)">+ Set Budget</button>`}
+      </div>
+
+      <!-- Expense + Income row -->
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:3px">Expense</p>
+          <p style="font-family:'DM Mono',monospace;font-size:28px;font-weight:700;color:var(--text)">${fmt(mth.exp)}</p>
+        </div>
+        <div style="text-align:right">
+          <p style="font-size:11px;color:var(--muted);margin-bottom:3px">Income</p>
+          <p style="font-family:'DM Mono',monospace;font-size:20px;font-weight:700;color:var(--accent)">${fmt(mth.inc)}</p>
+        </div>
+      </div>
+
+      <!-- Budget progress bar -->
+      ${totalBudget>0?`
+      <div class="budget-bar-track" style="height:7px;margin-bottom:8px">
+        <div class="budget-bar-fill" style="width:${budgetUsedPct}%;background:${budgetBarColor}"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <p style="font-size:12px;color:var(--muted)">Remaining Budget</p>
+        <p style="font-size:13px;font-weight:700;color:${remaining<0?'var(--red)':'var(--accent)'}">
+          ${fmt(Math.abs(remaining))} <span style="font-size:11px;font-weight:500;color:var(--muted)">(${Math.round(Math.abs(remaining)/totalBudget*100)}%)</span>
+        </p>
+      </div>`:`<div style="height:1px;background:var(--border);margin-bottom:14px"></div>`}
+
+      <!-- Member Spending breakdown -->
+      ${memberSpend.length>0||sharedTotal>0?`
+      <p style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;letter-spacing:0.04em;text-transform:uppercase">Member Spending</p>
+      ${sharedTotal>0?`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.18);margin-bottom:8px">
+        <div style="width:36px;height:36px;border-radius:50%;background:rgba(108,99,255,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👥</div>
+        <div style="flex:1">
+          <p style="font-size:14px;font-weight:600;color:var(--accent)">Shared</p>
+          <p style="font-size:10px;color:var(--dim);margin-top:1px">Split across members</p>
+        </div>
+        <p style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:var(--accent)">${fmt(sharedTotal)}</p>
+        <span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">(${totalMemberSpend>0?Math.round(sharedTotal/mth.exp*100):0}%)</span>
+      </div>`:''}
+      ${memberSpend.map(m=>{
+        const pct=mth.exp>0?Math.round(m.spent/mth.exp*100):0;
+        // How much of their share came from splits?
+        const splitShare=nowTxs.filter(t=>(t.splitWith?.length>0||Object.keys(t.splitAmounts||{}).length>1)&&(t.member===m.id||(t.splitWith||[]).includes(m.id)||(t.splitAmounts&&t.splitAmounts[m.id]!=null))).reduce((s,t)=>{
+          if(t.splitAmounts?.[m.id])return s+t.splitAmounts[m.id];
+          if(t.splitWith?.includes(m.id)||t.member===m.id){const all=[t.member,...(t.splitWith||[])];return s+t.amount/all.length;}
+          return s;
+        },0);
+        const soloShare=m.spent-splitShare;
+        return`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,0.04);margin-bottom:8px">
+          <div style="width:36px;height:36px;border-radius:50%;background:${m.color||'#6C63FF'}22;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${m.avatar}</div>
+          <div style="flex:1;min-width:0">
+            <p style="font-size:14px;font-weight:600">${m.displayName}${m.guest?'<span class="guest-badge">G</span>':''}</p>
+            ${splitShare>0?`<p style="font-size:10px;color:var(--accent);margin-top:1px">÷ ${fmt(splitShare)} split${soloShare>0?` + ${fmt(soloShare)} solo`:''}</p>`:''}
+          </div>
+          <p style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600">${fmt(m.spent)}</p>
+          <span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">(${pct}%)</span>
+        </div>`;
+      }).join('')}`:``}
+
+      <!-- vs last month chip -->
+      ${vsLastMonth!==null?`
+      <div style="margin-top:4px;text-align:center">
+        <span style="display:inline-block;background:rgba(255,255,255,0.06);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--muted)">
+          Compared to last month:
+          <strong style="color:${vsLastMonth<=0?'var(--green)':'var(--red)'}">${vsLastMonth>0?'+':''}${vsLastMonth.toFixed(1)}% ${vsLastMonth<=0?'decrease':'increase'}</strong>
+        </span>
+      </div>`:``}
+    </div>
+
+    <!-- TABS -->
     <div class="tab-bar">
       <button class="tab-btn ${S.tab==='transactions'?'active':''}" onclick="setTab('transactions')">Transactions</button>
       <button class="tab-btn ${S.tab==='analytics'?'active':''}" onclick="setTab('analytics')">Analytics</button>
     </div>
     ${tc}
   </div>`;
+}
+
+
+
+
+// ── STATISTICS VIEW ──
+function renderStats(){
+  const ym=S.statsMonth;
+  const [yr,mo]=ym.split('-').map(Number);
+  const nowYm=new Date().toISOString().slice(0,7);
+  const isCurrentMonth=ym===nowYm;
+  const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'short',year:'numeric'});
+  const cats=getCats();
+  const mems=S.members||{};
+  const memList=[{id:'all',displayName:'All',avatar:'👥',color:'#6C63FF'},...Object.entries(mems).map(([id,m])=>({id,...m}))];
+  const memFilter=S.statsMember;
+  const isFiltered=memFilter!=='all';
+  const filteredMem=isFiltered?getMem(memFilter):null;
+
+  // All txs for month
+  const all=txArr();
+  const monthAll=all.filter(t=>t.date&&t.date.startsWith(ym));
+
+  // For filtered member: include txs where they paid OR they're in splitWith/splitAmounts
+  const monthTxs=isFiltered
+    ?monthAll.filter(t=>t.member===memFilter||(t.splitWith||[]).includes(memFilter)||(t.splitAmounts&&t.splitAmounts[memFilter]!=null))
+    :monthAll;
+
+  // Helper: get a member's actual share from a tx
+  function getMemberShare(t,uid){
+    if(t.type!=='expense')return 0;
+    if(t.splitAmounts&&t.splitAmounts[uid]!=null)return t.splitAmounts[uid];
+    if(t.splitWith?.length>0){
+      const all=[t.member,...t.splitWith];
+      if(all.includes(uid))return t.amount/all.length;
+    }
+    if(t.member===uid&&!t.splitWith?.length&&(!t.splitAmounts||Object.keys(t.splitAmounts).length<=1))return t.amount;
+    return 0;
+  }
+
+  // Filtered income/expense: for a specific member, expense = their share
+  let inc,exp;
+  if(isFiltered){
+    inc=monthTxs.filter(t=>t.type==='income'&&t.member===memFilter).reduce((s,t)=>s+t.amount,0);
+    exp=monthTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+getMemberShare(t,memFilter),0);
+  } else {
+    inc=monthTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+    exp=monthTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  }
+  const net=inc-exp;
+
+  // Prev month
+  const prevYm=`${mo===1?yr-1:yr}-${String(mo===1?12:mo-1).padStart(2,'0')}`;
+  const prevAll=all.filter(t=>t.date&&t.date.startsWith(prevYm));
+  const prevTxs=isFiltered
+    ?prevAll.filter(t=>t.member===memFilter||(t.splitWith||[]).includes(memFilter)||(t.splitAmounts&&t.splitAmounts[memFilter]!=null))
+    :prevAll;
+  let prevInc,prevExp2;
+  if(isFiltered){
+    prevInc=prevTxs.filter(t=>t.type==='income'&&t.member===memFilter).reduce((s,t)=>s+t.amount,0);
+    prevExp2=prevTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+getMemberShare(t,memFilter),0);
+  } else {
+    prevInc=prevTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+    prevExp2=prevTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  }
+  const prevNet=prevInc-prevExp2;
+  const incChg=prevInc>0?((inc-prevInc)/prevInc*100):null;
+  const expChg=prevExp2>0?((exp-prevExp2)/prevExp2*100):null;
+  const netChg=prevNet!==0?((net-prevNet)/Math.abs(prevNet)*100):null;
+
+  // Category breakdown
+  const catData=Object.entries(cats).filter(([k])=>k!=='income').map(([key,cat])=>{
+    let total;
+    if(isFiltered){
+      total=monthTxs.filter(t=>t.category===key&&t.type==='expense').reduce((s,t)=>s+getMemberShare(t,memFilter),0);
+    } else {
+      total=monthTxs.filter(t=>t.category===key&&t.type==='expense').reduce((s,t)=>s+t.amount,0);
+    }
+    const subcats=cat.subcats?Object.entries(cat.subcats).map(([sk,sv])=>({
+      key:sk,label:sv,
+      total:isFiltered
+        ?monthTxs.filter(t=>t.category===key&&t.subcat===sk&&t.type==='expense').reduce((s,t)=>s+getMemberShare(t,memFilter),0)
+        :monthTxs.filter(t=>t.category===key&&t.subcat===sk&&t.type==='expense').reduce((s,t)=>s+t.amount,0)
+    })).filter(s=>s.total>0):[];
+    return{key,...cat,total,subcats};
+  }).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
+
+  // Member split breakdown — shown in overview when "All" selected
+  const memberShareData=Object.entries(mems).map(([id,m])=>{
+    const share=monthAll.filter(t=>t.type==='expense').reduce((s,t)=>s+getMemberShare(t,id),0);
+    const splitShare=monthAll.filter(t=>t.type==='expense'&&(t.splitWith?.length>0||Object.keys(t.splitAmounts||{}).length>1)).reduce((s,t)=>s+getMemberShare(t,id),0);
+    const soloShare=share-splitShare;
+    const earned=monthAll.filter(t=>t.type==='income'&&t.member===id).reduce((s,t)=>s+t.amount,0);
+    return{id,...m,share,splitShare,soloShare,earned};
+  }).filter(m=>m.share>0||m.earned>0).sort((a,b)=>b.share-a.share);
+  const totalShare=memberShareData.reduce((s,m)=>s+m.share,0);
+  const sharedExpTotal=monthAll.filter(t=>t.type==='expense'&&(t.splitWith?.length>0||Object.keys(t.splitAmounts||{}).length>1)).reduce((s,t)=>s+t.amount,0);
+
+  // Filtered member's split transactions detail
+  const memberSplitTxs=isFiltered?monthTxs.filter(t=>t.type==='expense'&&(t.splitWith?.length>0||Object.keys(t.splitAmounts||{}).length>1)):[];
+
+  // Trend: last 6 months
+  const trendMonths=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(yr,mo-1-i,1);
+    const tym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    let tExp,tInc;
+    if(isFiltered){
+      const ttxs=all.filter(t=>t.date&&t.date.startsWith(tym)&&(t.member===memFilter||(t.splitWith||[]).includes(memFilter)||(t.splitAmounts&&t.splitAmounts[memFilter]!=null)));
+      tExp=ttxs.filter(t=>t.type==='expense').reduce((s,t)=>s+getMemberShare(t,memFilter),0);
+      tInc=ttxs.filter(t=>t.type==='income'&&t.member===memFilter).reduce((s,t)=>s+t.amount,0);
+    } else {
+      tExp=all.filter(t=>t.date&&t.date.startsWith(tym)&&t.type==='expense').reduce((s,t)=>s+t.amount,0);
+      tInc=all.filter(t=>t.date&&t.date.startsWith(tym)&&t.type==='income').reduce((s,t)=>s+t.amount,0);
+    }
+    trendMonths.push({ym:tym,label:d.toLocaleDateString('en-MY',{month:'short'}),exp:tExp,inc:tInc});
+  }
+  const maxTrend=Math.max(...trendMonths.map(t=>Math.max(t.exp,t.inc)),1);
+
+  // Build donut
+  function buildDonut(data,totalVal,colorFn,labelFn){
+    if(!totalVal)return`<circle cx="110" cy="110" r="70" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="28"/>`;
+    let off=0;
+    return data.map(item=>{
+      const pct=item.val/totalVal*100;
+      const circ=2*Math.PI*70;
+      const dash=pct/100*circ;
+      const seg=`<circle cx="110" cy="110" r="70" fill="none" stroke="${colorFn(item)}" stroke-width="28"
+        stroke-dasharray="${dash} ${circ-dash}" stroke-dashoffset="${-circ*off/100}"
+        transform="rotate(-90 110 110)"/>`;
+      off+=pct;return seg;
+    }).join('');
+  }
+
+  const overviewContent=`
+    <!-- Income / Expense cards -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:14px">
+        <p style="font-size:11px;color:var(--muted);margin-bottom:5px">Income</p>
+        <p style="font-family:'DM Mono',monospace;font-size:20px;font-weight:700;color:#4A9EFF">${fmt(inc)}</p>
+        ${incChg!==null?`<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:${incChg<=0?'rgba(255,107,107,0.15)':'rgba(105,210,160,0.15)'};display:inline-block">
+          <p style="font-size:10px;color:${incChg<=0?'var(--red)':'var(--green)'};font-weight:600">${incChg>0?'+':''}${incChg.toFixed(1)}% vs last mo</p>
+        </div>`:''}
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:14px">
+        <p style="font-size:11px;color:var(--muted);margin-bottom:5px">Expense</p>
+        <p style="font-family:'DM Mono',monospace;font-size:20px;font-weight:700;color:var(--text)">${fmt(exp)}</p>
+        ${expChg!==null?`<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:${expChg>=0?'rgba(255,107,107,0.15)':'rgba(105,210,160,0.15)'};display:inline-block">
+          <p style="font-size:10px;color:${expChg>=0?'var(--red)':'var(--green)'};font-weight:600">${expChg>0?'+':''}${expChg.toFixed(1)}% vs last mo</p>
+        </div>`:''}
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <p style="font-size:13px;color:var(--muted)">Net Income</p>
+      <div style="text-align:right">
+        <p style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:${net>=0?'#4A9EFF':'var(--red)'}">${fmt(Math.abs(net))}</p>
+        ${netChg!==null?`<p style="font-size:10px;color:${netChg>=0?'var(--green)':'var(--red)'};margin-top:2px">${netChg>0?'+':''}${netChg.toFixed(1)}% vs last mo</p>`:''}
+      </div>
+    </div>
+
+    ${isFiltered?`
+    <!-- Filtered member split detail -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <span style="font-size:24px">${filteredMem?.avatar||'👤'}</span>
+        <div>
+          <p style="font-size:14px;font-weight:700">${filteredMem?.displayName||'Member'}</p>
+          <p style="font-size:11px;color:var(--dim)">Total share: ${fmt(exp)}</p>
+        </div>
+      </div>
+      ${memberSplitTxs.length>0?`
+      <p style="font-size:11px;color:var(--dim);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px">Split Transactions</p>
+      ${memberSplitTxs.map(t=>{
+        const share=getMemberShare(t,memFilter);
+        const cat=cats[t.category]||DEFAULT_CATS.other;
+        const all=[t.member,...(t.splitWith||[])];
+        const splitCount=t.splitAmounts?Object.keys(t.splitAmounts).length:all.length;
+        const isPayer=t.member===memFilter;
+        return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+          <div style="width:32px;height:32px;border-radius:9px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${cat.icon}</div>
+          <div style="flex:1;min-width:0">
+            <p style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</p>
+            <p style="font-size:10px;color:var(--dim);margin-top:1px">${t.date} · ÷${splitCount} split${isPayer?' · paid by you':''}</p>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <p style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--red)">-${fmt(share)}</p>
+            <p style="font-size:10px;color:var(--dim)">of ${fmt(t.amount)}</p>
+          </div>
+        </div>`;
+      }).join('')}
+      `:''}
+      ${monthTxs.filter(t=>t.type==='expense'&&t.member===memFilter&&!t.splitWith?.length&&(!t.splitAmounts||Object.keys(t.splitAmounts).length<=1)).length>0?`
+      <p style="font-size:11px;color:var(--dim);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-top:12px;margin-bottom:10px">Solo Transactions</p>
+      ${monthTxs.filter(t=>t.type==='expense'&&t.member===memFilter&&!t.splitWith?.length&&(!t.splitAmounts||Object.keys(t.splitAmounts).length<=1)).map(t=>{
+        const cat=cats[t.category]||DEFAULT_CATS.other;
+        return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+          <div style="width:32px;height:32px;border-radius:9px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${cat.icon}</div>
+          <div style="flex:1;min-width:0">
+            <p style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</p>
+            <p style="font-size:10px;color:var(--dim);margin-top:1px">${t.date}</p>
+          </div>
+          <p style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--red)">-${fmt(t.amount)}</p>
+        </div>`;
+      }).join('')}
+      `:''}
+    </div>`:''}
+
+    <!-- Donut + category breakdown -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px">
+      <p style="font-size:14px;font-weight:700;margin-bottom:14px">Expenses by Category</p>
+      ${catData.length?`
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+        <svg width="120" height="120" viewBox="0 0 220 220" style="flex-shrink:0">
+          <circle cx="110" cy="110" r="70" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="28"/>
+          ${buildDonut(catData.map(c=>({...c,val:c.total})),exp,c=>c.color,c=>c.label)}
+          <text x="110" y="106" text-anchor="middle" fill="var(--text)" font-size="13" font-weight="700" font-family="DM Mono,monospace">${getCur().symbol}${exp>=1000?(exp/1000).toFixed(1)+'K':exp.toFixed(0)}</text>
+          <text x="110" y="122" text-anchor="middle" fill="var(--muted)" font-size="10">total</text>
+        </svg>
+        <div style="flex:1;min-width:0">
+          ${catData.slice(0,5).map(c=>{
+            const pct=exp>0?Math.round(c.total/exp*100):0;
+            return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+              <div style="width:9px;height:9px;border-radius:3px;background:${c.color};flex-shrink:0"></div>
+              <span style="font-size:11px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.icon} ${c.label}</span>
+              <span style="font-size:11px;font-weight:600">${pct}%</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      ${catData.map(c=>{
+        const pct=exp>0?Math.round(c.total/exp*100):0;
+        return`<div style="margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <div style="width:30px;height:30px;border-radius:9px;background:${c.color}22;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${c.icon}</div>
+            <div style="flex:1">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+                <span style="font-size:12px;font-weight:600">${c.label}</span>
+                <span style="font-family:'DM Mono',monospace;font-size:12px">${fmt(c.total)}</span>
+              </div>
+              <div style="height:4px;border-radius:999px;background:rgba(255,255,255,0.07)"><div style="height:100%;border-radius:999px;background:${c.color};width:${pct}%"></div></div>
+            </div>
+            <span style="font-size:10px;color:var(--dim);min-width:26px;text-align:right">${pct}%</span>
+          </div>
+          ${c.subcats.length?`<div style="padding-left:38px">${c.subcats.map(s=>{
+            const sp=c.total>0?Math.round(s.total/c.total*100):0;
+            return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+              <span style="font-size:11px;color:var(--muted);flex:1">${s.label}</span>
+              <div style="width:50px;height:3px;border-radius:999px;background:rgba(255,255,255,0.07)"><div style="height:100%;border-radius:999px;background:${c.color}88;width:${sp}%"></div></div>
+              <span style="font-size:10px;color:var(--dim);min-width:40px;text-align:right">${fmt(s.total)}</span>
+            </div>`;
+          }).join('')}</div>`:''}
+        </div>`;
+      }).join('')}`
+      :'<p style="font-size:13px;color:var(--dim);text-align:center;padding:20px 0">No expenses this month</p>'}
+    </div>
+
+    ${!isFiltered?`
+    <!-- Member spending section (All view only) -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px">
+      <p style="font-size:14px;font-weight:700;margin-bottom:14px">Member Spending</p>
+      <!-- Member donut -->
+      ${memberShareData.length&&totalShare>0?`
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+        <svg width="100" height="100" viewBox="0 0 220 220" style="flex-shrink:0">
+          <circle cx="110" cy="110" r="70" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="40"/>
+          ${buildDonut(memberShareData.map(m=>({...m,val:m.share})),totalShare,m=>m.color||'#6C63FF',m=>m.displayName)}
+        </svg>
+        <div style="flex:1;min-width:0">
+          ${memberShareData.map(m=>{
+            const pct=Math.round(m.share/totalShare*100);
+            return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+              <div style="width:9px;height:9px;border-radius:50%;background:${m.color||'#6C63FF'};flex-shrink:0"></div>
+              <span style="font-size:11px;color:var(--muted);flex:1">${m.avatar} ${m.displayName}</span>
+              <span style="font-size:11px;font-weight:600">${pct}%</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`:''}
+      <!-- Shared row -->
+      ${sharedExpTotal>0?`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.2);margin-bottom:8px">
+        <span style="font-size:20px">👥</span>
+        <div style="flex:1">
+          <p style="font-size:13px;font-weight:600;color:var(--accent)">Shared Expenses</p>
+          <p style="font-size:10px;color:var(--dim)">Split across multiple members</p>
+        </div>
+        <p style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--accent)">${fmt(sharedExpTotal)}</p>
+      </div>`:''}
+      <!-- Per-member rows with split detail -->
+      ${memberShareData.map(m=>{
+        const pct=totalShare>0?Math.round(m.share/totalShare*100):0;
+        return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="width:34px;height:34px;border-radius:50%;background:${m.color||'#6C63FF'}22;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${m.avatar}</div>
+          <div style="flex:1;min-width:0">
+            <p style="font-size:13px;font-weight:600">${m.displayName}</p>
+            <p style="font-size:10px;color:var(--accent);margin-top:1px">
+              ${m.splitShare>0?`÷ ${fmt(m.splitShare)} split`:''} ${m.soloShare>0?`${m.splitShare>0?'+ ':''}${fmt(m.soloShare)} solo`:''}
+            </p>
+          </div>
+          <div style="text-align:right">
+            <p style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--red)">${fmt(m.share)}</p>
+            ${m.earned>0?`<p style="font-family:'DM Mono',monospace;font-size:10px;color:var(--green)">+${fmt(m.earned)}</p>`:''}
+            <p style="font-size:10px;color:var(--dim)">${pct}%</p>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`:''}`;
+
+  // ── BUDGET TAB CONTENT ──
+  // Sync budget data: use S.budgets only if S.budgetMonth matches statsMonth
+  const budgetForMonth=S.budgetMonth===ym?S.budgets:{};
+  const catBudgetTotal=Object.entries(budgetForMonth).filter(([k])=>k!=='_total').reduce((s,[,v])=>s+(parseFloat(v)||0),0);
+  const manualBudgetTotal=parseFloat(budgetForMonth._total)||0;
+  const monthBudget=manualBudgetTotal>0?manualBudgetTotal:catBudgetTotal;
+
+  // All-time category data with monthly breakdown
+  const allTimeCatData=Object.entries(cats).filter(([k])=>k!=='income').map(([key,cat])=>{
+    const allTimeTotal=txArr().filter(t=>t.type==='expense'&&t.category===key).reduce((s,t)=>s+t.amount,0);
+    const monthTotal=isFiltered
+      ?monthTxs.filter(t=>t.type==='expense'&&t.category===key).reduce((s,t)=>s+getMemberShare(t,memFilter),0)
+      :monthAll.filter(t=>t.type==='expense'&&t.category===key).reduce((s,t)=>s+t.amount,0);
+    const bgt=parseFloat(budgetForMonth[key])||0;
+    const txCountAll=txArr().filter(t=>t.type==='expense'&&t.category===key).length;
+    const txCountMonth=monthAll.filter(t=>t.type==='expense'&&t.category===key).length;
+    const subcats=cat.subcats?Object.entries(cat.subcats).map(([sk,sv])=>({
+      key:sk,label:sv,
+      allTimeTotal:txArr().filter(t=>t.type==='expense'&&t.category===key&&t.subcat===sk).reduce((s,t)=>s+t.amount,0),
+      monthTotal:isFiltered
+        ?monthTxs.filter(t=>t.type==='expense'&&t.category===key&&t.subcat===sk).reduce((s,t)=>s+getMemberShare(t,memFilter),0)
+        :monthAll.filter(t=>t.type==='expense'&&t.category===key&&t.subcat===sk).reduce((s,t)=>s+t.amount,0),
+    })).filter(s=>s.allTimeTotal>0):[];
+    return{key,...cat,allTimeTotal,monthTotal,bgt,txCountAll,txCountMonth,subcats};
+  });
+
+  // Month-only categories (for the monthly card)
+  const monthCatData=allTimeCatData.filter(c=>c.monthTotal>0||c.bgt>0).sort((a,b)=>b.monthTotal-a.monthTotal);
+  // All-time categories (for the all-time card)
+  const allTimeCatDataFiltered=allTimeCatData.filter(c=>c.allTimeTotal>0).sort((a,b)=>b.allTimeTotal-a.allTimeTotal);
+
+  const allTimeExpTotal=allTimeCatDataFiltered.reduce((s,c)=>s+c.allTimeTotal,0);
+  const maxCatAllTime=allTimeCatDataFiltered.reduce((a,c)=>Math.max(a,c.allTimeTotal),1);
+  const monthExpCount=monthAll.filter(t=>t.type==='expense').length;
+  const allTimeExpCount=txArr().filter(t=>t.type==='expense').length;
+
+  const budgetContent=`
+    <!-- Month budget summary -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${monthBudget>0?12:6}px">
+        <p style="font-size:14px;font-weight:700">${monthLabel} Budget</p>
+        ${S.budgetMonth!==ym
+          ?`<span style="font-size:11px;color:var(--dim);font-style:italic">Loading…</span>`
+          :monthBudget>0
+            ?`<span style="font-size:12px;font-weight:600;background:rgba(255,255,255,0.07);padding:4px 10px;border-radius:10px">${fmt(monthBudget)}</span>`
+            :`<button onclick="goBudget()" style="font-size:11px;padding:5px 12px;border-radius:8px;background:rgba(108,99,255,0.12);color:var(--accent);border:1px solid rgba(108,99,255,0.2);cursor:pointer;font-family:'Sora',sans-serif">+ Set Budget</button>`}
+      </div>
+      ${monthBudget>0?`
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px">
+          <span>Spent ${fmt(exp)}</span>
+          <span style="color:${exp>monthBudget?'var(--red)':exp/monthBudget>0.8?'var(--yellow)':'var(--green)'};font-weight:600">${Math.round(exp/monthBudget*100)}% used</span>
+        </div>
+        <div class="budget-bar-track" style="height:7px"><div class="budget-bar-fill" style="width:${Math.min(100,exp/monthBudget*100)}%;background:${exp>monthBudget?'var(--red)':exp/monthBudget>0.8?'var(--yellow)':'var(--green)'}"></div></div>
+        <p style="font-size:11px;margin-top:6px;color:${exp>monthBudget?'var(--red)':'var(--accent2)'}">
+          ${exp>monthBudget?'⚠️ Over by '+fmt(exp-monthBudget):'✓ Remaining: '+fmt(monthBudget-exp)}
+        </p>`
+      :`<p style="font-size:11px;color:var(--dim)">No budget set for this month.</p>`}
+    </div>
+
+    <!-- THIS MONTH category breakdown -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <p style="font-size:14px;font-weight:700">${monthLabel} — by Category</p>
+        <p style="font-size:11px;color:var(--dim)">${fmt(exp)}</p>
+      </div>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:14px">${monthExpCount} transactions this month</p>
+      ${monthCatData.length?monthCatData.map(c=>{
+        const pct=exp>0?Math.round(c.monthTotal/exp*100):0;
+        const bgtOver=c.bgt>0&&c.monthTotal>c.bgt;
+        const bgtPct=c.bgt>0?Math.min(100,Math.round(c.monthTotal/c.bgt*100)):0;
+        const monthSubcats=c.subcats.filter(s=>s.monthTotal>0);
+        return`<div style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <div style="width:32px;height:32px;border-radius:9px;background:${c.color}22;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${c.icon}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+                <span style="font-size:13px;font-weight:600">${c.label}</span>
+                <div style="text-align:right">
+                  <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700">${fmt(c.monthTotal)}</span>
+                  ${c.bgt>0?`<span style="font-size:10px;color:${bgtOver?'var(--red)':'var(--dim)'}"> / ${fmt(c.bgt)}</span>`:''}
+                </div>
+              </div>
+              <div style="height:6px;border-radius:999px;background:rgba(255,255,255,0.07)">
+                <div style="height:100%;border-radius:999px;background:${bgtOver?'var(--red)':c.color};width:${c.bgt>0?bgtPct:pct}%"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:3px">
+                <span style="font-size:10px;color:var(--dim)">${c.txCountMonth} txns this month</span>
+                <span style="font-size:10px;color:${bgtOver?'var(--red)':'var(--dim)'}">${c.bgt>0?bgtPct+'% of budget':pct+'% of total'}${bgtOver?' ⚠️':''}</span>
+              </div>
+            </div>
+          </div>
+          ${monthSubcats.length?`<div style="padding-left:40px;border-left:2px solid ${c.color}33;margin-left:16px">
+            ${monthSubcats.map(s=>{
+              const sp=c.monthTotal>0?Math.round(s.monthTotal/c.monthTotal*100):0;
+              return`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                <span style="font-size:11px;color:var(--muted);flex:1">${s.label}</span>
+                <div style="width:60px;height:3px;border-radius:999px;background:rgba(255,255,255,0.07)">
+                  <div style="height:100%;border-radius:999px;background:${c.color}88;width:${sp}%"></div>
+                </div>
+                <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);min-width:55px;text-align:right">${fmt(s.monthTotal)}</span>
+                <span style="font-size:10px;color:var(--dim);min-width:24px;text-align:right">${sp}%</span>
+              </div>`;
+            }).join('')}
+          </div>`:''}
+        </div>`;
+      }).join('')
+      :`<p style="font-size:13px;color:var(--dim);text-align:center;padding:16px 0">No expenses in ${monthLabel}</p>`}
+    </div>
+
+    <!-- ALL-TIME category breakdown -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <p style="font-size:14px;font-weight:700">All-Time by Category</p>
+        <p style="font-size:11px;color:var(--dim)">${fmt(allTimeExpTotal)}</p>
+      </div>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:14px">${allTimeExpCount} transactions total</p>
+      ${allTimeCatDataFiltered.length?allTimeCatDataFiltered.map(c=>{
+        const barPct=Math.round(c.allTimeTotal/maxCatAllTime*100);
+        const ofTotal=allTimeExpTotal>0?Math.round(c.allTimeTotal/allTimeExpTotal*100):0;
+        return`<div style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <div style="width:32px;height:32px;border-radius:9px;background:${c.color}22;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${c.icon}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+                <span style="font-size:13px;font-weight:600">${c.label}</span>
+                <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700">${fmt(c.allTimeTotal)}</span>
+              </div>
+              <div style="height:6px;border-radius:999px;background:rgba(255,255,255,0.07)">
+                <div style="height:100%;border-radius:999px;background:${c.color};width:${barPct}%"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:3px">
+                <span style="font-size:10px;color:var(--dim)">${c.txCountAll} txns · ${ofTotal}% of all spending</span>
+              </div>
+            </div>
+            <span style="font-size:10px;color:var(--dim);min-width:26px;text-align:right;flex-shrink:0">${ofTotal}%</span>
+          </div>
+          ${c.subcats.length?`<div style="padding-left:40px;border-left:2px solid ${c.color}33;margin-left:16px">
+            ${c.subcats.map(s=>{
+              const sp=c.allTimeTotal>0?Math.round(s.allTimeTotal/c.allTimeTotal*100):0;
+              return`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                <span style="font-size:11px;color:var(--muted);flex:1">${s.label}</span>
+                <div style="width:60px;height:3px;border-radius:999px;background:rgba(255,255,255,0.07)">
+                  <div style="height:100%;border-radius:999px;background:${c.color}88;width:${sp}%"></div>
+                </div>
+                <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);min-width:55px;text-align:right">${fmt(s.allTimeTotal)}</span>
+                <span style="font-size:10px;color:var(--dim);min-width:24px;text-align:right">${sp}%</span>
+              </div>`;
+            }).join('')}
+          </div>`:''}
+        </div>`;
+      }).join('')
+      :'<p style="font-size:13px;color:var(--dim);text-align:center;padding:16px 0">No expense history yet</p>'}
+    </div>`;
+
+  const trendContent=`
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px">
+      <p style="font-size:14px;font-weight:700;margin-bottom:16px">6-Month Trend${isFiltered?` · ${filteredMem?.displayName||''}`:''}
+      </p>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:120px;margin-bottom:8px">
+        ${trendMonths.map(m=>{
+          const expH=maxTrend>0?Math.round(m.exp/maxTrend*100):0;
+          const incH=maxTrend>0?Math.round(m.inc/maxTrend*100):0;
+          const isThis=m.ym===ym;
+          return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+            <div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:100px">
+              <div style="flex:1;border-radius:4px 4px 0 0;background:${isThis?'var(--green)':'rgba(105,210,160,0.4)'};height:${incH}%;min-height:${m.inc>0?3:0}px"></div>
+              <div style="flex:1;border-radius:4px 4px 0 0;background:${isThis?'var(--red)':'rgba(255,107,107,0.4)'};height:${expH}%;min-height:${m.exp>0?3:0}px"></div>
+            </div>
+            <p style="font-size:9px;color:${isThis?'var(--accent)':'var(--dim)'};font-weight:${isThis?'700':'400'}">${m.label}</p>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <div style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;border-radius:3px;background:var(--green)"></div><span style="font-size:11px;color:var(--muted)">Income</span></div>
+        <div style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;border-radius:3px;background:var(--red)"></div><span style="font-size:11px;color:var(--muted)">Expense</span></div>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:16px">
+      <p style="font-size:14px;font-weight:700;margin-bottom:14px">Monthly Summary</p>
+      ${trendMonths.slice().reverse().map(m=>{
+        const mNet=m.inc-m.exp;
+        const isThis=m.ym===ym;
+        return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <p style="font-size:12px;font-weight:${isThis?'700':'500'};color:${isThis?'var(--accent)':'var(--text)'};min-width:44px">${m.label}</p>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;font-size:11px">
+              <span style="color:var(--green)">+${fmt(m.inc)}</span>
+              <span style="color:var(--red)">-${fmt(m.exp)}</span>
+            </div>
+          </div>
+          <p style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${mNet>=0?'var(--green)':'var(--red)'};min-width:70px;text-align:right">${mNet>=0?'+':''}${fmt(Math.abs(mNet))}</p>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  const tabs=['overview','budget','trend'];
+  const tabLabels={overview:'Overview',budget:'Budget',trend:'Trend'};
+
+  return`<div class="fade-in settings-page" style="padding-top:0">
+    <div style="position:sticky;top:0;z-index:20;background:var(--bg);padding-top:52px">
+      <div style="display:flex;border-bottom:1px solid var(--border);padding:0 4px">
+        ${tabs.map(t=>`<button data-stab="${t}" style="flex:1;padding:12px 8px;font-size:13px;font-weight:700;background:none;border:none;border-bottom:2px solid ${S.statsTab===t?'var(--accent)':'transparent'};color:${S.statsTab===t?'var(--accent)':'var(--muted)'};cursor:pointer;font-family:'Sora',sans-serif">${tabLabels[t]}</button>`).join('')}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+        <button id="statsPrevBtn" style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.07);border:none;color:var(--text);font-size:16px;cursor:pointer">‹</button>
+        <p style="font-size:16px;font-weight:700">${monthLabel}</p>
+        <button id="statsNextBtn" style="width:30px;height:30px;border-radius:8px;background:${isCurrentMonth?'rgba(255,255,255,0.03)':'rgba(255,255,255,0.07)'};border:none;color:${isCurrentMonth?'var(--dim)':'var(--text)'};font-size:16px;cursor:pointer" ${isCurrentMonth?'disabled':''}>›</button>
+      </div>
+      <div style="display:flex;gap:6px;padding:0 16px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch">
+        ${memList.map(m=>`<button data-smem="${m.id}" style="flex-shrink:0;padding:6px 13px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid ${S.statsMember===m.id?'var(--accent)':'var(--border)'};background:${S.statsMember===m.id?'rgba(108,99,255,0.2)':'rgba(255,255,255,0.04)'};color:${S.statsMember===m.id?'var(--accent)':'var(--muted)'};cursor:pointer;font-family:'Sora',sans-serif">${m.avatar} ${m.displayName}</button>`).join('')}
+      </div>
+    </div>
+    <div style="padding:0 16px 20px">
+      ${S.statsTab==='trend'?trendContent:S.statsTab==='budget'?budgetContent:overviewContent}
+    </div>
+  </div>`;
+}
+window.goStats=()=>{S.view='stats';S.statsTab='overview';render();};
+
+function attachStatsListeners(){
+  // Remove old listeners by cloning
+  ['statsPrevBtn','statsNextBtn'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){const clone=el.cloneNode(true);el.parentNode.replaceChild(clone,el);}
+  });
+  document.querySelectorAll('[data-stab],[data-smem],[data-sync-budget]').forEach(btn=>{
+    const clone=btn.cloneNode(true);btn.parentNode.replaceChild(clone,btn);
+  });
+
+  document.querySelectorAll('[data-stab]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      S.statsTab=btn.dataset.stab;
+      if(S.statsTab==='budget'&&S.budgetMonth!==S.statsMonth)switchBudgetMonth(S.statsMonth);
+      renderPage();
+    });
+  });
+  document.getElementById('statsPrevBtn')?.addEventListener('click',()=>{
+    const[yr,mo]=S.statsMonth.split('-').map(Number);
+    S.statsMonth=`${mo===1?yr-1:yr}-${String(mo===1?12:mo-1).padStart(2,'0')}`;
+    if(S.statsTab==='budget')switchBudgetMonth(S.statsMonth);
+    else renderPage();
+  });
+  document.getElementById('statsNextBtn')?.addEventListener('click',()=>{
+    const[yr,mo]=S.statsMonth.split('-').map(Number);
+    const next=`${mo===12?yr+1:yr}-${String(mo===12?1:mo+1).padStart(2,'0')}`;
+    if(next<=new Date().toISOString().slice(0,7)){
+      S.statsMonth=next;
+      if(S.statsTab==='budget')switchBudgetMonth(S.statsMonth);
+      else renderPage();
+    }
+  });
+  document.querySelectorAll('[data-smem]').forEach(btn=>{
+    btn.addEventListener('click',()=>{S.statsMember=btn.dataset.smem;renderPage();});
+  });
+  document.querySelector('[data-sync-budget]')?.addEventListener('click',()=>{
+    switchBudgetMonth(S.statsMonth);
+  });
+}
+
+// ── CALENDAR VIEW ──
+function renderCalendar(){
+  const ym=S.calendarMonth;
+  const [yr,mo]=ym.split('-').map(Number);
+  const nowYm=new Date().toISOString().slice(0,7);
+  const todayStr=td();
+  const isCurrentMonth=ym===nowYm;
+  const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'short',year:'numeric'});
+
+  // All txs for this month
+  const all=txArr();
+  const monthTxs=all.filter(t=>t.date&&t.date.startsWith(ym));
+
+  // Build daily totals map: date -> {inc, exp}
+  const daily={};
+  monthTxs.forEach(t=>{
+    if(!daily[t.date])daily[t.date]={inc:0,exp:0};
+    if(t.type==='income')daily[t.date].inc+=t.amount;
+    else daily[t.date].exp+=t.amount;
+  });
+
+  // Month summary
+  const totalInc=monthTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const totalExp=monthTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const balance=totalInc-totalExp;
+
+  // Carry-over: sum of all transactions before this month
+  const carryOver=all.filter(t=>t.date&&t.date<ym+'-01').reduce((s,t)=>s+(t.type==='income'?t.amount:-t.amount),0);
+
+  // Calendar grid: find first day of month (0=Sun)
+  const firstDay=new Date(yr,mo-1,1).getDay();
+  const daysInMonth=new Date(yr,mo,0).getDate();
+  const cur=getCur();
+
+  // Build grid cells
+  const cells=[];
+  // Empty cells before first day
+  for(let i=0;i<firstDay;i++)cells.push(null);
+  // Day cells
+  for(let d=1;d<=daysInMonth;d++)cells.push(d);
+
+  const DAY_LABELS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Selected day transactions
+  const selDay=S.calendarDay;
+  const selDayTxs=selDay?all.filter(t=>t.date===selDay).sort((a,b)=>(b.ts||0)-(a.ts||0)):[];
+  const cats=getCats();
+
+  return`<div class="fade-in" style="display:flex;flex-direction:column;height:100%">
+
+    <!-- HEADER -->
+    <div style="padding:52px 16px 0;display:flex;align-items:center;gap:8px">
+      <button id="calPrevBtn" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.07);border:none;color:var(--text);font-size:18px;cursor:pointer;flex-shrink:0">‹</button>
+      <div style="flex:1;text-align:center">
+        <p style="font-size:17px;font-weight:700;letter-spacing:-0.01em">${monthLabel}${isCurrentMonth?'':''} <span style="color:var(--dim);font-size:14px">▾</span></p>
+      </div>
+      <button id="calNextBtn" style="width:34px;height:34px;border-radius:10px;background:${isCurrentMonth?'rgba(255,255,255,0.03)':'rgba(255,255,255,0.07)'};border:none;color:${isCurrentMonth?'var(--dim)':'var(--text)'};font-size:18px;cursor:pointer;flex-shrink:0" ${isCurrentMonth?'disabled':''}>›</button>
+    </div>
+
+    <!-- SUMMARY ROW -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;margin:12px 16px 0;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+      <div style="padding:10px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)">
+        <p style="font-size:10px;color:var(--muted);margin-bottom:2px">Income</p>
+        <p style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:#4A9EFF">${fmt(totalInc)}</p>
+      </div>
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+        <p style="font-size:10px;color:var(--muted);margin-bottom:2px">Expense</p>
+        <p style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--red)">${fmt(totalExp)}</p>
+      </div>
+      <div style="padding:10px 14px;border-right:1px solid var(--border)">
+        <p style="font-size:10px;color:var(--muted);margin-bottom:2px">Carry-over</p>
+        <p style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--text)">${fmt(Math.abs(carryOver))}</p>
+      </div>
+      <div style="padding:10px 14px">
+        <p style="font-size:10px;color:var(--muted);margin-bottom:2px">Balance</p>
+        <p style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:${balance+carryOver>=0?'#4A9EFF':'var(--red)'}"> ${fmt(Math.abs(balance+carryOver))}</p>
+      </div>
+    </div>
+
+    <!-- DAY LABELS -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:10px 16px 0;gap:0">
+      ${DAY_LABELS.map((d,i)=>`<div style="text-align:center;font-size:11px;font-weight:700;color:${i===0?'var(--red)':i===6?'#4A9EFF':'var(--muted)'};padding:4px 0">${d}</div>`).join('')}
+    </div>
+
+    <!-- CALENDAR GRID -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:0 16px;gap:0;flex:1">
+      ${cells.map((d,i)=>{
+        if(!d)return`<div style="border:0.5px solid rgba(255,255,255,0.05);min-height:62px"></div>`;
+        const dateStr=`${yr}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const dd=daily[dateStr]||{inc:0,exp:0};
+        const isToday=dateStr===todayStr;
+        const isSel=dateStr===selDay;
+        const col=(i%7);
+        const dayColor=col===0?'var(--red)':col===6?'#4A9EFF':'var(--text)';
+        const future=dateStr>todayStr;
+        return`<div onclick="selectCalDay('${dateStr}')" style="border:0.5px solid rgba(255,255,255,0.05);min-height:62px;padding:5px 4px;cursor:pointer;background:${isSel?'rgba(108,99,255,0.25)':isToday?'rgba(108,99,255,0.15)':'transparent'};position:relative;transition:background 0.15s">
+          <p style="font-size:12px;font-weight:${isToday?'700':'500'};color:${isToday?'var(--accent)':future?'var(--dim)':dayColor};text-align:center;line-height:1.2">${d}</p>
+          ${dd.inc>0?`<p style="font-size:9px;color:#4A9EFF;text-align:center;margin-top:2px;font-family:'DM Mono',monospace;line-height:1.2">${shortFmt(dd.inc)}</p>`:''}
+          ${dd.exp>0?`<p style="font-size:9px;color:var(--red);text-align:center;margin-top:1px;font-family:'DM Mono',monospace;line-height:1.2">${shortFmt(dd.exp)}</p>`:''}
+          ${isToday?`<div style="position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--accent)"></div>`:''}
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- SELECTED DAY PANEL -->
+    ${selDay?`
+    <div style="margin:0 16px 8px;border-top:1px solid var(--border);padding-top:12px;max-height:240px;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <p style="font-size:13px;font-weight:700">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{weekday:'long',day:'numeric',month:'long'})}</p>
+        <button onclick="selectCalDay(null)" style="background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      ${selDayTxs.length===0
+        ?`<p style="font-size:13px;color:var(--dim);text-align:center;padding:12px 0">No transactions</p>`
+        :selDayTxs.map(t=>{
+          const cat=cats[t.category]||DEFAULT_CATS.other;
+          const mem=getMem(t.member);
+          return`<div class="tx-row surface" onclick="openTxModal('${t._k}')" style="margin-bottom:6px">
+            <div class="tx-icon" style="background:${cat.color}22;width:36px;height:36px;border-radius:11px">${cat.icon}</div>
+            <div class="tx-info">
+              <p class="tx-desc" style="font-size:13px">${t.description}</p>
+              <span class="tag" style="background:${(mem.color||'#999')}33;color:${mem.color||'#999'};font-size:10px">${mem.avatar} ${mem.displayName}</span>
+            </div>
+            <p class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--text)'}; font-size:14px">${t.type==='income'?'+':'-'}${fmt(t.amount)}</p>
+          </div>`;
+        }).join('')}
+    </div>`
+    :`<div style="height:8px"></div>`}
+  </div>`;
+}
+
+// Short format: show K for thousands to fit in calendar cell
+function shortFmt(n){
+  const c=getCur();
+  const sym=c?c.symbol:'RM';
+  if(n>=1000)return sym+(n/1000).toFixed(1)+'K';
+  return sym+n.toFixed(0);
+}
+
+function attachCalendarListeners(){
+  document.getElementById('calPrevBtn')?.addEventListener('click',()=>{
+    const[yr,mo]=S.calendarMonth.split('-').map(Number);
+    const ny=mo===1?yr-1:yr,nm=mo===1?12:mo-1;
+    S.calendarMonth=`${ny}-${String(nm).padStart(2,'0')}`;
+    S.calendarDay=null;
+    renderPage();
+  });
+  document.getElementById('calNextBtn')?.addEventListener('click',()=>{
+    const[yr,mo]=S.calendarMonth.split('-').map(Number);
+    const ny=mo===12?yr+1:yr,nm=mo===12?1:mo+1;
+    const next=`${ny}-${String(nm).padStart(2,'0')}`;
+    if(next<=new Date().toISOString().slice(0,7)){
+      S.calendarMonth=next;S.calendarDay=null;renderPage();
+    }
+  });
+}
+
+window.goCalendar=()=>{S.view='calendar';S.calendarDay=null;render();};
+window.selectCalDay=day=>{S.calendarDay=(day===S.calendarDay||!day)?null:day;renderPage();};
+
+// ── HISTORY VIEW ──
+function renderHistory(){
+  const ym=S.historyMonth;
+  const [yr,mo]=ym.split('-').map(Number);
+  const nowYm=new Date().toISOString().slice(0,7);
+  const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+  const prevYm=`${mo===1?yr-1:yr}-${String(mo===1?12:mo-1).padStart(2,'0')}`;
+  const nextYm=`${mo===12?yr+1:yr}-${String(mo===12?1:mo+1).padStart(2,'0')}`;
+  const isCurrentMonth=ym===nowYm;
+
+  // All transactions for this month, respecting member filter
+  const f=S.filterMember;
+  const all=txArr();
+  const filtered=f==='all'?all:all.filter(t=>t.member===f||(t.splitWith||[]).includes(f));
+  const monthTxs=filtered.filter(t=>t.date&&t.date.startsWith(ym));
+  const inc=monthTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp=monthTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const bal=inc-exp;
+
+  // Month budget
+  const nowMonthBudgets=ym===S.budgetMonth?S.budgets:{};
+  // We only have budget data for S.budgetMonth so we just don't show it for other months — budget is managed separately
+  const catBgt=Object.entries(S.budgets||{}).filter(([k])=>k!=='_total'&&ym===S.budgetMonth).reduce((s,[,v])=>s+(parseFloat(v)||0),0);
+  const manualBgt=ym===S.budgetMonth?parseFloat(S.budgets?._total)||0:0;
+  const totalBudget=manualBgt>0?manualBgt:catBgt;
+  const budgetUsedPct=totalBudget>0?Math.min(100,(exp/totalBudget)*100):0;
+  const budgetBarColor=exp>totalBudget?'var(--red)':budgetUsedPct>80?'var(--yellow)':'#6C63FF';
+
+  // Category breakdown for this month
+  const cats=getCats();
+  const catBreakdown=Object.entries(cats).filter(([k])=>k!=='income').map(([key,cat])=>({
+    key,...cat,
+    total:monthTxs.filter(t=>t.category===key&&t.type==='expense').reduce((s,t)=>s+t.amount,0)
+  })).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
+
+  // Member breakdown for this month
+  const mems=S.members||{};
+  const memberBreakdown=Object.entries(mems).map(([id,m])=>({
+    id,...m,
+    spent:monthTxs.filter(t=>t.member===id&&t.type==='expense').reduce((s,t)=>s+t.amount,0),
+    earned:monthTxs.filter(t=>t.member===id&&t.type==='income').reduce((s,t)=>s+t.amount,0)
+  })).filter(m=>m.spent>0||m.earned>0).sort((a,b)=>b.spent-a.spent);
+
+  // vs prev month
+  const prevMonthTxs=all.filter(t=>t.type==='expense'&&t.date?.startsWith(prevYm));
+  const prevExp=prevMonthTxs.reduce((s,t)=>s+t.amount,0);
+  const vsLast=prevExp>0?((exp-prevExp)/prevExp*100):null;
+
+  // Group transactions by date for the list
+  const g={};
+  monthTxs.sort((a,b)=>b.date.localeCompare(a.date)||(b.ts||0)-(a.ts||0)).forEach(t=>{
+    if(!g[t.date])g[t.date]=[];g[t.date].push(t);
+  });
+
+  // Get all months that have any transactions, for the month selector dots
+  const allMonths=[...new Set(all.map(t=>t.date?.slice(0,7)).filter(Boolean))].sort().reverse();
+
+  return`<div class="fade-in" style="padding-bottom:20px">
+
+    <!-- Header -->
+    <div style="padding:52px 20px 0;display:flex;justify-content:space-between;align-items:center">
+      <p style="font-size:22px;font-weight:700;letter-spacing:-0.02em">History</p>
+      <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:20px;padding:7px 13px">
+        <span style="font-size:11px;color:var(--muted)">Total Balance</span>
+        <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--accent)">${fmt(Math.abs(allTimeTotals().bal))}</span>
+      </div>
+    </div>
+
+    <!-- Month Navigator -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 0">
+      <button id="histPrevBtn" style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.07);border:1px solid var(--border);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+      <div style="text-align:center">
+        <p style="font-size:17px;font-weight:700">${monthLabel}</p>
+        ${isCurrentMonth?'<p style="font-size:10px;color:var(--accent);font-weight:600;letter-spacing:0.06em">CURRENT MONTH</p>':''}
+      </div>
+      <button id="histNextBtn" style="width:38px;height:38px;border-radius:12px;background:${isCurrentMonth?'rgba(255,255,255,0.03)':'rgba(255,255,255,0.07)'};border:1px solid var(--border);color:${isCurrentMonth?'var(--dim)':'var(--text)'};font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center" ${isCurrentMonth?'disabled':''}>›</button>
+    </div>
+
+    <!-- Month dots: quick jump to any month with transactions -->
+    ${allMonths.length>1?`<div style="display:flex;gap:6px;padding:12px 20px 0;overflow-x:auto;-webkit-overflow-scrolling:touch">
+      ${allMonths.slice(0,12).map(m=>`<button onclick="setHistoryMonth('${m}')" style="flex-shrink:0;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid ${m===ym?'var(--accent)':'var(--border)'};background:${m===ym?'rgba(108,99,255,0.2)':'rgba(255,255,255,0.04)'};color:${m===ym?'var(--accent)':'var(--muted)'};cursor:pointer">
+        ${new Date(m+'-01').toLocaleDateString('en-MY',{month:'short',year:'2-digit'})}
+      </button>`).join('')}
+    </div>`:''}
+
+    <!-- Summary Card -->
+    <div class="card balance-card slide-up" style="margin:16px 20px 0;padding:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <p style="font-size:14px;font-weight:700">${monthLabel}</p>
+        <span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:${bal>=0?'rgba(105,210,160,0.15)':'rgba(255,107,107,0.15)'};color:${bal>=0?'var(--green)':'var(--red)'}">
+          ${bal>=0?'▲ surplus':'▼ deficit'}
+        </span>
+      </div>
+
+      <!-- Expense / Income -->
+      <div style="display:flex;gap:12px;margin-bottom:${totalBudget>0?12:16}px">
+        <div style="flex:1;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.15);border-radius:14px;padding:12px">
+          <p style="font-size:10px;color:var(--red);letter-spacing:0.08em;font-weight:600;margin-bottom:4px">EXPENSE</p>
+          <p style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--text)">${fmt(exp)}</p>
+        </div>
+        <div style="flex:1;background:rgba(105,210,160,0.08);border:1px solid rgba(105,210,160,0.15);border-radius:14px;padding:12px">
+          <p style="font-size:10px;color:var(--green);letter-spacing:0.08em;font-weight:600;margin-bottom:4px">INCOME</p>
+          <p style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--text)">${fmt(inc)}</p>
+        </div>
+      </div>
+
+      <!-- Budget bar (only if budget set for viewed month) -->
+      ${totalBudget>0?`<div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px">
+          <span>Budget used</span>
+          <span style="color:${budgetBarColor};font-weight:600">${fmt(exp)} / ${fmt(totalBudget)}</span>
+        </div>
+        <div class="budget-bar-track"><div class="budget-bar-fill" style="width:${budgetUsedPct}%;background:${budgetBarColor}"></div></div>
+        <p style="font-size:11px;margin-top:5px;color:${exp>totalBudget?'var(--red)':'var(--accent2)'}">
+          ${exp>totalBudget?'⚠️ Over by '+fmt(exp-totalBudget):'✓ Remaining: '+fmt(totalBudget-exp)+' ('+Math.round(100-budgetUsedPct)+'%)'}
+        </p>
+      </div>`:''}
+
+      <!-- Category breakdown -->
+      ${catBreakdown.length?`
+      <p style="font-size:11px;color:var(--dim);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">By Category</p>
+      ${catBreakdown.map(c=>{
+        const pct=exp>0?Math.round(c.total/exp*100):0;
+        return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:32px;height:32px;border-radius:10px;background:${c.color}22;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${c.icon}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:600">${c.label}</span>
+              <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)">${fmt(c.total)}</span>
+            </div>
+            <div style="height:4px;border-radius:999px;background:rgba(255,255,255,0.07)"><div style="height:100%;border-radius:999px;background:${c.color};width:${pct}%"></div></div>
+          </div>
+          <span style="font-size:11px;color:var(--dim);min-width:30px;text-align:right">${pct}%</span>
+        </div>`;
+      }).join('')}`:''}
+
+      <!-- Member breakdown -->
+      ${memberBreakdown.length?`
+      <p style="font-size:11px;color:var(--dim);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-top:${catBreakdown.length?12:0}px;margin-bottom:10px">By Member</p>
+      ${memberBreakdown.map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,0.03);margin-bottom:6px">
+        <span style="font-size:20px">${m.avatar}</span>
+        <span style="font-size:13px;font-weight:600;flex:1">${m.displayName}</span>
+        ${m.spent>0?`<span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--red)">-${fmt(m.spent)}</span>`:''}
+        ${m.earned>0?`<span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--green);margin-left:6px">+${fmt(m.earned)}</span>`:''}
+      </div>`).join('')}`:''}
+
+      <!-- vs last month -->
+      ${vsLast!==null?`<div style="margin-top:12px;text-align:center">
+        <span style="display:inline-block;background:rgba(255,255,255,0.05);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--muted)">
+          vs last month: <strong style="color:${vsLast<=0?'var(--green)':'var(--red)'}">${vsLast>0?'+':''}${vsLast.toFixed(1)}% ${vsLast<=0?'decrease':'increase'}</strong>
+        </span>
+      </div>`:``}
+    </div>
+
+    <!-- Transaction List -->
+    <div style="padding:0 20px">
+      ${monthTxs.length===0
+        ?`<div class="empty" style="padding:30px 0">No transactions in ${monthLabel}</div>`
+        :Object.entries(g).map(([date,txs])=>`
+        <div style="margin-top:18px">
+          <p class="tx-date-label">${dlabel(date)}</p>
+          <div class="tx-list" style="margin-top:8px">
+            ${txs.map(t=>{
+              const cat=cats[t.category]||DEFAULT_CATS.other;
+              const mem=getMem(t.member);
+              const hs=(t.splitWith?.length>0)||(Object.keys(t.splitAmounts||{}).length>1);
+              return`<div class="tx-row surface" onclick="openTxModal('${t._k}')">
+                <div class="tx-icon" style="background:${cat.color}22">${cat.icon}</div>
+                <div class="tx-info">
+                  <p class="tx-desc">${t.description}</p>
+                  <div class="tx-meta">
+                    <span class="tag" style="background:${(mem.color||'#999')}33;color:${mem.color||'#999'}">${mem.avatar} ${mem.displayName}</span>
+                    ${hs?`<span class="tag" style="background:rgba(108,99,255,0.15);color:var(--accent)">÷split</span>`:''}
+                    ${t.fromRecurringId?`<span class="tag" style="background:rgba(78,205,196,0.12);color:var(--accent2)">🔄</span>`:''}
+                  </div>
+                </div>
+                <p class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</p>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`).join('')
+      }
+    </div>
+
+    <div style="height:30px"></div>
+  </div>`;
+}
+
+window.goHistory=()=>{S.view='history';render();};
+window.setHistoryMonth=ym=>{S.historyMonth=ym;renderPage();};
+
+function attachHistoryListeners(){
+  const ym=S.historyMonth;
+  document.getElementById('histPrevBtn')?.addEventListener('click',()=>{
+    const[yr,mo]=ym.split('-').map(Number);
+    const ny=mo===1?yr-1:yr,nm=mo===1?12:mo-1;
+    window.setHistoryMonth(`${ny}-${String(nm).padStart(2,'0')}`);
+  });
+  document.getElementById('histNextBtn')?.addEventListener('click',()=>{
+    const[yr,mo]=ym.split('-').map(Number);
+    const ny=mo===12?yr+1:yr,nm=mo===12?1:mo+1;
+    const next=`${ny}-${String(nm).padStart(2,'0')}`;
+    if(next<=new Date().toISOString().slice(0,7))window.setHistoryMonth(next);
+  });
 }
 
 function renderTxs(fil){
@@ -550,14 +1670,33 @@ function renderAnalytics(fil,totalExp){
     </div>`;}).join(''):'<p class="empty">No expense data yet.</p>';
   const dbs=debts();
   const dRows=dbs.length?dbs.map(d=>{const f=getMem(d.from),t=getMem(d.to);
-    return`<div class="debt-row surface"><span style="font-size:20px">${f.avatar}</span><span style="font-size:13px;color:var(--muted);flex:1">${f.displayName} owes ${t.displayName}</span><span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--yellow);font-weight:600">${fmt(d.amount)}</span></div>`;
-  }).join(''):'<p style="font-size:13px;color:var(--dim)">No split balances.</p>';
+    return`<div class="debt-row surface" style="display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:14px;margin-bottom:8px">
+      <span style="font-size:20px">${f.avatar}</span>
+      <span style="font-size:13px;color:var(--muted);flex:1">${f.displayName} owes ${t.displayName}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--yellow);font-weight:600">${fmt(d.amount)}</span>
+      <button onclick="openSettleModal('${d.from}','${d.to}',${d.amount.toFixed(2)})" style="padding:6px 12px;border-radius:10px;background:rgba(105,210,160,0.15);color:var(--green);font-size:12px;font-weight:700;border:1px solid rgba(105,210,160,0.3);flex-shrink:0">Settle</button>
+    </div>`;
+  }).join(''):'<p style="font-size:13px;color:var(--dim)">No split balances. 🎉</p>';
+  const settleLog=Object.entries(S.settlements||{}).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0)).slice(0,8).map(([sk,s])=>{
+    const f=getMem(s.from),t=getMem(s.to);
+    return`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;margin-bottom:6px;background:rgba(105,210,160,0.06);border:1px solid rgba(105,210,160,0.15)">
+      <span style="font-size:18px">${f.avatar}</span>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:13px;font-weight:600">${f.displayName} → ${t.displayName}</p>
+        <p style="font-size:11px;color:var(--dim)">${s.note||'Settled'} · ${s.date||''}</p>
+      </div>
+      <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--green);font-weight:600">${fmt(s.amount)}</span>
+      <button onclick="deleteSettle('${sk}')" style="font-size:10px;padding:3px 8px;border-radius:7px;background:rgba(255,107,107,0.12);color:var(--red);font-weight:600;border:none">✕</button>
+    </div>`;
+  }).join('');
   const mStats=Object.entries(S.members||{}).map(([id,m])=>({id,...m,spent:txArr().filter(t=>t.member===id&&t.type==='expense').reduce((s,t)=>s+t.amount,0),earned:txArr().filter(t=>t.member===id&&t.type==='income').reduce((s,t)=>s+t.amount,0)})).filter(m=>m.spent>0||m.earned>0);
   return`
     <div class="analytics-section"><p class="label" style="margin-bottom:12px">Spending by category</p>${bars}
       <button onclick="goBudget()" style="margin-top:12px;width:100%;padding:12px;border-radius:12px;background:rgba(108,99,255,0.1);color:var(--accent);font-size:13px;font-weight:600;border:1px solid rgba(108,99,255,0.2)">💰 Manage Budgets</button>
     </div>
-    <div class="analytics-section" style="margin-top:8px"><p class="label" style="margin-bottom:12px">Split balances owed</p>${dRows}</div>
+    <div class="analytics-section" style="margin-top:8px"><p class="label" style="margin-bottom:12px">Split balances owed</p>${dRows}
+      ${settleLog?`<p class="label" style="margin-bottom:10px;margin-top:18px">Settlement History</p>${settleLog}`:''}
+    </div>
     <div class="analytics-section" style="margin-top:8px"><p class="label" style="margin-bottom:12px">Per member</p>
       ${mStats.map(m=>`<div class="settings-row surface" style="margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">${m.avatar}</span><div><p style="font-size:13px;font-weight:600">${m.displayName}${m.guest?'<span class="guest-badge">GUEST</span>':''}</p><p style="font-size:11px;color:var(--dim)">Spent ${fmt(m.spent)}</p></div></div>
@@ -708,7 +1847,7 @@ function renderAdd(){
     </div></div>
     <div class="form-section"><div class="input-card surface">
       <p class="label" style="margin-bottom:8px">Description</p>
-      <input class="normal-input" type="text" placeholder="What was this for?" value="${f.description}" oninput="setFF('description',this.value)">
+      <input class="normal-input" type="text" placeholder="What was this for? (optional)" value="${f.description}" oninput="setFF('description',this.value)">
     </div></div>
     <div class="form-section"><div class="input-card surface">
       <p class="label" style="margin-bottom:8px">Date</p>
@@ -873,26 +2012,226 @@ function renderModal(){
 }
 
 // ══════════════════════════════════════════
+//  SETTLE MODAL
+// ══════════════════════════════════════════
+function renderSettleModal(){
+  const mc=document.getElementById('modalContainer');if(!mc)return;
+  if(!S.settleModal){if(!S.splitModal)mc.innerHTML='';return;}
+  const{fromId,toId,maxAmt}=S.settleModal;
+  const f=getMem(fromId),t=getMem(toId);
+
+  // Build DOM directly — avoids module-scope issue with inline onclick strings
+  mc.innerHTML='';
+  const overlay=document.createElement('div');
+  overlay.className='modal-overlay fade-in';
+  overlay.addEventListener('click',()=>closeSettleModal());
+
+  const sheet=document.createElement('div');
+  sheet.className='modal-sheet';
+  sheet.addEventListener('click',e=>e.stopPropagation());
+  sheet.innerHTML=`
+    <div class="modal-handle"></div>
+    <p style="font-size:18px;font-weight:700;margin-bottom:6px">💸 Settle Up</p>
+    <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:rgba(105,210,160,0.08);border:1px solid rgba(105,210,160,0.2);margin-bottom:20px">
+      <span style="font-size:28px">${f.avatar}</span>
+      <div style="flex:1"><p style="font-size:14px;font-weight:600">${f.displayName}</p><p style="font-size:11px;color:var(--muted)">paying back</p></div>
+      <span style="font-size:20px">→</span>
+      <div style="text-align:right"><p style="font-size:14px;font-weight:600">${t.displayName}</p><span style="font-size:28px">${t.avatar}</span></div>
+    </div>
+    <p class="label" style="margin-bottom:8px">Amount to Settle</p>
+    <div class="surface input-card" style="margin-bottom:14px;padding:14px 16px">
+      <input id="settleAmt" type="number" inputmode="decimal" class="big-input" placeholder="0.00" value="${maxAmt.toFixed(2)}" style="font-size:28px">
+      <p style="font-size:11px;color:var(--dim);margin-top:4px">Max owed: ${fmt(maxAmt)}</p>
+    </div>
+    <p class="label" style="margin-bottom:8px">Note (optional)</p>
+    <div class="surface input-card" style="margin-bottom:20px">
+      <input id="settleNote" type="text" class="normal-input" placeholder="e.g. Cash transfer, PayNow…">
+    </div>
+    <button id="settleConfirmBtn" class="btn-primary" style="margin-bottom:10px">✓ Record Settlement</button>
+    <button id="settleCancelBtn" style="width:100%;padding:13px;border-radius:14px;background:rgba(255,255,255,0.05);color:var(--muted);font-size:14px;font-weight:600;border:none;font-family:'Sora',sans-serif;cursor:pointer">Cancel</button>`;
+
+  overlay.appendChild(sheet);
+  mc.appendChild(overlay);
+
+  // Attach listeners after DOM is appended
+  document.getElementById('settleConfirmBtn').addEventListener('click',async()=>{
+    const amt=parseFloat(document.getElementById('settleAmt')?.value)||0;
+    const note=document.getElementById('settleNote')?.value.trim()||'';
+    if(amt<=0){toast('Enter a valid amount','var(--red)');return;}
+    if(amt>maxAmt+0.01){toast('Amount exceeds what is owed','var(--red)');return;}
+    try{
+      const k=push(ref(db,'ledgers/'+S.activeLedgerId+'/settlements')).key;
+      await set(ref(db,'ledgers/'+S.activeLedgerId+'/settlements/'+k),{
+        from:fromId,to:toId,amount:amt,note,date:td(),ts:Date.now(),by:S.user.uid
+      });
+      S.settleModal=null;mc.innerHTML='';
+      toast('✓ Settlement recorded');
+      goHome('analytics');
+    }catch(e){toast('Error: '+e.message,'var(--red)');}
+  });
+  document.getElementById('settleCancelBtn').addEventListener('click',()=>closeSettleModal());
+}
+
+window.openSettleModal=(fromId,toId,maxAmt)=>{
+  S.settleModal={fromId,toId,maxAmt:parseFloat(maxAmt)};
+  renderSettleModal();
+};
+window.closeSettleModal=()=>{S.settleModal=null;const mc=document.getElementById('modalContainer');if(mc&&!S.splitModal)mc.innerHTML=''};
+window.deleteSettle=async sk=>{
+  if(!confirm('Remove this settlement record?'))return;
+  try{
+    await remove(ref(db,'ledgers/'+S.activeLedgerId+'/settlements/'+sk));
+    toast('Settlement removed','var(--muted)');
+    renderPage();
+  }catch(e){toast('Error: '+e.message,'var(--red)');}
+};
+
+// ══════════════════════════════════════════
 //  BUDGET PAGE
 // ══════════════════════════════════════════
 function renderBudgetPage(){
   const cats=getCats();const cur=getCur();
-  const rows=Object.entries(cats).filter(([k])=>k!=='income').map(([key,c])=>`
-    <div class="settings-row surface" style="margin-bottom:8px;flex-direction:column;align-items:stretch;gap:10px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:22px">${c.icon}</span>
-        <span style="font-size:14px;font-weight:600;flex:1">${c.label}</span>
-        <span style="font-size:12px;color:var(--dim)">${cur.symbol}</span>
-      </div>
-      <input type="number" inputmode="decimal" class="fw-input" placeholder="0.00 = no limit" value="${S.budgets?.[key]||''}" onchange="saveBudget('${key}',this.value)" style="font-family:'DM Mono',monospace">
-    </div>`).join('');
+  const ym=S.budgetMonth;
+  const mth=monthlyTotals(ym);
+  const [yr,mo]=ym.split('-').map(Number);
+  const nowYm=new Date().toISOString().slice(0,7);
+  const isCurrentMonth=ym===nowYm;
+  const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+  const catTotal=Object.entries(S.budgets||{}).filter(([k])=>k!=='_total').reduce((s,[,v])=>s+(parseFloat(v)||0),0);
+  const manualTotal=parseFloat(S.budgets?._total)||0;
+  const totalBudget=manualTotal>0?manualTotal:catTotal;
+  const budgetUsedPct=totalBudget>0?Math.min(100,(mth.exp/totalBudget)*100):0;
+  const budgetColor=mth.exp>totalBudget?'var(--red)':budgetUsedPct>80?'var(--yellow)':'var(--green)';
+  const catKeys=Object.keys(cats).filter(k=>k!=='income');
+
   return`<div class="settings-page fade-in">
-    <button class="btn-ghost" onclick="goHome('analytics')" style="margin-bottom:22px">← Back</button>
+    <button id="budgetBackBtn" class="btn-ghost" style="margin-bottom:22px">← Back</button>
     <h2 style="font-size:24px;font-weight:700;margin-bottom:6px">Monthly Budget</h2>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Set spending limits per category.</p>
-    ${rows}
-    <p style="font-size:12px;color:var(--dim);margin-top:16px;text-align:center">Budgets shared with all ledger members</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:18px">Per-month category limits — each month is independent.</p>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.25);border-radius:16px;padding:12px 16px;margin-bottom:20px">
+      <button id="budgetPrevBtn" style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.08);border:none;color:var(--text);font-size:20px;cursor:pointer">‹</button>
+      <div style="text-align:center">
+        <p style="font-size:15px;font-weight:700">${monthLabel}</p>
+        <p style="font-size:10px;color:${isCurrentMonth?'var(--accent)':'var(--dim)'};font-weight:600;letter-spacing:0.06em">${isCurrentMonth?'CURRENT MONTH':'tap ‹ › to navigate'}</p>
+      </div>
+      <button id="budgetNextBtn" style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.08);border:none;color:var(--text);font-size:20px;cursor:pointer">›</button>
+    </div>
+
+    <div class="card" style="padding:20px;margin-bottom:20px;border-radius:18px">
+      <p class="label" style="color:var(--accent2);margin-bottom:10px">Total Budget — ${monthLabel}</p>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+        <div style="flex:1;position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--dim);font-family:'DM Mono',monospace">${cur.symbol}</span>
+          <input id="bgt__total" type="number" inputmode="decimal" class="fw-input" placeholder="Overall cap (optional)" value="${manualTotal||''}" style="font-family:'DM Mono',monospace;padding-left:34px;font-size:17px;font-weight:700">
+        </div>
+        <button id="bgt__total_save" style="padding:13px 18px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700;flex-shrink:0;border:none;cursor:pointer;font-family:'Sora',sans-serif">Save</button>
+      </div>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:${totalBudget>0?10:0}px">Leave blank → auto-sums category limits (${fmt(catTotal)})</p>
+      ${totalBudget>0?`<div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px">
+          <span>Spent: ${fmt(mth.exp)}</span>
+          <span style="color:${budgetColor};font-weight:700">${Math.round(budgetUsedPct)}% used</span>
+        </div>
+        <div class="budget-bar-track"><div class="budget-bar-fill" style="width:${budgetUsedPct}%;background:${budgetColor}"></div></div>
+        <p style="font-size:12px;margin-top:6px;color:${mth.exp>totalBudget?'var(--red)':'var(--accent2)'}">${mth.exp>totalBudget?'⚠️ Over by '+fmt(mth.exp-totalBudget):'✓ Remaining: '+fmt(totalBudget-mth.exp)}</p>
+      </div>`:''}
+    </div>
+
+    <button id="budgetCopyBtn" style="width:100%;padding:12px;border-radius:12px;background:rgba(78,205,196,0.1);color:var(--accent2);font-size:13px;font-weight:600;border:1px solid rgba(78,205,196,0.2);margin-bottom:20px;cursor:pointer;font-family:'Sora',sans-serif">📋 Copy budgets from previous month</button>
+
+    ${catKeys.map(key=>{
+      const c=cats[key];
+      const spent=txArr().filter(t=>t.type==='expense'&&t.category===key&&t.date?.startsWith(ym)).reduce((s,t)=>s+t.amount,0);
+      const bgt=parseFloat(S.budgets?.[key])||0;
+      const pct=bgt>0?Math.min(100,(spent/bgt)*100):0;
+      const over=bgt>0&&spent>bgt;
+      return`<div class="surface" style="padding:16px;border-radius:16px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:22px">${c.icon}</span>
+          <div style="flex:1">
+            <p style="font-size:14px;font-weight:600">${c.label}</p>
+            ${bgt>0?`<p style="font-size:11px;color:${over?'var(--red)':'var(--muted)'}">Spent ${fmt(spent)} / ${fmt(bgt)}${over?' ⚠️':''}</p>`:`<p style="font-size:11px;color:var(--dim)">No limit · spent ${fmt(spent)}</p>`}
+          </div>
+        </div>
+        ${bgt>0?`<div class="budget-bar-track" style="margin-bottom:10px"><div class="budget-bar-fill" style="width:${pct}%;background:${over?'var(--red)':pct>80?'var(--yellow)':c.color}"></div></div>`:''}
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="flex:1;position:relative">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--dim);font-family:'DM Mono',monospace">${cur.symbol}</span>
+            <input data-catkey="${key}" type="number" inputmode="decimal" class="fw-input bgt-cat-input" placeholder="No limit" value="${bgt||''}" style="font-family:'DM Mono',monospace;padding-left:32px">
+          </div>
+          <button data-catkey="${key}" class="bgt-cat-save" style="padding:11px 16px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700;flex-shrink:0;border:none;cursor:pointer;font-family:'Sora',sans-serif">Save</button>
+        </div>
+      </div>`;
+    }).join('')}
+    <p style="font-size:12px;color:var(--dim);margin-top:8px;text-align:center">Budgets shared with all ledger members</p>
   </div>`;
+}
+
+function attachBudgetListeners(){
+  const lid=S.activeLedgerId;
+  const ym=S.budgetMonth;
+  const basePath='ledgers/'+lid+'/budgets/'+ym+'/';
+
+  // Clone & replace buttons to remove any previously attached listeners
+  ['budgetBackBtn','budgetPrevBtn','budgetNextBtn','bgt__total_save','budgetCopyBtn'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){const clone=el.cloneNode(true);el.parentNode.replaceChild(clone,el);}
+  });
+  document.querySelectorAll('.bgt-cat-save').forEach(btn=>{
+    const clone=btn.cloneNode(true);btn.parentNode.replaceChild(clone,btn);
+  });
+
+  document.getElementById('budgetBackBtn')?.addEventListener('click',()=>{
+    const nowYm=new Date().toISOString().slice(0,7);
+    if(ym!==nowYm)switchBudgetMonth(nowYm);
+    goHome('analytics');
+  });
+
+  document.getElementById('budgetPrevBtn')?.addEventListener('click',()=>{
+    const[yr,mo]=S.budgetMonth.split('-').map(Number);
+    const ny=mo===1?yr-1:yr, nm=mo===1?12:mo-1;
+    switchBudgetMonth(`${ny}-${String(nm).padStart(2,'0')}`);
+  });
+  document.getElementById('budgetNextBtn')?.addEventListener('click',()=>{
+    const[yr,mo]=S.budgetMonth.split('-').map(Number);
+    const ny=mo===12?yr+1:yr, nm=mo===12?1:mo+1;
+    switchBudgetMonth(`${ny}-${String(nm).padStart(2,'0')}`);
+  });
+
+  document.getElementById('bgt__total_save')?.addEventListener('click',async()=>{
+    const val=parseFloat(document.getElementById('bgt__total')?.value||'0')||0;
+    try{
+      if(val<=0){await remove(ref(db,basePath+'_total'));}
+      else{await set(ref(db,basePath+'_total'),val);}
+      toast('✓ Total budget saved');
+    }catch(e){toast('Error: '+e.message,'var(--red)');}
+  });
+
+  document.getElementById('budgetCopyBtn')?.addEventListener('click',async()=>{
+    const[yr,mo]=ym.split('-').map(Number);
+    const py=mo===1?yr-1:yr, pm=mo===1?12:mo-1;
+    const prevYm=`${py}-${String(pm).padStart(2,'0')}`;
+    try{
+      const snap=await get(ref(db,'ledgers/'+lid+'/budgets/'+prevYm));
+      if(!snap.exists()){toast('No budgets found for previous month','var(--muted)');return;}
+      await set(ref(db,'ledgers/'+lid+'/budgets/'+ym),snap.val());
+      toast('✓ Copied from '+new Date(py,pm-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'}));
+    }catch(e){toast('Error: '+e.message,'var(--red)');}
+  });
+
+  document.querySelectorAll('.bgt-cat-save').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      const key=btn.dataset.catkey;
+      const inp=document.querySelector(`.bgt-cat-input[data-catkey="${key}"]`);
+      const val=parseFloat(inp?.value||'0')||0;
+      try{
+        if(val<=0){await remove(ref(db,basePath+key));}
+        else{await set(ref(db,basePath+key),val);}
+        toast('✓ Saved');
+      }catch(e){toast('Error: '+e.message,'var(--red)');}
+    });
+  });
 }
 
 // ══════════════════════════════════════════
@@ -1138,7 +2477,7 @@ window.goHome      =t=>{S.view='home';if(t)S.tab=t;render();};
 window.goAdd       =()=>{S.addForm=blankForm();S.editTxKey=null;S.view='add';render();};
 window.goSettings  =()=>{S.view='settings';render();};
 window.goInvite    =()=>{_code=null;S.view='invite';render();};
-window.goBudget    =()=>{S.view='budget';render();};
+window.goBudget    =()=>{const nowYm=new Date().toISOString().slice(0,7);if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);S.view='budget';render();};
 window.goCategories=()=>{editCatKey=null;editSubcatKey=null;S.view='categories';render();};
 window.goGuests    =()=>{S.view='guests';render();};
 window.goAssets    =()=>{S.view='assets';render();};
@@ -1203,7 +2542,6 @@ window.deleteTxFromEdit=async()=>{
 window.submitForm=async()=>{
   const f=S.addForm;
   if(!f.amount||isNaN(parseFloat(f.amount))){alert('Enter an amount.');return;}
-  if(!f.description.trim()){alert('Enter a description.');return;}
   if(!f.member){alert('Select who paid.');return;}
   let splitAmounts={};
   if(f.type==='expense'&&f.splitWith.length>0){
@@ -1229,7 +2567,7 @@ window.submitForm=async()=>{
     currency:txCurrency,          // original currency
     category:f.type==='income'?'income':f.category,
     subcat:f.subcat||null,
-    description:f.description.trim(),
+    description:f.description.trim()||getCats()[f.category]?.label||f.category,
     member:f.member,splitWith:[...f.splitWith],
     splitAmounts:Object.keys(splitAmounts).length?splitAmounts:null,
     date:f.date||td(),
@@ -1286,7 +2624,7 @@ window.exportCSV   =()=>{
 window.copyCode    =()=>{const c=document.getElementById('invCode')?.textContent||'';navigator.clipboard.writeText(c).then(()=>toast('📋 Copied: '+c)).catch(()=>prompt('Copy:',c));};
 window.quickJoin   =async()=>{const code=document.getElementById('qjCode')?.value.trim().toUpperCase(),msg=document.getElementById('qjMsg');const name=await joinByCode(code,msg);if(name)setTimeout(()=>{S.view='home';render();toast('✓ Joined '+name);},700);};
 
-window.saveBudget=async(key,val)=>{const amount=parseFloat(val)||0;if(amount<=0){await remove(ref(db,'ledgerBudgets/'+S.activeLedgerId+'/'+key));}else{await set(ref(db,'ledgerBudgets/'+S.activeLedgerId+'/'+key),amount);}toast('✓ Budget saved');};
+window.saveBudget=async(key,val)=>{const amount=parseFloat(val)||0;const path='ledgers/'+S.activeLedgerId+'/budgets/'+S.budgetMonth+'/'+key;if(amount<=0){await remove(ref(db,path));}else{await set(ref(db,path),amount);}toast('✓ Budget saved');};
 window.changeCurrency=async val=>{await set(ref(db,'ledgers/'+S.activeLedgerId+'/currency'),val);S.ledgerCurrency=val;toast('✓ Currency updated');renderPage();};
 
 // Category actions
@@ -1961,6 +3299,21 @@ window.pickProfColor=i=>{
   if(dot)dot.classList.add('selected');
 };
 window.setProfTab=tab=>{profTab=tab;renderPage();};
+
+// ── iOS SAFARI ADDRESS BAR FIX ──
+(function(){
+  function setVh(){
+    const h=window.innerHeight;
+    if(h<100)return; // guard against zero/bad value before layout
+    document.documentElement.style.setProperty('--vh',(h*0.01)+'px');
+    const app=document.getElementById('app');
+    if(app)app.style.height=h+'px';
+  }
+  // Defer to next frame so layout is fully calculated first
+  requestAnimationFrame(()=>{ setVh(); });
+  window.addEventListener('resize',setVh,{passive:true});
+  window.addEventListener('orientationchange',()=>setTimeout(setVh,300),{passive:true});
+})();
 
 </script>
 </body>
