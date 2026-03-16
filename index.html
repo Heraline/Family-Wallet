@@ -17,9 +17,17 @@
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
   :root{--bg:#0A0A14;--bg2:#12121E;--bg3:#1A1A2E;--accent:#6C63FF;--accent2:#4ECDC4;--green:#69D2A0;--red:#FF6B6B;--yellow:#FFE66D;--text:#F0EEF6;--muted:#8A88AA;--dim:#5A587A;--border:rgba(255,255,255,0.07)}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html{height:100%;overflow:hidden}
-  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:stretch;height:100%;height:-webkit-fill-available;overflow:hidden}
-  #app{width:100%;max-width:430px;height:100%;position:fixed;top:0;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+  html{height:100%;overflow:hidden;background:var(--bg)}
+  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:stretch;height:100%;height:-webkit-fill-available;overflow:hidden;background:var(--bg)}
+  #app{width:100%;max-width:430px;position:fixed;top:0;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;overflow:hidden;background:var(--bg);
+    /* Fill full screen including area below home indicator */
+    height:100vh;
+    height:100dvh;
+    height:-webkit-fill-available;
+    /* Extend background into safe area below home indicator */
+    padding-bottom:env(safe-area-inset-bottom);
+    box-sizing:border-box;
+  }
   .page{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(90px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
   .page::-webkit-scrollbar{display:none}
   .glow1{position:fixed;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(108,99,255,0.15),transparent 70%);pointer-events:none;z-index:0}
@@ -3310,44 +3318,38 @@ window.pickProfColor=i=>{
 window.setProfTab=tab=>{profTab=tab;renderPage();};
 
 // ── iOS SAFARI VIEWPORT FIX ──
-// Uses visualViewport API for precise height tracking.
-// Eliminates the blank gap left when address bar shows/hides.
+// CSS handles the base height via dvh/-webkit-fill-available.
+// JS only adjusts when the software keyboard appears (shrinks viewport).
 (function(){
   const app=document.getElementById('app');
-  let rafId=null;
+  if(!app)return;
 
-  function applyHeight(){
-    // visualViewport gives the exact visible area, accounting for
-    // address bar, keyboard, and other browser chrome precisely
-    const h=window.visualViewport
-      ?window.visualViewport.height
-      :window.innerHeight;
-    if(!app||h<100)return;
-    app.style.height=h+'px';
-    app.style.top=(window.visualViewport?window.visualViewport.offsetTop:0)+'px';
-  }
+  const fullH=window.innerHeight;
 
   function onViewportChange(){
-    // Cancel any pending frame to avoid stacking
-    if(rafId)cancelAnimationFrame(rafId);
-    rafId=requestAnimationFrame(()=>{
-      applyHeight();
-      rafId=null;
-    });
+    if(!window.visualViewport)return;
+    const vvh=window.visualViewport.height;
+    // If viewport shrank by more than 100px, keyboard is likely open
+    // In that case let the viewport shrink naturally
+    // Otherwise always use CSS full height (don't set inline style)
+    if(fullH-vvh>100){
+      // Keyboard open — shrink app to visible area
+      app.style.height=vvh+'px';
+      app.style.paddingBottom='0';
+    } else {
+      // Normal — remove inline style, let CSS take over
+      app.style.height='';
+      app.style.paddingBottom='';
+    }
   }
 
-  // visualViewport fires more accurately than resize on iOS
   if(window.visualViewport){
-    window.visualViewport.addEventListener('resize',onViewportChange);
-    window.visualViewport.addEventListener('scroll',onViewportChange);
-  } else {
-    window.addEventListener('resize',onViewportChange,{passive:true});
+    window.visualViewport.addEventListener('resize',onViewportChange,{passive:true});
   }
-  window.addEventListener('orientationchange',()=>setTimeout(applyHeight,400),{passive:true});
-
-  // Apply immediately and on first paint
-  applyHeight();
-  requestAnimationFrame(applyHeight);
+  window.addEventListener('orientationchange',()=>{
+    app.style.height='';
+    app.style.paddingBottom='';
+  },{passive:true});
 })();
 
 // ── SERVICE WORKER REGISTRATION ──
