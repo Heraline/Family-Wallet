@@ -18,27 +18,13 @@
   :root{--bg:#0A0A14;--bg2:#12121E;--bg3:#1A1A2E;--accent:#6C63FF;--accent2:#4ECDC4;--green:#69D2A0;--red:#FF6B6B;--yellow:#FFE66D;--text:#F0EEF6;--muted:#8A88AA;--dim:#5A587A;--border:rgba(255,255,255,0.07)}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 
-  /* ── BASE (shared) ── */
-  html{background:var(--bg)}
-  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text)}
-  #app{width:100%;max-width:430px;display:flex;flex-direction:column;background:var(--bg);margin:0 auto}
-
-  /* ── STANDALONE MODE (home screen PWA) ── */
-  /* Fixed layout, inner div scrolls, no address bar */
-  html.mode-standalone,html.mode-standalone body{height:100%;overflow:hidden}
-  html.mode-standalone body{display:flex;justify-content:center;align-items:stretch;height:-webkit-fill-available}
-  html.mode-standalone #app{position:fixed;top:0;left:50%;transform:translateX(-50%);overflow:hidden;height:100vh;height:100dvh;height:-webkit-fill-available}
-  html.mode-standalone .page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
-
-  /* ── BROWSER MODE (Safari, Chrome) ── */
-  /* Document scrolls so address bar can auto-hide */
-  html.mode-browser,html.mode-browser body{height:auto;overflow-x:hidden}
-  html.mode-browser body{display:flex;justify-content:center}
-  html.mode-browser #app{min-height:100svh;min-height:100dvh;min-height:-webkit-fill-available;position:relative}
-  html.mode-browser .page{flex:1;overflow:visible;height:auto}
-
-  /* Scrollbar hide for both */
+  /* Single layout that works in both Safari browser and standalone PWA */
+  html,body{height:100%;overflow:hidden;background:var(--bg)}
+  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:stretch}
+  #app{width:100%;max-width:430px;height:100%;position:relative;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+  .page{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(90px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
   .page::-webkit-scrollbar{display:none}
+  html.mode-standalone #scrollTrigger{display:none}
   .glow1{position:fixed;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(108,99,255,0.15),transparent 70%);pointer-events:none;z-index:0}
   .glow2{position:fixed;bottom:60px;left:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(78,205,196,0.10),transparent 70%);pointer-events:none;z-index:0}
   .label{font-size:11px;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase}
@@ -181,7 +167,7 @@
 </style>
 </head>
 <body>
-<!-- Detect standalone vs browser BEFORE layout so CSS applies correctly -->
+<!-- Detect standalone vs browser BEFORE layout -->
 <script>
 (function(){
   var isStandalone=window.navigator.standalone===true||window.matchMedia('(display-mode:standalone)').matches;
@@ -201,6 +187,9 @@
   <div id="modalContainer"></div>
   <nav class="bottom-nav" id="bottomNav" style="display:none"></nav>
 </div>
+<!-- Safari address bar trick: 1px div makes document scrollable so bar can hide.
+     Hidden in standalone mode via CSS. -->
+<div id="scrollTrigger" style="height:1px;width:1px;position:absolute;bottom:0;opacity:0;pointer-events:none"></div>
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -3335,26 +3324,44 @@ window.pickProfColor=i=>{
 };
 window.setProfTab=tab=>{profTab=tab;renderPage();};
 
-// ── iOS SAFARI VIEWPORT FIX (standalone only) ──
+// ── VIEWPORT & ADDRESS BAR FIX ──
 (function(){
-  // Only needed in standalone PWA mode — browser mode uses document scroll
-  if(!document.documentElement.classList.contains('mode-standalone'))return;
-  const app=document.getElementById('app');
-  if(!app)return;
-  const fullH=window.innerHeight;
-  function onViewportChange(){
-    if(!window.visualViewport)return;
-    const vvh=window.visualViewport.height;
-    if(fullH-vvh>100){
-      app.style.height=vvh+'px';
-      app.style.paddingBottom='0';
-    }else{
-      app.style.height='';
-      app.style.paddingBottom='';
-    }
+  var isStandalone=window.navigator.standalone===true||window.matchMedia('(display-mode:standalone)').matches;
+  var app=document.getElementById('app');
+
+  function setHeight(){
+    var h=window.innerHeight;
+    if(app&&h>100)app.style.height=h+'px';
   }
-  if(window.visualViewport)window.visualViewport.addEventListener('resize',onViewportChange,{passive:true});
-  window.addEventListener('orientationchange',()=>{app.style.height='';app.style.paddingBottom='';},{passive:true});
+
+  if(isStandalone){
+    // PWA home screen — fix height precisely, handle keyboard
+    setHeight();
+    requestAnimationFrame(setHeight);
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize',function(){
+        var vvh=window.visualViewport.height;
+        if(app){app.style.height=(window.innerHeight-vvh>100?vvh:window.innerHeight)+'px';}
+      },{passive:true});
+    }
+    window.addEventListener('resize',setHeight,{passive:true});
+    window.addEventListener('orientationchange',function(){setTimeout(setHeight,300);},{passive:true});
+  } else {
+    // Safari browser — position scroll trigger 1px below viewport
+    // This makes document scrollable so Safari can hide address bar
+    var trigger=document.getElementById('scrollTrigger');
+    function updateTrigger(){
+      var h=window.innerHeight;
+      if(app&&h>100)app.style.height=h+'px';
+      if(trigger)trigger.style.top=(h+1)+'px';
+    }
+    updateTrigger();
+    requestAnimationFrame(updateTrigger);
+    window.addEventListener('resize',updateTrigger,{passive:true});
+    window.addEventListener('orientationchange',function(){setTimeout(updateTrigger,300);},{passive:true});
+    // When address bar hides, innerHeight increases — update app height
+    window.addEventListener('scroll',function(){updateTrigger();},{passive:true});
+  }
 })();
 
 // ── SERVICE WORKER REGISTRATION ──
