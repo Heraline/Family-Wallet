@@ -322,7 +322,12 @@ function blankForm(){return{type:'expense',amount:'',category:'food',subcat:'',d
 function toast(msg,col='var(--green)'){const el=document.createElement('div');el.className='toast';el.textContent=msg;el.style.color=col;document.body.appendChild(el);setTimeout(()=>el.remove(),2500);}
 function showLoad(){document.getElementById('loadingScreen').style.display='flex';}
 function hideLoad(){document.getElementById('loadingScreen').style.display='none';}
-function safeRender(){const pg=document.getElementById('mainPage');if(pg&&!document.getElementById('ledgerContainer')?.innerHTML)renderPage();}
+// ── PER-TAB SCROLL MEMORY ──
+const _scrollPos={};
+function _saveScroll(){const pg=document.getElementById('mainPage');if(pg&&S&&S.view)_scrollPos[S.view]=pg.scrollTop;}
+function _restoreScroll(view){requestAnimationFrame(()=>{const pg=document.getElementById('mainPage');if(pg)pg.scrollTop=(_scrollPos[view]||0);});}
+
+function safeRender(){const pg=document.getElementById('mainPage');if(pg&&!document.getElementById('ledgerContainer')?.innerHTML){_saveScroll();renderPage();}}
 
 // ── AUTH STATE ──
 onAuthStateChanged(auth,async user=>{
@@ -497,7 +502,7 @@ function showErr(msg){
   if(pg)pg.innerHTML=`<div style="padding:60px 24px;color:#FF6B6B;font-size:13px;font-family:monospace;white-space:pre-wrap;word-break:break-all">${msg}</div>`;
   console.error(msg);
 }
-function render(){try{renderPage();}catch(e){showErr('render: '+e.stack||e.message);}renderNav();renderModal();}
+function render(){_saveScroll();try{renderPage();}catch(e){showErr('render: '+e.stack||e.message);}renderNav();renderModal();}
 function renderNav(){
   const nav=document.getElementById('bottomNav');if(!nav)return;
   const{view,tab}=S;
@@ -510,23 +515,24 @@ function renderNav(){
 }
 function renderPage(){
   const pg=document.getElementById('mainPage');if(!pg)return;
+  const _v=S.view;
   try{
-    if(S.view==='add'){pg.innerHTML=renderAdd();return;}
-    if(S.view==='calendar'){pg.innerHTML=renderCalendar();attachCalendarListeners();return;}
-    if(S.view==='stats'){pg.innerHTML=renderStats();attachStatsListeners();return;}
-    if(S.view==='history'){pg.innerHTML=renderHistory();attachHistoryListeners();return;}
-    if(S.view==='settings'){pg.innerHTML=renderSettings();return;}
-    if(S.view==='invite'){pg.innerHTML=renderInvite();return;}
-    if(S.view==='budget'){pg.innerHTML=renderBudgetPage();attachBudgetListeners();return;}
-    if(S.view==='categories'){pg.innerHTML=renderCategoriesPage();return;}
-    if(S.view==='guests'){pg.innerHTML=renderGuestsPage();return;}
-    if(S.view==='assets'){pg.innerHTML=renderAssetsPage();return;}
-    if(S.view==='assetForm'){pg.innerHTML=renderAssetForm();return;}
-    if(S.view==='recurring'){pg.innerHTML=renderRecurringPage();return;}
-    if(S.view==='recurForm'){pg.innerHTML=renderRecurForm();return;}
-    if(S.view==='profile'){pg.innerHTML=renderProfilePage();return;}
-    pg.innerHTML=renderHome();
-  }catch(e){showErr('renderPage ['+S.view+']: '+(e.stack||e.message));}
+    if(_v==='add'){pg.innerHTML=renderAdd();_restoreScroll(_v);return;}
+    if(_v==='calendar'){pg.innerHTML=renderCalendar();attachCalendarListeners();_restoreScroll(_v);return;}
+    if(_v==='stats'){pg.innerHTML=renderStats();attachStatsListeners();_restoreScroll(_v);return;}
+    if(_v==='history'){pg.innerHTML=renderHistory();attachHistoryListeners();_restoreScroll(_v);return;}
+    if(_v==='settings'){pg.innerHTML=renderSettings();_restoreScroll(_v);return;}
+    if(_v==='invite'){pg.innerHTML=renderInvite();_restoreScroll(_v);return;}
+    if(_v==='budget'){pg.innerHTML=renderBudgetPage();attachBudgetListeners();_restoreScroll(_v);return;}
+    if(_v==='categories'){pg.innerHTML=renderCategoriesPage();_restoreScroll(_v);return;}
+    if(_v==='guests'){pg.innerHTML=renderGuestsPage();_restoreScroll(_v);return;}
+    if(_v==='assets'){pg.innerHTML=renderAssetsPage();_restoreScroll(_v);return;}
+    if(_v==='assetForm'){pg.innerHTML=renderAssetForm();_restoreScroll(_v);return;}
+    if(_v==='recurring'){pg.innerHTML=renderRecurringPage();_restoreScroll(_v);return;}
+    if(_v==='recurForm'){pg.innerHTML=renderRecurForm();_restoreScroll(_v);return;}
+    if(_v==='profile'){pg.innerHTML=renderProfilePage();_restoreScroll(_v);return;}
+    pg.innerHTML=renderHome();_restoreScroll(_v);
+  }catch(e){showErr('renderPage ['+_v+']: '+(e.stack||e.message));}
 }
 
 // ── HOME ──
