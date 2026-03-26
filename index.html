@@ -6310,74 +6310,26 @@ async function processExpense(rawText) {
     category = memory[merchant];
   }
 
-  // TEMP: just show result
-  alert(
-    `Merchant: ${merchant}
-Amount: ${amount}
-Category: ${category}
-Date: ${date}`
-  );
+  // Auto-fill the inputs
+  const amountInput = document.querySelector(".big-input");
+  if (amountInput) amountInput.value = amount;
+
+  const descInput = document.querySelector(".normal-input[placeholder*='optional']");
+  if (descInput) descInput.value = notes || merchant;
+
+  const dateInput = document.querySelector(".normal-input[type='date']");
+  if (dateInput) dateInput.value = date;
+
+  // Handle category chip selection
+  if (category) {
+    const chip = Array.from(document.querySelectorAll(".chip-grid .chip")).find(
+      c => c.textContent.trim().toLowerCase() === category.toLowerCase()
+    );
+    if (chip) chip.click(); // simulate user click to select
+  }
 
   memory[merchant] = category;
   localStorage.setItem("merchantMemory", JSON.stringify(memory));
-}
-
-document.addEventListener("paste", (e) => {
-  const text = e.clipboardData.getData("text");
-  if (text) {
-    processExpense(text);
-  }
-});
-
-const OPENAI_KEY = prompt("Enter your OpenAI API Key");
-
-async function callAI(text) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + OPENAI_KEY
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "user",
-          content: `
-Extract structured expense data.
-
-Return JSON:
-{
-  "merchant": "",
-  "amount": number,
-  "date": "YYYY-MM-DD",
-  "category": "",
-  "notes": ""
-}
-
-Categories:
-Food, Drinks, Groceries, Transport, Shopping, Bills, Entertainment, Health, Education, Others
-
-Smart rules:
-- Tealive, Starbucks → Drinks
-- McDonald's → Food
-- Shell, Petronas → Transport
-- Lotus's, Aeon → Groceries
-
-Text:
-${text}
-`
-        }
-      ],
-      temperature: 0.2
-    })
-  });
-
-  const data = await response.json();
-
-  const content = data.choices[0].message.content;
-
-  return JSON.parse(content);
 }
 </script>
 </body>
