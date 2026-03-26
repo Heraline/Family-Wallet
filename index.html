@@ -6296,21 +6296,26 @@ if('serviceWorker' in navigator){
       .catch(e=>console.log('SW registration failed:',e));
   });
 }
-
 </script>
+
 <script>
+<!-- AI Expense Auto-Fill Script -->
+// ---------- CONFIG ----------
+const OPENAI_KEY = prompt("Enter your OpenAI API Key");
+
+// ---------- PROCESS EXPENSE ----------
 async function processExpense(rawText) {
+  // Load saved merchant → category memory
   const memory = JSON.parse(localStorage.getItem("merchantMemory") || "{}");
 
+  // Call AI to extract structured expense
   const aiResult = await callAI(rawText);
-
   let { merchant, amount, date, category, notes } = aiResult;
 
-  if (memory[merchant]) {
-    category = memory[merchant];
-  }
+  // Use memory if merchant was seen before
+  if (memory[merchant]) category = memory[merchant];
 
-  // Auto-fill the inputs
+  // ---------- AUTO-FILL FORM ----------
   const amountInput = document.querySelector(".big-input");
   if (amountInput) amountInput.value = amount;
 
@@ -6320,16 +6325,59 @@ async function processExpense(rawText) {
   const dateInput = document.querySelector(".normal-input[type='date']");
   if (dateInput) dateInput.value = date;
 
-  // Handle category chip selection
+  // Category selection: click chip that matches category
   if (category) {
     const chip = Array.from(document.querySelectorAll(".chip-grid .chip")).find(
       c => c.textContent.trim().toLowerCase() === category.toLowerCase()
     );
-    if (chip) chip.click(); // simulate user click to select
+    if (chip) chip.click();
   }
 
+  // Save merchant → category for next time
   memory[merchant] = category;
   localStorage.setItem("merchantMemory", JSON.stringify(memory));
+}
+
+// ---------- CLIPBOARD PASTE LISTENER ----------
+document.addEventListener("paste", (e) => {
+  const text = e.clipboardData.getData("text");
+  if (text) processExpense(text);
+});
+
+// ---------- AI CALL ----------
+async function callAI(text) {
+  const payload = {
+    model: "gpt-4o-mini",
+    messages: [{
+      role: "user",
+      content: "Extract structured expense data.\n\nReturn JSON:\n" +
+        '{ "merchant": "", "amount": number, "date": "YYYY-MM-DD", "category": "", "notes": "" }\n\n' +
+        "Categories:\nFood, Drinks, Groceries, Transport, Shopping, Bills, Entertainment, Health, Education, Others\n\n" +
+        "Smart rules:\n- Tealive, Starbucks → Drinks\n- McDonald's → Food\n- Shell, Petronas → Transport\n- Lotus's, Aeon → Groceries\n\n" +
+        "Text:\n" + text
+    }],
+    temperature: 0.2
+  };
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + OPENAI_KEY
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json();
+  const content = data.choices[0].message.content;
+
+  // Parse the JSON safely
+  try {
+    return JSON.parse(content);
+  } catch (err) {
+    console.error("AI returned invalid JSON:", content, err);
+    return { merchant: "", amount: 0, date: "", category: "", notes: "" };
+  }
 }
 </script>
 </body>
