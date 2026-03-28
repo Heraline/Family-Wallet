@@ -3507,21 +3507,27 @@ function renderAdd(){
   const splitMembers=mList.filter(m=>m.id!==f.member);
   const splitSection=f.type==='expense'?buildSplitSection(f,splitMembers):'';
 
-  const geminiKey=localStorage.getItem('fw_gemini_key')||'';
+  const aiProvider=localStorage.getItem('fw_ai_provider')||'gemini';
+  const aiKey=aiProvider==='openai'?localStorage.getItem('fw_openai_key')||'':localStorage.getItem('fw_gemini_key')||'';
+  const providerLabel=aiProvider==='openai'?'🤖 GPT-4o':'🌟 Gemini';
   const scanBar=!isEdit?`
     <!-- Hidden file inputs: one for camera, one for library -->
     <input type="file" id="receiptCamera"  accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelected(this)">
     <input type="file" id="receiptLibrary" accept="image/*"                        style="display:none" onchange="handlePhotoSelected(this)">
 
-    ${!geminiKey?`
+    ${!aiKey?`
     <div style="background:rgba(255,230,109,0.1);border:1px solid rgba(255,230,109,0.25);border-radius:14px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
       <span style="font-size:18px">⚠️</span>
       <div style="flex:1">
-        <p style="font-size:12px;color:var(--yellow);font-weight:600">No Gemini API key</p>
-        <p style="font-size:11px;color:var(--dim);margin-top:2px">Add your key in Settings to enable AI scanning</p>
+        <p style="font-size:12px;color:var(--yellow);font-weight:600">No AI key set up</p>
+        <p style="font-size:11px;color:var(--dim);margin-top:2px">Add a Gemini or OpenAI key in Settings</p>
       </div>
       <button onclick="goSettings()" style="background:rgba(108,99,255,0.2);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;border:none">Set up</button>
-    </div>`:''}
+    </div>`:`
+    <div style="background:rgba(105,210,160,0.08);border:1px solid rgba(105,210,160,0.2);border-radius:10px;padding:7px 12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <p style="font-size:11px;color:var(--green);font-weight:600">${providerLabel} active</p>
+      <button onclick="goSettings()" style="background:none;border:none;font-size:11px;color:var(--dim);font-weight:600">Switch</button>
+    </div>`}
 
     <!-- Photo source buttons -->
     <div style="display:flex;gap:10px;margin-bottom:14px">
@@ -4879,13 +4885,40 @@ function renderSettings(){
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">AI Receipt Scanning</p>
       <div class="surface" style="padding:16px;border-radius:14px">
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">Powered by <strong style="color:var(--text)">Google Gemini</strong> (free tier). Get your key at <strong style="color:var(--accent)">aistudio.google.com</strong></p>
-        <input id="geminiKeyInput" class="fw-input" type="password" placeholder="Paste Gemini API key here..." value="${localStorage.getItem('fw_gemini_key')||''}" style="margin-bottom:10px;font-family:'DM Mono',monospace;font-size:16px">
-        <div style="display:flex;gap:8px">
-          <button onclick="saveGeminiKey()" style="flex:1;padding:11px;border-radius:12px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;font-size:13px;font-weight:700">Save Key</button>
-          <button onclick="clearGeminiKey()" style="padding:11px 14px;border-radius:12px;background:rgba(255,107,107,0.12);color:var(--red);font-size:13px;font-weight:600;border:1px solid rgba(255,107,107,0.2)">Clear</button>
+
+        <!-- Provider toggle -->
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600">Select AI Provider</p>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button onclick="setAiProvider('gemini')" id="provBtn_gemini" style="flex:1;padding:10px 6px;border-radius:12px;font-size:12px;font-weight:700;border:2px solid ${(localStorage.getItem('fw_ai_provider')||'gemini')==='gemini'?'var(--accent)':'var(--border)'};background:${(localStorage.getItem('fw_ai_provider')||'gemini')==='gemini'?'rgba(108,99,255,0.15)':'transparent'};color:${(localStorage.getItem('fw_ai_provider')||'gemini')==='gemini'?'var(--accent)':'var(--dim)'}">
+            🌟 Gemini
+          </button>
+          <button onclick="setAiProvider('openai')" id="provBtn_openai" style="flex:1;padding:10px 6px;border-radius:12px;font-size:12px;font-weight:700;border:2px solid ${(localStorage.getItem('fw_ai_provider')||'gemini')==='openai'?'var(--accent2)':'var(--border)'};background:${(localStorage.getItem('fw_ai_provider')||'gemini')==='openai'?'rgba(78,205,196,0.15)':'transparent'};color:${(localStorage.getItem('fw_ai_provider')||'gemini')==='openai'?'var(--accent2)':'var(--dim)'}">
+            🤖 GPT-4o
+          </button>
         </div>
-        ${localStorage.getItem('fw_gemini_key')?'<p style="font-size:11px;color:var(--green);margin-top:8px;text-align:center">✓ API key saved — scanning enabled</p>':'<p style="font-size:11px;color:var(--dim);margin-top:8px;text-align:center">No key saved yet</p>'}
+
+        <!-- Gemini key -->
+        <div id="geminiKeySection" style="display:${(localStorage.getItem('fw_ai_provider')||'gemini')==='gemini'?'block':'none'}">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6">Get your free key at <strong style="color:var(--accent)">aistudio.google.com</strong></p>
+          <input id="geminiKeyInput" class="fw-input" type="password" placeholder="Paste Gemini API key..." value="${localStorage.getItem('fw_gemini_key')||''}" style="margin-bottom:10px;font-family:'DM Mono',monospace;font-size:14px">
+          <div style="display:flex;gap:8px">
+            <button onclick="saveGeminiKey()" style="flex:1;padding:11px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700">Save</button>
+            <button onclick="clearGeminiKey()" style="padding:11px 14px;border-radius:12px;background:rgba(255,107,107,0.12);color:var(--red);font-size:13px;font-weight:600;border:1px solid rgba(255,107,107,0.2)">Clear</button>
+          </div>
+          ${localStorage.getItem('fw_gemini_key')?'<p style="font-size:11px;color:var(--green);margin-top:8px;text-align:center">✓ Gemini key saved</p>':'<p style="font-size:11px;color:var(--dim);margin-top:8px;text-align:center">No key saved yet</p>'}
+        </div>
+
+        <!-- OpenAI key -->
+        <div id="openaiKeySection" style="display:${(localStorage.getItem('fw_ai_provider')||'gemini')==='openai'?'block':'none'}">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6">Get your key at <strong style="color:var(--accent2)">platform.openai.com</strong>. GPT-4o handles mixed-language receipts better.</p>
+          <input id="openaiKeyInput" class="fw-input" type="password" placeholder="Paste OpenAI API key (sk-...)..." value="${localStorage.getItem('fw_openai_key')||''}" style="margin-bottom:10px;font-family:'DM Mono',monospace;font-size:14px">
+          <div style="display:flex;gap:8px">
+            <button onclick="saveOpenAiKey()" style="flex:1;padding:11px;border-radius:12px;background:linear-gradient(135deg,var(--accent2),var(--green));color:#fff;font-size:13px;font-weight:700">Save</button>
+            <button onclick="clearOpenAiKey()" style="padding:11px 14px;border-radius:12px;background:rgba(255,107,107,0.12);color:var(--red);font-size:13px;font-weight:600;border:1px solid rgba(255,107,107,0.2)">Clear</button>
+          </div>
+          ${localStorage.getItem('fw_openai_key')?'<p style="font-size:11px;color:var(--green);margin-top:8px;text-align:center">✓ OpenAI key saved</p>':'<p style="font-size:11px;color:var(--dim);margin-top:8px;text-align:center">No key saved yet</p>'}
+        </div>
+
       </div>
     </div>
 
@@ -5846,20 +5879,61 @@ window.confirmScCrop=()=>{
 window.clearScCustom=()=>{_scCustomIcon=null;_scCroppedIcon=null;_scCropImg=null;_scCropZoom=1;renderPage();};
 
 // ══════════════════════════════════════════
-//  GEMINI AI RECEIPT SCANNING
+//  AI RECEIPT SCANNING — Gemini + GPT-4o
 // ══════════════════════════════════════════
+
+// ── Provider selector ──
+window.setAiProvider=p=>{
+  localStorage.setItem('fw_ai_provider',p);
+  // Toggle sections without full re-render for snappy UX
+  const gSection=document.getElementById('geminiKeySection');
+  const oSection=document.getElementById('openaiKeySection');
+  const gBtn=document.getElementById('provBtn_gemini');
+  const oBtn=document.getElementById('provBtn_openai');
+  if(gSection)gSection.style.display=p==='gemini'?'block':'none';
+  if(oSection)oSection.style.display=p==='openai'?'block':'none';
+  if(gBtn){
+    gBtn.style.borderColor=p==='gemini'?'var(--accent)':'var(--border)';
+    gBtn.style.background=p==='gemini'?'rgba(108,99,255,0.15)':'transparent';
+    gBtn.style.color=p==='gemini'?'var(--accent)':'var(--dim)';
+  }
+  if(oBtn){
+    oBtn.style.borderColor=p==='openai'?'var(--accent2)':'var(--border)';
+    oBtn.style.background=p==='openai'?'rgba(78,205,196,0.15)':'transparent';
+    oBtn.style.color=p==='openai'?'var(--accent2)':'var(--dim)';
+  }
+};
+
+// ── Gemini key ──
 window.saveGeminiKey=()=>{
   const val=document.getElementById('geminiKeyInput')?.value.trim();
   if(!val){toast('Enter an API key first','var(--red)');return;}
   localStorage.setItem('fw_gemini_key',val);
-  toast('✓ API key saved');
-  renderPage(); // refresh to show green status
+  toast('✓ Gemini key saved');
+  renderPage();
 };
 window.clearGeminiKey=()=>{
   localStorage.removeItem('fw_gemini_key');
   const inp=document.getElementById('geminiKeyInput');
   if(inp)inp.value='';
-  toast('Key cleared','var(--muted)');
+  toast('Gemini key cleared','var(--muted)');
+  renderPage();
+};
+
+// ── OpenAI key ──
+window.saveOpenAiKey=()=>{
+  const val=document.getElementById('openaiKeyInput')?.value.trim();
+  if(!val){toast('Enter an API key first','var(--red)');return;}
+  if(!val.startsWith('sk-')){toast('OpenAI keys start with sk-','var(--yellow)');return;}
+  localStorage.setItem('fw_openai_key',val);
+  toast('✓ OpenAI key saved');
+  renderPage();
+};
+window.clearOpenAiKey=()=>{
+  localStorage.removeItem('fw_openai_key');
+  const inp=document.getElementById('openaiKeyInput');
+  if(inp)inp.value='';
+  toast('OpenAI key cleared','var(--muted)');
   renderPage();
 };
 
@@ -5926,9 +6000,12 @@ async function compressImage(file){
 
 window.scanSelectedPhoto=async()=>{
   if(!_scanFile){toast('No photo selected','var(--red)');return;}
-  const key=(localStorage.getItem('fw_gemini_key')||'').trim();
+  const provider=localStorage.getItem('fw_ai_provider')||'gemini';
+  const key=provider==='openai'
+    ?(localStorage.getItem('fw_openai_key')||'').trim()
+    :(localStorage.getItem('fw_gemini_key')||'').trim();
   if(!key){
-    toast('⚠️ Add your Gemini API key in Settings first','var(--yellow)');
+    toast('⚠️ Add your AI key in Settings first','var(--yellow)');
     return;
   }
   const status=document.getElementById('scanStatus');
@@ -5943,55 +6020,105 @@ window.scanSelectedPhoto=async()=>{
   if(errorBox)errorBox.style.display='none';
   if(scanNowBtn)scanNowBtn.disabled=true;
   try{
-    // Step 1: Compress image
     if(statusMsg)statusMsg.textContent='Compressing image...';
     const {base64,mimeType}=await compressImage(_scanFile);
-    // Step 2: Call Gemini API
     if(statusMsg)statusMsg.textContent='Reading receipt with AI...';
     const cats=getCats();
     const catKeys=Object.keys(cats).filter(k=>k!=='income').join(', ');
-    const resp=await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          contents:[{parts:[
-            {inline_data:{mime_type:mimeType,data:base64}},
-            {text:'You are a receipt/invoice reader for a family expense tracker.\nAnalyze this image and extract transaction details.\n\nReturn ONLY a valid JSON object:\n{\n  "amount": <number, total paid>,\n  "description": <string, merchant name max 40 chars>,\n  "date": <string, YYYY-MM-DD, use today if unclear>,\n  "category": <string, ONE of: '+catKeys+'>,\n  "currency": <string, 3-letter code e.g. MYR USD SGD>,\n  "notes": <string, extra item details max 60 chars or "">\n}\nRules: amount is a plain number. Return ONLY the JSON, no markdown.'}
-          ]}]
-        })
-      }
-    );
-    // Step 3: Handle response
-    const responseText=await resp.text();
-    if(!resp.ok){
-      let errMsg='API error '+resp.status;
-      try{
-        const errJson=JSON.parse(responseText);
-        errMsg=errJson?.error?.message||errMsg;
-        // Common error codes
-        if(resp.status===400)errMsg='Invalid request or bad image. '+errMsg;
-        if(resp.status===401||resp.status===403)errMsg='Invalid API key. Check your key in Settings.';
-        if(resp.status===429)errMsg='Rate limit reached. Wait a moment and try again.';
-        if(resp.status===503)errMsg='Gemini service unavailable. Try again shortly.';
-      }catch(e2){}
-      throw new Error(errMsg);
-    }
-    const data=JSON.parse(responseText);
-    const text=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    if(!text)throw new Error('Empty response from AI. Try a clearer photo.');
-    // Step 4: Parse JSON
-    const clean=text.replace(/```json|```/g,'').trim();
+    const prompt=`You are an expert receipt/invoice reader for a family expense tracker app used in Malaysia.
+Analyze this image carefully. It may contain text in English, Malay, Chinese, or a mix.
+Extract the transaction details and return ONLY a valid JSON object with no markdown:
+{
+  "amount": <number, the total amount paid — look for "TOTAL", "JUMLAH", "合计", or the largest amount>,
+  "description": <string, the merchant or store name, max 40 chars>,
+  "date": <string, YYYY-MM-DD format. Use today's date if not visible: ${new Date().toISOString().slice(0,10)}>,
+  "category": <string, ONE of these exact keys: ${catKeys}>,
+  "currency": <string, 3-letter ISO code. Default to MYR if not shown>,
+  "notes": <string, brief summary of items or purpose, max 60 chars, or "">
+}
+Rules: amount must be a plain number (no currency symbol). Return ONLY the JSON object.`;
+
     let parsed;
-    try{parsed=JSON.parse(clean);}
-    catch(e){
-      // Try to extract JSON from the response
-      const match=clean.match(/\{[\s\S]*\}/);
-      if(match)try{parsed=JSON.parse(match[0]);}catch(e2){}
-      if(!parsed)throw new Error('Could not parse AI response. Try a clearer photo of the receipt.');
+
+    if(provider==='openai'){
+      // ── GPT-4o Vision ──
+      const resp=await fetch('https://api.openai.com/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+        body:JSON.stringify({
+          model:'gpt-4o',
+          max_tokens:400,
+          messages:[{
+            role:'user',
+            content:[
+              {type:'image_url',image_url:{url:'data:'+mimeType+';base64,'+base64,detail:'high'}},
+              {type:'text',text:prompt}
+            ]
+          }]
+        })
+      });
+      const responseText=await resp.text();
+      if(!resp.ok){
+        let errMsg='OpenAI API error '+resp.status;
+        try{
+          const errJson=JSON.parse(responseText);
+          errMsg=errJson?.error?.message||errMsg;
+          if(resp.status===401)errMsg='Invalid OpenAI key. Check your key in Settings.';
+          if(resp.status===429)errMsg='OpenAI rate limit or quota exceeded. Try again shortly or switch to Gemini.';
+          if(resp.status===400)errMsg='Bad request — try a clearer photo.';
+        }catch(e2){}
+        throw new Error(errMsg);
+      }
+      const data=JSON.parse(responseText);
+      const text=data?.choices?.[0]?.message?.content||'';
+      if(!text)throw new Error('Empty response from GPT-4o. Try a clearer photo.');
+      const clean=text.replace(/```json|```/g,'').trim();
+      try{parsed=JSON.parse(clean);}catch(e){
+        const match=clean.match(/\{[\s\S]*\}/);
+        if(match)try{parsed=JSON.parse(match[0]);}catch(e2){}
+        if(!parsed)throw new Error('Could not parse AI response. Try a clearer photo.');
+      }
+
+    }else{
+      // ── Gemini Flash ──
+      const resp=await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,
+        {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            contents:[{parts:[
+              {inline_data:{mime_type:mimeType,data:base64}},
+              {text:prompt}
+            ]}]
+          })
+        }
+      );
+      const responseText=await resp.text();
+      if(!resp.ok){
+        let errMsg='Gemini API error '+resp.status;
+        try{
+          const errJson=JSON.parse(responseText);
+          errMsg=errJson?.error?.message||errMsg;
+          if(resp.status===400)errMsg='Invalid request or bad image. '+errMsg;
+          if(resp.status===401||resp.status===403)errMsg='Invalid Gemini key. Check your key in Settings.';
+          if(resp.status===429)errMsg='Gemini rate limit reached. Switch to GPT-4o in Settings or wait a moment.';
+          if(resp.status===503)errMsg='Gemini service unavailable. Try again shortly.';
+        }catch(e2){}
+        throw new Error(errMsg);
+      }
+      const data=JSON.parse(responseText);
+      const text=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+      if(!text)throw new Error('Empty response from Gemini. Try a clearer photo.');
+      const clean=text.replace(/```json|```/g,'').trim();
+      try{parsed=JSON.parse(clean);}catch(e){
+        const match=clean.match(/\{[\s\S]*\}/);
+        if(match)try{parsed=JSON.parse(match[0]);}catch(e2){}
+        if(!parsed)throw new Error('Could not parse AI response. Try a clearer photo of the receipt.');
+      }
     }
-    // Step 5: Fill form
+
+    // ── Fill form fields ──
     if(parsed.amount)      S.addForm.amount=String(parseFloat(parsed.amount)||'');
     if(parsed.description) S.addForm.description=parsed.description.substring(0,40);
     if(parsed.date)        S.addForm.date=parsed.date;
@@ -6004,7 +6131,7 @@ window.scanSelectedPhoto=async()=>{
     }
     S.addForm.type='expense';S.addForm.subcat='';
     if(status)status.style.display='none';
-    // Step 6: Show result card
+    // ── Show result card ──
     const cats2=getCats();const cat2=cats2[S.addForm.category]||DEFAULT_CATS.other;
     if(resultBody){
       const dispCur=S.addForm.currency||S.ledgerCurrency;
@@ -6032,7 +6159,6 @@ window.scanSelectedPhoto=async()=>{
     if(previewWrap)previewWrap.style.display='block';
     if(scanNowBtn)scanNowBtn.disabled=false;
     console.error('Scan error:',e);
-    // Show persistent error box instead of just a toast
     if(errorBox){
       errorBox.style.display='block';
       document.getElementById('scanErrorMsg').textContent=e.message;
