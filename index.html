@@ -91,7 +91,7 @@
   .member-box .m-avatar{font-size:20px;margin-bottom:3px}
   .member-box.active{color:#fff}
   .split-hint{font-size:12px;color:var(--accent);text-align:center;margin-top:10px}
-  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--bg);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 30px calc(24px + env(safe-area-inset-bottom));display:flex;justify-content:space-around;align-items:center;z-index:50;margin-bottom:env(safe-area-inset-bottom,0px)}
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--bg);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 30px 10px;display:flex;justify-content:space-around;align-items:center;z-index:50}
   .bottom-nav::after{content:'';position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:60px;background:var(--bg);z-index:-1}
   .nav-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;color:var(--dim);font-size:11px;font-weight:600;padding:4px 12px}
   .nav-btn.active{color:var(--accent)}
@@ -6684,30 +6684,27 @@ window.pickProfColor=i=>{
 window.setProfTab=tab=>{profTab=tab;renderPage();};
 
 // ── SAFE AREA GAP FIX ──
-// CSS env(safe-area-inset-bottom) can get stale when switching between PWA apps on iOS.
-// We measure it via JS and reapply whenever the app becomes visible again.
 (function(){
   function applyGap(){
-    // Measure actual safe area using a probe element
     var probe=document.createElement('div');
     probe.style.cssText='position:fixed;bottom:0;left:0;width:1px;height:env(safe-area-inset-bottom,0px);pointer-events:none;opacity:0;visibility:hidden';
     document.body.appendChild(probe);
     var safeH=probe.getBoundingClientRect().height||0;
     document.body.removeChild(probe);
 
-    var gap=document.getElementById('navGap');
     var nav=document.getElementById('bottomNav');
-    if(gap)gap.style.height=safeH+'px';
-    // padding-bottom is handled by CSS env(safe-area-inset-bottom)
+    // In PWA: nav padding covers safe area + comfortable tap space
+    if(nav)nav.style.paddingBottom=(safeH+10)+'px';
+
+    // Page scroll area must end above the nav
+    var navH=nav?nav.getBoundingClientRect().height:80;
     document.querySelectorAll('.page').forEach(function(p){
-      p.style.paddingBottom=(90+safeH)+'px';
+      p.style.paddingBottom=navH+'px';
     });
   }
 
   applyGap();
   requestAnimationFrame(applyGap);
-
-  // Re-measure whenever app comes back into view (key fix for PWA switching)
   document.addEventListener('visibilitychange',function(){
     if(!document.hidden){applyGap();setTimeout(applyGap,150);setTimeout(applyGap,400);}
   });
@@ -6723,37 +6720,48 @@ window.setProfTab=tab=>{profTab=tab;renderPage();};
   var app=document.getElementById('app');
 
   function setHeight(){
-    var h=window.innerHeight;
+    // Use dvh (dynamic viewport height) which accounts for browser chrome
+    var h=window.visualViewport?window.visualViewport.height:window.innerHeight;
     if(app&&h>100)app.style.height=h+'px';
   }
 
   if(isStandalone){
-    // PWA home screen — fix height precisely, handle keyboard
-    setHeight();
-    requestAnimationFrame(setHeight);
+    // PWA — use full innerHeight, adjust when keyboard appears
+    function setPwaHeight(){
+      var h=window.innerHeight;
+      if(app&&h>100)app.style.height=h+'px';
+    }
+    setPwaHeight();
+    requestAnimationFrame(setPwaHeight);
     if(window.visualViewport){
       window.visualViewport.addEventListener('resize',function(){
         var vvh=window.visualViewport.height;
         if(app){app.style.height=(window.innerHeight-vvh>100?vvh:window.innerHeight)+'px';}
       },{passive:true});
     }
-    window.addEventListener('resize',setHeight,{passive:true});
-    window.addEventListener('orientationchange',function(){setTimeout(setHeight,300);},{passive:true});
+    window.addEventListener('resize',setPwaHeight,{passive:true});
+    window.addEventListener('orientationchange',function(){setTimeout(setPwaHeight,300);},{passive:true});
   } else {
-    // Safari browser — position scroll trigger 1px below viewport
-    // This makes document scrollable so Safari can hide address bar
+    // Safari browser — make body taller than viewport so address bar can hide on scroll
     var trigger=document.getElementById('scrollTrigger');
     function updateTrigger(){
       var h=window.innerHeight;
       if(app&&h>100)app.style.height=h+'px';
-      if(trigger)trigger.style.top=(h+1)+'px';
+      // Place trigger just beyond viewport bottom — forces Safari to allow hiding address bar
+      if(trigger){
+        trigger.style.position='fixed';
+        trigger.style.top=(h-1)+'px';
+        trigger.style.height='2px';
+        trigger.style.width='100%';
+      }
     }
     updateTrigger();
     requestAnimationFrame(updateTrigger);
     window.addEventListener('resize',updateTrigger,{passive:true});
     window.addEventListener('orientationchange',function(){setTimeout(updateTrigger,300);},{passive:true});
-    // When address bar hides, innerHeight increases — update app height
     window.addEventListener('scroll',function(){updateTrigger();},{passive:true});
+    // Force initial scroll to trigger address bar hide
+    setTimeout(function(){window.scrollTo(0,1);window.scrollTo(0,0);},300);
   }
 })();
 
