@@ -20,9 +20,11 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;transition:background-color 0.25s,color 0.15s,border-color 0.2s}
 
   /* Single layout that works in both Safari browser and standalone PWA */
-  html,body{height:100%;height:100dvh;overflow:hidden;background:var(--bg)}
+  html,body{height:100%;overflow:hidden;background:var(--bg)}
   body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:stretch}
-  #app{width:100%;max-width:430px;height:100dvh;position:relative;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+  #app{width:100%;max-width:430px;height:100vh;height:100dvh;position:relative;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+  /* Extend background beyond app bottom to fill physical screen gap */
+  #app::after{content:'';position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:60px;background:var(--bg);z-index:0;pointer-events:none}
   .page{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(90px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
   .page::-webkit-scrollbar{display:none}
   html.mode-standalone #scrollTrigger{display:none}
@@ -6717,14 +6719,21 @@ window.setProfTab=tab=>{profTab=tab;renderPage();};
   }
 
   if(isStandalone){
-    // PWA — CSS 100dvh handles full height correctly.
-    // Only handle keyboard: when visualViewport shrinks by >100px, keyboard is open.
+    // PWA — screen.height covers the full physical display including areas
+    // below window.innerHeight that CSS alone can't reach
+    function setPwaHeight(){
+      if(app)app.style.height=screen.height+'px';
+    }
+    setPwaHeight();
+    requestAnimationFrame(setPwaHeight);
+    // Shrink only when keyboard appears
     if(window.visualViewport){
       window.visualViewport.addEventListener('resize',function(){
         var diff=window.innerHeight-window.visualViewport.height;
-        if(app)app.style.height=(diff>100?window.visualViewport.height+'px':'');
+        if(app)app.style.height=(diff>100?window.visualViewport.height:screen.height)+'px';
       },{passive:true});
     }
+    window.addEventListener('orientationchange',function(){setTimeout(setPwaHeight,300);},{passive:true});
   } else {
     // Safari browser — make body taller than viewport so address bar can hide on scroll
     var trigger=document.getElementById('scrollTrigger');
