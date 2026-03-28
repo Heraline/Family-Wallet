@@ -197,11 +197,46 @@
      Hidden in standalone mode via CSS. -->
 <div id="scrollTrigger" style="height:1px;width:1px;position:absolute;bottom:0;opacity:0;pointer-events:none"></div>
 
-<script src="firebase-config.js"></script>
+<script>
+// Inline fallback: if firebase-config.js is missing (e.g. GitHub Pages without the file),
+// show a clear setup message instead of infinite loading.
+if(typeof window.__FIREBASE_CONFIG__ === 'undefined'){
+  window.addEventListener('DOMContentLoaded', function(){
+    var ls = document.getElementById('loadingScreen');
+    if(ls){
+      ls.innerHTML = '<div style="max-width:340px;text-align:center;padding:0 24px">'
+        + '<div style="font-size:52px;margin-bottom:18px">⚙️</div>'
+        + '<div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:10px">Firebase Setup Required</div>'
+        + '<div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:22px">'
+        + 'This app needs a <code style="background:rgba(108,99,255,0.15);color:var(--accent);padding:2px 6px;border-radius:5px">firebase-config.js</code> file '
+        + 'in the same folder as <code style="background:rgba(108,99,255,0.15);color:var(--accent);padding:2px 6px;border-radius:5px">index.html</code>.<br><br>'
+        + 'Create the file with your Firebase project credentials:'
+        + '</div>'
+        + '<pre style="background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.25);border-radius:12px;padding:14px 16px;font-size:11px;text-align:left;color:var(--text);overflow-x:auto;line-height:1.6">'
+        + 'window.__FIREBASE_CONFIG__ = {\n'
+        + '  apiKey: "YOUR_API_KEY",\n'
+        + '  authDomain: "YOUR_PROJECT.firebaseapp.com",\n'
+        + '  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",\n'
+        + '  projectId: "YOUR_PROJECT_ID",\n'
+        + '  storageBucket: "YOUR_PROJECT.appspot.com",\n'
+        + '  messagingSenderId: "YOUR_SENDER_ID",\n'
+        + '  appId: "YOUR_APP_ID"\n'
+        + '};'
+        + '</pre>'
+        + '<div style="font-size:12px;color:var(--dim);margin-top:16px">Get these values from your <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">Firebase Console</a> → Project Settings → Your Apps.</div>'
+        + '</div>';
+    }
+  });
+}
+</script>
+<script src="firebase-config.js" onerror="console.warn('firebase-config.js not found')"></script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updateProfile}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import{getDatabase,ref,set,get,push,onValue,off,update,remove}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// Guard: stop execution if Firebase config is not loaded
+if(!window.__FIREBASE_CONFIG__){throw new Error('Firebase config missing — see setup instructions on screen.');}
 
 const app=initializeApp(window.__FIREBASE_CONFIG__);
 const auth=getAuth(app),db=getDatabase(app);
