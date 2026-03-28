@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Gap Test</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:#1a1a2e;color:white;font-family:sans-serif}
+  body{display:flex;flex-direction:column}
+
+  #info{flex:1;padding:20px;font-size:13px;line-height:2;overflow:auto}
+  
+  /* THE NAV — same as your app */
+  #nav{
+    position:fixed;
+    bottom:0;left:0;right:0;
+    background:#6C63FF;
+    padding:10px 30px;
+    padding-bottom:calc(10px + env(safe-area-inset-bottom));
+    text-align:center;
+    font-size:14px;font-weight:bold;
+    z-index:50;
+  }
+
+  /* Red line to show where screen bottom actually is */
+  #marker{
+    position:fixed;
+    bottom:0;left:0;right:0;
+    height:3px;
+    background:red;
+    z-index:999;
+  }
+</style>
+</head>
+<body>
+<div id="info">Loading measurements...</div>
+<div id="nav">NAV BAR — should touch screen bottom</div>
+<div id="marker"></div>
+
+<script>
+function measure(){
+  var info = document.getElementById('info');
+  var nav = document.getElementById('nav');
+  var navRect = nav.getBoundingClientRect();
+  
+  // Measure safe area with probe
+  var probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;bottom:0;left:0;width:1px;height:env(safe-area-inset-bottom,0px);background:transparent';
+  document.body.appendChild(probe);
+  var safeArea = probe.getBoundingClientRect().height;
+  document.body.removeChild(probe);
+
+  var isStandalone = window.navigator.standalone === true;
+
+  info.innerHTML = 
+    '<b>Device Info</b><br>' +
+    'window.innerHeight: ' + window.innerHeight + 'px<br>' +
+    'screen.height: ' + screen.height + 'px<br>' +
+    'visualViewport.height: ' + (window.visualViewport ? window.visualViewport.height : 'N/A') + 'px<br>' +
+    '<br><b>Safe Area</b><br>' +
+    'env(safe-area-inset-bottom): ' + safeArea + 'px<br>' +
+    '<br><b>Nav Bar</b><br>' +
+    'nav top: ' + navRect.top + 'px<br>' +
+    'nav bottom: ' + navRect.bottom + 'px<br>' +
+    'nav height: ' + navRect.height + 'px<br>' +
+    'gap below nav: ' + (window.innerHeight - navRect.bottom) + 'px<br>' +
+    '<br><b>Mode</b><br>' +
+    'PWA standalone: ' + isStandalone + '<br>' +
+    'display-mode standalone: ' + window.matchMedia("(display-mode:standalone)").matches + '<br>' +
+    '<br><b>The red line = screen bottom</b><br>' +
+    'If nav doesn\'t touch red line, gap exists.<br>';
+}
+
+measure();
+window.addEventListener('resize', measure);
+setTimeout(measure, 500);
+setTimeout(measure, 1500);
+</script>
+</body>
+</html>
