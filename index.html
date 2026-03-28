@@ -20,9 +20,9 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;transition:background-color 0.25s,color 0.15s,border-color 0.2s}
 
   /* Single layout that works in both Safari browser and standalone PWA */
-  html,body{height:100%;overflow:hidden;background:var(--bg)}
+  html,body{height:100%;height:100dvh;overflow:hidden;background:var(--bg)}
   body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:stretch}
-  #app{width:100%;max-width:430px;height:100%;min-height:100dvh;position:relative;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+  #app{width:100%;max-width:430px;height:100dvh;position:relative;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
   .page{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(90px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
   .page::-webkit-scrollbar{display:none}
   html.mode-standalone #scrollTrigger{display:none}
@@ -6717,14 +6717,12 @@ window.setProfTab=tab=>{profTab=tab;renderPage();};
   }
 
   if(isStandalone){
-    // PWA — let CSS 100dvh handle full height.
-    // Only shrink app when keyboard appears (visualViewport height drops significantly)
+    // PWA — CSS 100dvh handles full height correctly.
+    // Only handle keyboard: when visualViewport shrinks by >100px, keyboard is open.
     if(window.visualViewport){
       window.visualViewport.addEventListener('resize',function(){
-        var vvh=window.visualViewport.height;
-        var diff=window.innerHeight-vvh;
-        // Only adjust if keyboard is open (diff > 100px)
-        if(app){app.style.height=(diff>100?vvh:''+'');}
+        var diff=window.innerHeight-window.visualViewport.height;
+        if(app)app.style.height=(diff>100?window.visualViewport.height+'px':'');
       },{passive:true});
     }
   } else {
