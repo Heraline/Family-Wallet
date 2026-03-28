@@ -90,6 +90,7 @@
   .member-box.active{color:#fff}
   .split-hint{font-size:12px;color:var(--accent);text-align:center;margin-top:10px}
   .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--bg);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 30px calc(24px + env(safe-area-inset-bottom));display:flex;justify-content:space-around;align-items:center;z-index:50}
+  .bottom-nav::after{content:'';position:absolute;bottom:calc(-1 * env(safe-area-inset-bottom, 34px));left:0;right:0;height:calc(env(safe-area-inset-bottom, 34px) + 20px);background:var(--bg);z-index:-1}
   .nav-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;color:var(--dim);font-size:11px;font-weight:600;padding:4px 12px}
   .nav-btn.active{color:var(--accent)}
   .nav-btn .nav-icon{font-size:22px}
@@ -6695,7 +6696,7 @@ window.setProfTab=tab=>{profTab=tab;renderPage();};
     var gap=document.getElementById('navGap');
     var nav=document.getElementById('bottomNav');
     if(gap)gap.style.height=safeH+'px';
-    if(nav)nav.style.paddingBottom=(safeH+24)+'px';
+    // padding-bottom is handled by CSS env(safe-area-inset-bottom)
     document.querySelectorAll('.page').forEach(function(p){
       p.style.paddingBottom=(90+safeH)+'px';
     });
