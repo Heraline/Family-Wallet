@@ -831,16 +831,16 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
   },800);
 
   // ── CLIPBOARD BRIDGE (PWA mode — best experience) ──
-  // When Shortcut copies JSON to clipboard, PWA picks it up automatically on open
-  setTimeout(function(){
+  // Check clipboard multiple times to handle slow PWA load
+  function checkClipboard(){
     if(!navigator.clipboard||!navigator.clipboard.readText)return;
     navigator.clipboard.readText().then(function(text){
-      if(!text||text.length>2000)return;
-      var t=text.trim();
+      if(!text||text.length>5000)return;
+      // Strip markdown code fences if Gemini returned them
+      var t=text.trim().replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
       if(!t.startsWith('{'))return;
       try{
         var d=JSON.parse(t);
-        // Must have fw_shortcut marker to avoid reading random clipboard content
         if(d.fw_shortcut!==true)return;
         var cats=getCats();
         var cat=d.cat||'food';
@@ -857,12 +857,16 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
           coPayorMode:'equal',splitMode:'equal',customSplits:{},assetId:'',origAmount:null
         };
         S.editTxKey=null;S.view='add';render();
-        // Clear clipboard so it doesn't re-trigger next open
         navigator.clipboard.writeText('').catch(function(){});
-        toast('✨ Receipt detected from Shortcut — review and save!');
-      }catch(e){}
+        toast('✨ Receipt scanned — review and save!');
+      }catch(e){console.log('Clipboard parse:',e,t);}
     }).catch(function(){});
-  },1200);
+  }
+  // Check at 1s, 2s, 3s, 5s after app loads to handle slow PWA startup
+  setTimeout(checkClipboard,1000);
+  setTimeout(checkClipboard,2000);
+  setTimeout(checkClipboard,3000);
+  setTimeout(checkClipboard,5000);
 }
 
 // ── AUTH UI ──
@@ -1045,6 +1049,39 @@ function renderNav(){
     <button class="nav-btn ${view==='stats'?'active':''}" onclick="goStats()"><span class="nav-icon">📊</span><span>Statistics</span></button>
     <button class="nav-btn ${view==='notifications'?'active':''}" onclick="goNotifications()" style="position:relative"><span class="nav-icon">🔔</span>${unread>0?`<span style="position:absolute;top:2px;right:12px;background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:999px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 3px">${unread>9?'9+':unread}</span>`:''}<span>Activity</span></button>`;
 }
+
+// ── MANUAL CLIPBOARD CHECK (for Shortcut bridge) ──
+window.checkClipboardNow=function(){
+  if(!navigator.clipboard||!navigator.clipboard.readText){
+    toast('Clipboard not available','var(--red)');return;
+  }
+  navigator.clipboard.readText().then(function(text){
+    if(!text){toast('Clipboard is empty','var(--muted)');return;}
+    var t=text.trim().replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    if(!t.startsWith('{')){toast('No transaction data found','var(--yellow)');return;}
+    try{
+      var d=JSON.parse(t);
+      if(d.fw_shortcut!==true){toast('No shortcut data in clipboard','var(--yellow)');return;}
+      var cats=getCats();
+      var cat=d.cat||'food';
+      var cur=d.cur||S.ledgerCurrency||'MYR';
+      S.addForm={
+        type:'expense',
+        amount:String(parseFloat(d.amount)||''),
+        description:d.notes?((d.desc||'')+' — '+d.notes).substring(0,80):(d.desc||''),
+        category:cats[cat]?cat:'food',subcat:'',
+        date:d.date||new Date().toISOString().slice(0,10),
+        currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
+        member:S.user?S.user.uid:'',
+        splitWith:[],coPayors:[],coPayorAmounts:{},
+        coPayorMode:'equal',splitMode:'equal',customSplits:{},assetId:'',origAmount:null
+      };
+      S.editTxKey=null;S.view='add';render();
+      navigator.clipboard.writeText('').catch(function(){});
+      toast('✨ Receipt loaded — review and save!');
+    }catch(e){toast('Could not parse clipboard data','var(--red)');console.log('Clipboard:',text);}
+  }).catch(function(e){toast('Clipboard permission denied — tap Allow','var(--red)');});
+};
 function renderPage(){
   const pg=document.getElementById('mainPage');if(!pg)return;
   const _v=S.view;
@@ -1489,11 +1526,10 @@ function renderHome(){
         </div>
         <button onclick="goSearch()" style="background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 10px;font-size:16px">🔍</button>
         <button onclick="goNotifications()" style="position:relative;background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 10px;font-size:16px">${unreadCount()>0?`<span style="position:absolute;top:4px;right:4px;background:var(--red);border-radius:999px;min-width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;padding:0 2px">${unreadCount()>9?'9+':unreadCount()}</span>`:''}🔔</button>
+        <button onclick="checkClipboardNow()" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);border-radius:12px;padding:8px 10px;font-size:16px" title="Load from Shortcut">⚡</button>
         <button onclick="goSettings()" style="background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 10px;font-size:16px">⚙️</button>
       </div>
     </div>
-
-    <!-- SPENT TODAY + TOTAL BALANCE ROW -->
     <div style="padding:18px 20px 0;display:flex;align-items:flex-end;justify-content:space-between">
       <div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:4px">Spent Today</p>
