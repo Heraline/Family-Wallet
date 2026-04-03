@@ -801,10 +801,81 @@ function switchBudgetMonth(ym){
 }
 function showAuth(){document.getElementById('authContainer').innerHTML=renderAuth();document.getElementById('ledgerContainer').innerHTML='';document.getElementById('bottomNav').style.display='none';document.getElementById('mainPage').innerHTML='';}
 function showApp(){document.getElementById('authContainer').innerHTML='';document.getElementById('ledgerContainer').innerHTML='';document.getElementById('bottomNav').style.display='flex';render();
-  // ── SHORTCUT URL HANDLER (Safari fallback) ──
+  // ── SHORTCUT URL HANDLER ──
   setTimeout(function(){
     try{
       const p=new URLSearchParams(window.location.search);
+
+      // ── scan=1 mode: shortcut sends raw Base64 image, app does AI scanning ──
+      if(p.get('scan')==='1'){
+        const imgData=p.get('img')||'';
+        window.history.replaceState({},'','/Family-Wallet/');
+        const aiProvider=localStorage.getItem('fw_ai_provider')||'gemini';
+        const aiKey=aiProvider==='openai'
+          ?(localStorage.getItem('fw_openai_key')||'').trim()
+          :(localStorage.getItem('fw_gemini_key')||'').trim();
+        S.addForm=blankForm();S.editTxKey=null;S.view='add';render();
+        if(!imgData||!aiKey){
+          toast(aiKey?'⚠️ No image received from Shortcut':'⚠️ Add your AI key in Settings first','var(--yellow)');
+          return;
+        }
+        toast('🌟 Scanning receipt...');
+        const cats=getCats();
+        const catKeys=Object.keys(cats).filter(k=>k!=='income');
+        const catDescriptions=catKeys.map(k=>{
+          const c=cats[k];
+          const subcatKeys=c.subcats?Object.keys(c.subcats):[];
+          return k+(subcatKeys.length?' (subcats: '+subcatKeys.join(', ')+')':'');
+        }).join('; ');
+        const prompt='Extract the transaction from this receipt image. Return ONLY a raw JSON object with no markdown, no backticks, no explanation: {"amount":0.00,"description":"merchant name max 40 chars","date":"'+new Date().toISOString().slice(0,10)+'","category":"food","subcat":"","currency":"MYR","notes":""}. Available categories with subcategories: '+catDescriptions+'. Rules: amount is a plain number. category must be one of: '+catKeys.join(', ')+'. subcat must be a valid subcat key for the chosen category or empty string. Default currency to MYR.';
+        (async()=>{
+          try{
+            let parsed;
+            if(aiProvider==='openai'){
+              const resp=await fetch('https://api.openai.com/v1/chat/completions',{
+                method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiKey},
+                body:JSON.stringify({model:'gpt-4o',max_tokens:300,messages:[{role:'user',content:[
+                  {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+imgData,detail:'high'}},
+                  {type:'text',text:prompt}
+                ]}]})
+              });
+              const data=JSON.parse(await resp.text());
+              const text=data?.choices?.[0]?.message?.content||'';
+              const clean=text.replace(/```json|```/g,'').trim();
+              try{parsed=JSON.parse(clean);}catch(e){const m=clean.match(/\{[\s\S]*\}/);if(m)parsed=JSON.parse(m[0]);}
+            }else{
+              const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+aiKey,{
+                method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({contents:[{parts:[
+                  {inline_data:{mime_type:'image/jpeg',data:imgData}},
+                  {text:prompt}
+                ]}]})
+              });
+              const data=JSON.parse(await resp.text());
+              const text=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+              const clean=text.replace(/```json|```/g,'').trim();
+              try{parsed=JSON.parse(clean);}catch(e){const m=clean.match(/\{[\s\S]*\}/);if(m)parsed=JSON.parse(m[0]);}
+            }
+            if(!parsed)throw new Error('Could not read receipt. Try a clearer photo.');
+            const cats2=getCats();
+            if(parsed.amount)S.addForm.amount=String(parseFloat(parsed.amount)||'');
+            if(parsed.description)S.addForm.description=parsed.description.substring(0,40);
+            if(parsed.date)S.addForm.date=parsed.date;
+            if(parsed.category&&cats2[parsed.category])S.addForm.category=parsed.category;
+            if(parsed.subcat&&cats2[S.addForm.category]?.subcats?.[parsed.subcat])S.addForm.subcat=parsed.subcat;
+            if(parsed.currency&&CURRENCIES[parsed.currency])S.addForm.currency=parsed.currency;
+            if(parsed.notes&&parsed.notes.trim()){
+              const note=parsed.notes.trim().substring(0,60);
+              if(!S.addForm.description.includes(note))S.addForm.description=(S.addForm.description+' — '+note).substring(0,80);
+            }
+            S.addForm.type='expense';
+            render();toast('✨ Receipt scanned — review and save!');
+          }catch(e){console.error('Shortcut scan error:',e);toast('❌ Scan failed: '+e.message,'var(--red)');}
+        })();
+        return;
+      }
+
+      // ── shortcut=1 mode: pre-filled URL params (legacy / fallback) ──
       if(p.get('shortcut')==='1'){
         const amount=p.get('amount')||'';
         const desc=p.get('desc')||'';
@@ -812,11 +883,14 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
         const date=p.get('date')||new Date().toISOString().slice(0,10);
         const cur=p.get('cur')||S.ledgerCurrency||'MYR';
         const notes=p.get('notes')||'';
+        const subcat=p.get('subcat')||'';
         const cats=getCats();
         S.addForm={
           type:'expense',amount:amount,
           description:notes?((desc+' — '+notes).substring(0,80)):desc,
-          category:cats[cat]?cat:'food',subcat:'',date:date,
+          category:cats[cat]?cat:'food',
+          subcat:cats[cat]?.subcats?.[subcat]?subcat:'',
+          date:date,
           currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
           member:S.user?S.user.uid:'',
           splitWith:[],coPayors:[],coPayorAmounts:{},
