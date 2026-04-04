@@ -829,8 +829,8 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
         S.addForm={
           type:'expense',amount:amount,
           description:notes?((desc+' — '+notes).substring(0,80)):desc,
-          category:cats[cat]?cat:'food',
-          subcat:cats[cat]?.subcats?.[subcat]?subcat:'',
+          category:fuzzyMatchCat(cat,cats),
+          subcat:fuzzyMatchSubcat(subcat,fuzzyMatchCat(cat,cats),cats),
           date:date,
           currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
           member:S.user?S.user.uid:'',
@@ -846,7 +846,6 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
   },800);
 
   // ── CLIPBOARD BRIDGE (PWA mode — best experience) ──
-  // When Shortcut copies JSON to clipboard, PWA picks it up automatically on open
   setTimeout(function(){
     if(!navigator.clipboard||!navigator.clipboard.readText)return;
     navigator.clipboard.readText().then(function(text){
@@ -855,16 +854,16 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
       if(!t.startsWith('{'))return;
       try{
         var d=JSON.parse(t);
-        // Must have fw_shortcut marker to avoid reading random clipboard content
         if(d.fw_shortcut!==true)return;
         var cats=getCats();
-        var cat=d.cat||'food';
+        var cat=fuzzyMatchCat(d.cat||'',cats);
+        var subcat=fuzzyMatchSubcat(d.subcat||'',cat,cats);
         var cur=d.cur||S.ledgerCurrency||'MYR';
         S.addForm={
           type:'expense',
           amount:String(parseFloat(d.amount)||''),
           description:d.notes?((d.desc||'')+' — '+d.notes).substring(0,80):(d.desc||''),
-          category:cats[cat]?cat:'food',subcat:'',
+          category:cat,subcat:subcat,
           date:d.date||new Date().toISOString().slice(0,10),
           currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
           member:S.user?S.user.uid:'',
@@ -872,12 +871,34 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
           coPayorMode:'equal',splitMode:'equal',customSplits:{},assetId:'',origAmount:null
         };
         S.editTxKey=null;S.view='add';render();
-        // Clear clipboard so it doesn't re-trigger next open
         navigator.clipboard.writeText('').catch(function(){});
         toast('✨ Receipt detected from Shortcut — review and save!');
       }catch(e){}
     }).catch(function(){});
   },1200);
+}
+
+// ── FUZZY CATEGORY MATCHING ──
+function fuzzyMatchCat(raw,cats){
+  if(!raw)return Object.keys(cats).filter(k=>k!=='income')[0]||'other';
+  var r=raw.toLowerCase().trim();
+  var keys=Object.keys(cats).filter(k=>k!=='income');
+  if(cats[r]&&r!=='income')return r;
+  for(var i=0;i<keys.length;i++){var k=keys[i];var label=(cats[k].label||'').toLowerCase();if(r.includes(k)||k.includes(r)||r.includes(label)||label.includes(r))return k;}
+  var fallback={food:['food','dining','restaurant','meal','grocery','groceries','cafe','coffee','drink','beverage','breakfast','lunch','dinner'],transport:['transport','transportation','travel','grab','taxi','fuel','petrol','parking','toll','ride','bus','train','flight'],shopping:['shopping','retail','clothes','clothing','electronics','household','beauty','fashion'],health:['health','medical','pharmacy','clinic','hospital','gym','fitness','dental','optical'],entertainment:['entertainment','movie','movies','game','games','sport','streaming','event','leisure'],utilities:['utilities','utility','electric','electricity','water','internet','phone','telco','subscription','bill','broadband'],education:['education','school','tuition','book','course','training','class','fees'],other:['other','misc','miscellaneous','general']};
+  for(var cat in fallback){var words=fallback[cat];for(var j=0;j<words.length;j++){if(r.includes(words[j])){for(var m=0;m<keys.length;m++){if(keys[m]===cat||keys[m].includes(cat)||cat.includes(keys[m]))return keys[m];}break;}}}
+  return keys[0]||'other';
+}
+
+function fuzzyMatchSubcat(raw,catKey,cats){
+  if(!raw||!catKey)return'';
+  var cat=cats[catKey];
+  if(!cat||!cat.subcats)return'';
+  var r=raw.toLowerCase().trim();
+  var subcatKeys=Object.keys(cat.subcats);
+  if(cat.subcats[r])return r;
+  for(var i=0;i<subcatKeys.length;i++){var sk=subcatKeys[i];var sv=cat.subcats[sk];var slabel=(typeof sv==='object'?(sv.label||sk):sv).toLowerCase();if(r.includes(sk)||sk.includes(r)||r.includes(slabel)||slabel.includes(r))return sk;}
+  return'';
 }
 
 // ── AUTH UI ──
