@@ -876,37 +876,49 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
   },800);
 
   // ── CLIPBOARD BRIDGE (PWA mode — best experience) ──
-  setTimeout(function(){
-    if(!navigator.clipboard||!navigator.clipboard.readText)return;
-    navigator.clipboard.readText().then(function(text){
-      if(!text||text.length>2000)return;
-      var t=text.trim();
-      if(!t.startsWith('{'))return;
-      try{
-        var d=JSON.parse(t);
-        if(d.fw_shortcut!==true)return;
-        var cats=getCats();
-        var cat=fuzzyMatchCat(d.cat||'',cats);
-        var subcat=fuzzyMatchSubcat(d.subcat||'',cat,cats);
-        var cur=d.cur||S.ledgerCurrency||'MYR';
-        S.addForm={
-          type:'expense',
-          amount:String(parseFloat(d.amount)||''),
-          description:d.notes?((d.desc||'')+' — '+d.notes).substring(0,80):(d.desc||''),
-          category:cat,subcat:subcat,
-          date:d.date||new Date().toISOString().slice(0,10),
-          currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
-          member:S.user?S.user.uid:'',
-          splitWith:[],coPayors:[],coPayorAmounts:{},
-          coPayorMode:'equal',splitMode:'equal',customSplits:{},assetId:'',origAmount:null
-        };
-        S.editTxKey=null;S.view='add';render();
-        navigator.clipboard.writeText('').catch(function(){});
-        toast('✨ Receipt detected from Shortcut — review and save!');
-      }catch(e){}
-    }).catch(function(){});
-  },1200);
+  setTimeout(tryClipboardShortcut, 1200);
 }
+
+// ── CLIPBOARD SHORTCUT BRIDGE (retryable, called on show + visibilitychange) ──
+var _clipboardChecked=false;
+function tryClipboardShortcut(){
+  // Only run when the app is fully loaded (user logged in, ledger active)
+  if(!S.user||!S.activeLedgerId)return;
+  if(!navigator.clipboard||!navigator.clipboard.readText)return;
+  navigator.clipboard.readText().then(function(text){
+    if(!text||text.length>2000)return;
+    var t=text.trim();
+    if(!t.startsWith('{'))return;
+    try{
+      var d=JSON.parse(t);
+      if(d.fw_shortcut!==true)return;
+      // Ignore stale payloads older than 10 minutes
+      if(d._ts&&(Date.now()-d._ts)>600000)return;
+      var cats=getCats();
+      var cat=fuzzyMatchCat(d.cat||'',cats);
+      var subcat=fuzzyMatchSubcat(d.subcat||'',cat,cats);
+      var cur=d.cur||S.ledgerCurrency||'MYR';
+      S.addForm={
+        type:'expense',
+        amount:String(parseFloat(d.amount)||''),
+        description:d.notes?((d.desc||'')+' — '+d.notes).substring(0,80):(d.desc||''),
+        category:cat,subcat:subcat,
+        date:d.date||new Date().toISOString().slice(0,10),
+        currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
+        member:S.user?S.user.uid:'',
+        splitWith:[],coPayors:[],coPayorAmounts:{},
+        coPayorMode:'equal',splitMode:'equal',customSplits:{},assetId:'',origAmount:null
+      };
+      S.editTxKey=null;S.view='add';render();
+      navigator.clipboard.writeText('').catch(function(){});
+      toast('✨ Receipt detected from Shortcut — review and save!');
+    }catch(e){}
+  }).catch(function(){});
+}
+// Re-run every time the PWA comes back to foreground (e.g. after webapp:// redirect)
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden){setTimeout(tryClipboardShortcut,400);}
+});
 
 // ── FUZZY CATEGORY MATCHING ──
 function fuzzyMatchCat(raw,cats){
