@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="/Family-Wallet/icon-192.png">
 <title>Family Wallet</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Figtree:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Figtree:wght@300;400;500;600;700&display=swap');
   /* Font pair CSS variables — overridden per font style */
   :root{--font-ui:'Sora',sans-serif;--font-num:'DM Mono',monospace;--num-tracking:-0.03em;--num-weight:700;--label-transform:uppercase;--label-tracking:0.12em;--label-size:11px;--bg:#0A0A14;--bg2:#12121E;--bg3:#1A1A2E;--accent:#6C63FF;--accent2:#4ECDC4;--green:#69D2A0;--red:#FF6B6B;--yellow:#FFE66D;--text:#F0EEF6;--muted:#8A88AA;--dim:#5A587A;--border:rgba(255,255,255,0.07)}
   :root.light{--bg:#F4F4FA;--bg2:#FFFFFF;--bg3:#ECEAF6;--accent:#6C63FF;--accent2:#4ECDC4;--green:#2EB87A;--red:#E84545;--yellow:#D4A000;--text:#1A1830;--muted:#6B6890;--dim:#9896B8;--border:rgba(0,0,0,0.08)}
@@ -25,8 +25,6 @@
   :root.font-rounded{--font-ui:'Nunito',sans-serif;--font-num:'Nunito',sans-serif;--num-tracking:-0.01em;--num-weight:700;--label-transform:none;--label-tracking:0.02em;--label-size:12px}
   /* ── Font Style: Modern (DM Sans — neutral, airy) ── */
   :root.font-modern{--font-ui:'DM Sans',sans-serif;--font-num:'Figtree',sans-serif;--num-tracking:-0.025em;--num-weight:600;--label-transform:uppercase;--label-tracking:0.08em;--label-size:11px}
-  /* ── Font Style: Inter (Inter — sharp, neutral, Combifi-like) ── */
-  :root.font-inter{--font-ui:'Inter',sans-serif;--font-num:'Inter',sans-serif;--num-tracking:-0.03em;--num-weight:700;--label-transform:none;--label-tracking:0.01em;--label-size:12px}
 
   /* ── UI Style: Paper White ── */
   :root.ui-paper-white{--bg:#F7F7F5;--bg2:#FFFFFF;--bg3:#F0EFED;--accent:#111111;--accent2:#555555;--green:#2D9B6F;--red:#E05252;--yellow:#B8860B;--text:#111111;--muted:#888888;--dim:#AAAAAA;--border:rgba(0,0,0,0.09);--card-radius:16px;--font-weight-balance:300;--balance-letter-spacing:-0.04em}
@@ -84,104 +82,6 @@
   :root.ui-cool-slate .tab-bar{background:rgba(26,32,53,0.06)}
   :root.ui-cool-slate .modal-sheet{background:#F2F4F7}
   :root.ui-cool-slate .modal-handle{background:rgba(26,32,53,0.15)}
-
-  /* ── UI Style: Ghost White ── */
-  :root.ui-ghost-white{--bg:#F7F7F7;--bg2:#FFFFFF;--bg3:#F0F0F0;--accent:#1A56DB;--accent2:#4A90D9;--green:#2D9B6F;--red:#E05252;--yellow:#B8860B;--text:#111111;--muted:#888888;--dim:#AAAAAA;--border:rgba(0,0,0,0.09);--card-radius:14px;--font-ui:'Inter',sans-serif;--font-num:'Inter',sans-serif;--num-tracking:-0.03em;--num-weight:700;--label-transform:none;--label-tracking:0.01em;--label-size:12px}
-  :root.ui-ghost-white .card{border:0.5px solid rgba(0,0,0,0.09);box-shadow:none;background:#fff}
-  :root.ui-ghost-white .surface{background:#fff;border:0.5px solid rgba(0,0,0,0.09)}
-  :root.ui-ghost-white .btn-primary{background:#1A56DB;box-shadow:none}
-  :root.ui-ghost-white .balance-amount{font-weight:700;letter-spacing:-0.03em}
-  :root.ui-ghost-white .tab-btn.active{background:#1A56DB;color:#fff}
-  :root.ui-ghost-white .fab{background:#1A56DB;box-shadow:none}
-  :root.ui-ghost-white .bottom-nav{background:#fff;border-top:0.5px solid rgba(0,0,0,0.09)}
-  :root.ui-ghost-white .nav-btn.active{color:#1A56DB}
-  :root.ui-ghost-white .glow1,:root.ui-ghost-white .glow2{display:none}
-  :root.ui-ghost-white .tx-row{background:#fff;border:0.5px solid rgba(0,0,0,0.08);box-shadow:none}
-  :root.ui-ghost-white .tx-icon{border-radius:10px;background:#F0F3FF}
-  :root.ui-ghost-white .chip.active{background:#1A56DB;color:#fff}
-  :root.ui-ghost-white .member-pill.active{background:#1A56DB;color:#fff}
-  :root.ui-ghost-white .tab-bar{background:rgba(0,0,0,0.05)}
-  :root.ui-ghost-white .modal-sheet{background:#fff}
-  :root.ui-ghost-white .modal-handle{background:rgba(0,0,0,0.12)}
-  :root.ui-ghost-white .mini-card.income{background:rgba(45,155,111,0.07);border-color:rgba(45,155,111,0.15)}
-  :root.ui-ghost-white .mini-card.expense{background:rgba(224,82,82,0.07);border-color:rgba(224,82,82,0.15)}
-  :root.ui-ghost-white .settings-row{background:#fff;border:0.5px solid rgba(0,0,0,0.08)}
-  :root.ui-ghost-white .ledger-card{background:#fff;border:0.5px solid rgba(0,0,0,0.08)}
-  :root.ui-ghost-white .ledger-card.active-ledger{border:2px solid #1A56DB}
-  :root.ui-ghost-white .input-card{background:#fff;border:0.5px solid rgba(0,0,0,0.09)}
-  :root.ui-ghost-white .asset-card{background:#fff;border:0.5px solid rgba(0,0,0,0.08)}
-  :root.ui-ghost-white .recur-card{background:#fff;border:0.5px solid rgba(0,0,0,0.08)}
-  :root.ui-ghost-white .debt-row{background:#fff;border:0.5px solid rgba(0,0,0,0.08)}
-  :root.ui-ghost-white .balance-card{background:#fff;border:0.5px solid rgba(0,0,0,0.09)}
-  :root.ui-ghost-white .user-badge{background:rgba(26,86,219,0.08);border-color:rgba(26,86,219,0.2);color:#1A56DB}
-  :root.ui-ghost-white .invite-code-box{background:rgba(26,86,219,0.05);border:1px solid rgba(26,86,219,0.15)}
-  :root.ui-ghost-white .auth-input{background:#fff;border:1px solid rgba(0,0,0,0.12)}
-  :root.ui-ghost-white .spinner{border-color:rgba(26,86,219,0.15);border-top-color:#1A56DB}
-
-  /* ── UI Style: Soft Slate ── */
-  :root.ui-soft-slate{--bg:#F5F6FA;--bg2:#FFFFFF;--bg3:#ECEEF5;--accent:#4D5FD4;--accent2:#7B8FE8;--green:#2D9B6F;--red:#E05252;--yellow:#B8860B;--text:#1A1A2E;--muted:#9899BB;--dim:#B8BAD0;--border:rgba(77,95,212,0.12);--card-radius:16px;--font-ui:'DM Sans',sans-serif;--font-num:'DM Sans',sans-serif;--num-tracking:-0.02em;--num-weight:700;--label-transform:none;--label-tracking:0.01em;--label-size:12px}
-  :root.ui-soft-slate .card{border:none;box-shadow:0 2px 16px rgba(77,95,212,0.08);background:#fff}
-  :root.ui-soft-slate .surface{background:#fff;border:none;box-shadow:0 1px 8px rgba(77,95,212,0.07)}
-  :root.ui-soft-slate .btn-primary{background:#4D5FD4;box-shadow:0 6px 18px rgba(77,95,212,0.25)}
-  :root.ui-soft-slate .balance-amount{font-weight:700;letter-spacing:-0.02em}
-  :root.ui-soft-slate .tab-btn.active{background:#4D5FD4;color:#fff}
-  :root.ui-soft-slate .fab{background:#4D5FD4;box-shadow:0 6px 18px rgba(77,95,212,0.3)}
-  :root.ui-soft-slate .bottom-nav{background:#fff;border-top:0.5px solid rgba(77,95,212,0.1)}
-  :root.ui-soft-slate .nav-btn.active{color:#4D5FD4}
-  :root.ui-soft-slate .glow1,:root.ui-soft-slate .glow2{display:none}
-  :root.ui-soft-slate .tx-row{background:#fff;border:none;box-shadow:0 1px 8px rgba(77,95,212,0.07)}
-  :root.ui-soft-slate .tx-icon{border-radius:12px;background:#ECEEFF}
-  :root.ui-soft-slate .chip.active{background:#4D5FD4;color:#fff}
-  :root.ui-soft-slate .member-pill.active{background:#4D5FD4;color:#fff}
-  :root.ui-soft-slate .tab-bar{background:rgba(77,95,212,0.07)}
-  :root.ui-soft-slate .modal-sheet{background:#F5F6FA}
-  :root.ui-soft-slate .modal-handle{background:rgba(77,95,212,0.15)}
-  :root.ui-soft-slate .mini-card.income{background:rgba(45,155,111,0.08);border-color:rgba(45,155,111,0.15)}
-  :root.ui-soft-slate .mini-card.expense{background:rgba(224,82,82,0.08);border-color:rgba(224,82,82,0.15)}
-  :root.ui-soft-slate .settings-row{background:#fff;box-shadow:0 1px 6px rgba(77,95,212,0.06);border:none}
-  :root.ui-soft-slate .ledger-card{background:#fff;border:none;box-shadow:0 2px 12px rgba(77,95,212,0.08)}
-  :root.ui-soft-slate .ledger-card.active-ledger{border:2px solid #4D5FD4;box-shadow:0 2px 16px rgba(77,95,212,0.15)}
-  :root.ui-soft-slate .input-card{background:#fff;box-shadow:0 1px 8px rgba(77,95,212,0.07);border:none}
-  :root.ui-soft-slate .asset-card{background:#fff;border:none;box-shadow:0 2px 12px rgba(77,95,212,0.08)}
-  :root.ui-soft-slate .recur-card{background:#fff;border:none;box-shadow:0 1px 8px rgba(77,95,212,0.07)}
-  :root.ui-soft-slate .debt-row{background:#fff;border:none;box-shadow:0 1px 6px rgba(77,95,212,0.06)}
-  :root.ui-soft-slate .user-badge{background:rgba(77,95,212,0.1);border-color:rgba(77,95,212,0.2);color:#4D5FD4}
-  :root.ui-soft-slate .invite-code-box{background:rgba(77,95,212,0.06);border:1px solid rgba(77,95,212,0.15)}
-  :root.ui-soft-slate .auth-input{background:#fff;border:1px solid rgba(77,95,212,0.15)}
-  :root.ui-soft-slate .spinner{border-color:rgba(77,95,212,0.15);border-top-color:#4D5FD4}
-
-  /* ── UI Style: Warm Stone ── */
-  :root.ui-warm-stone{--bg:#FAFAF8;--bg2:#FFFFFF;--bg3:#F5F0E8;--accent:#8A7A60;--accent2:#B8A882;--green:#2D9B6F;--red:#C05A3A;--yellow:#B8860B;--text:#2C2416;--muted:#A89880;--dim:#C4B8A8;--border:rgba(44,36,22,0.1);--card-radius:16px;--font-ui:'Nunito',sans-serif;--font-num:'Nunito',sans-serif;--num-tracking:-0.02em;--num-weight:800;--label-transform:none;--label-tracking:0.02em;--label-size:12px}
-  :root.ui-warm-stone .card{border:0.5px solid rgba(44,36,22,0.1);box-shadow:none;background:#F5F0E8}
-  :root.ui-warm-stone .surface{background:#fff;border:0.5px solid rgba(44,36,22,0.09)}
-  :root.ui-warm-stone .btn-primary{background:#8A7A60;box-shadow:none}
-  :root.ui-warm-stone .balance-amount{font-weight:800;letter-spacing:-0.02em}
-  :root.ui-warm-stone .tab-btn.active{background:#8A7A60;color:#FAFAF8}
-  :root.ui-warm-stone .fab{background:#8A7A60;box-shadow:none}
-  :root.ui-warm-stone .bottom-nav{background:#FAFAF8;border-top:0.5px solid rgba(44,36,22,0.1)}
-  :root.ui-warm-stone .nav-btn.active{color:#8A7A60}
-  :root.ui-warm-stone .glow1,:root.ui-warm-stone .glow2{display:none}
-  :root.ui-warm-stone .tx-row{background:#fff;border:0.5px solid rgba(44,36,22,0.08);box-shadow:none}
-  :root.ui-warm-stone .tx-icon{border-radius:12px;background:#F5F0E8}
-  :root.ui-warm-stone .chip.active{background:#8A7A60;color:#FAFAF8}
-  :root.ui-warm-stone .member-pill.active{background:#8A7A60;color:#FAFAF8}
-  :root.ui-warm-stone .tab-bar{background:rgba(44,36,22,0.06)}
-  :root.ui-warm-stone .modal-sheet{background:#FAFAF8}
-  :root.ui-warm-stone .modal-handle{background:rgba(44,36,22,0.15)}
-  :root.ui-warm-stone .mini-card.income{background:rgba(45,155,111,0.08);border-color:rgba(45,155,111,0.18)}
-  :root.ui-warm-stone .mini-card.expense{background:rgba(192,90,58,0.08);border-color:rgba(192,90,58,0.18)}
-  :root.ui-warm-stone .settings-row{background:#fff;border:0.5px solid rgba(44,36,22,0.08)}
-  :root.ui-warm-stone .ledger-card{background:#fff;border:0.5px solid rgba(44,36,22,0.08)}
-  :root.ui-warm-stone .ledger-card.active-ledger{border:2px solid #8A7A60}
-  :root.ui-warm-stone .input-card{background:#fff;border:0.5px solid rgba(44,36,22,0.09)}
-  :root.ui-warm-stone .asset-card{background:#fff;border:0.5px solid rgba(44,36,22,0.08)}
-  :root.ui-warm-stone .recur-card{background:#fff;border:0.5px solid rgba(44,36,22,0.08)}
-  :root.ui-warm-stone .debt-row{background:#fff;border:0.5px solid rgba(44,36,22,0.08)}
-  :root.ui-warm-stone .user-badge{background:rgba(138,122,96,0.1);border-color:rgba(138,122,96,0.2);color:#8A7A60}
-  :root.ui-warm-stone .invite-code-box{background:rgba(138,122,96,0.07);border:1px solid rgba(138,122,96,0.2)}
-  :root.ui-warm-stone .auth-input{background:#fff;border:1px solid rgba(44,36,22,0.12)}
-  :root.ui-warm-stone .spinner{border-color:rgba(138,122,96,0.15);border-top-color:#8A7A60}
-
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;transition:background-color 0.25s,color 0.15s,border-color 0.2s}
 
   /* Single layout that works in both Safari browser and standalone PWA */
@@ -4918,7 +4818,7 @@ window.removeGuest=async id=>{if(!confirm('Remove this guest member?'))return;aw
 function renderAppearancePage(){
   const isDark=S.colorMode!=='light';
   const cur=S.uiStyle||'original';
-  const isMinimal=['paper-white','warm-cream','cool-slate','ghost-white','soft-slate','warm-stone'].includes(cur);
+  const isMinimal=cur!=='original';
 
   function styleCard(id,label,desc,previewHtml){
     const active=cur===id;
@@ -5011,81 +4911,6 @@ function renderAppearancePage(){
     </div>
   </div>`;
 
-  const previewGhost=`<div style="background:#F7F7F7;padding:12px 14px;font-family:'Inter',sans-serif">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <p style="font-size:13px;font-weight:700;color:#111;margin:0">Family Wallet</p>
-      <div style="width:22px;height:22px;border-radius:50%;background:#F0F0F0;display:flex;align-items:center;justify-content:center"><span style="font-size:9px;color:#555">⚙</span></div>
-    </div>
-    <div style="background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.09);padding:10px 12px;margin-bottom:7px">
-      <p style="font-size:9px;color:#aaa;margin:0 0 2px">Monthly Balance</p>
-      <p style="font-size:21px;font-weight:700;color:#111;margin:0;letter-spacing:-0.03em">RM 214.32</p>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <div style="flex:1;padding:6px 8px;border-radius:8px;background:rgba(45,155,111,0.07);border:0.5px solid rgba(45,155,111,0.15)"><p style="font-size:8px;color:#2D9B6F;margin:0">Income</p><p style="font-size:11px;font-weight:700;color:#2D9B6F;margin:1px 0 0">+1,164</p></div>
-        <div style="flex:1;padding:6px 8px;border-radius:8px;background:rgba(224,82,82,0.07);border:0.5px solid rgba(224,82,82,0.15)"><p style="font-size:8px;color:#E05252;margin:0">Expenses</p><p style="font-size:11px;font-weight:700;color:#E05252;margin:1px 0 0">−949</p></div>
-      </div>
-    </div>
-    <div style="background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.08);padding:8px 10px;display:flex;align-items:center;gap:8px">
-      <div style="width:26px;height:26px;border-radius:8px;background:#F0F3FF;display:flex;align-items:center;justify-content:center;font-size:11px">🛒</div>
-      <div style="flex:1"><p style="font-size:11px;font-weight:600;color:#111;margin:0">Dining</p><p style="font-size:9px;color:#aaa;margin:1px 0 0">A&W · 19:21</p></div>
-      <p style="font-size:11px;font-weight:700;color:#111;margin:0">24.80</p>
-    </div>
-  </div>`;
-
-  const previewSoftSlate=`<div style="background:#F5F6FA;padding:12px 14px;font-family:'DM Sans',system-ui,sans-serif">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <p style="font-size:13px;font-weight:700;color:#1A1A2E;margin:0;letter-spacing:-0.2px">Family Wallet</p>
-      <div style="width:22px;height:22px;border-radius:50%;background:#E8EAF2;display:flex;align-items:center;justify-content:center"><span style="font-size:9px;color:#6B6E9E">⚙</span></div>
-    </div>
-    <div style="background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(77,95,212,0.09);padding:10px 12px;margin-bottom:7px">
-      <p style="font-size:9px;color:#9899BB;margin:0 0 2px">Monthly Balance</p>
-      <p style="font-size:21px;font-weight:700;color:#1A1A2E;margin:0;letter-spacing:-0.02em">RM 214.32</p>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <div style="flex:1;padding:6px 8px;border-radius:8px;background:rgba(45,155,111,0.08)"><p style="font-size:8px;color:#2D9B6F;margin:0">Income</p><p style="font-size:11px;font-weight:700;color:#2D9B6F;margin:1px 0 0">+1,164</p></div>
-        <div style="flex:1;padding:6px 8px;border-radius:8px;background:rgba(224,82,82,0.08)"><p style="font-size:8px;color:#E05252;margin:0">Expenses</p><p style="font-size:11px;font-weight:700;color:#E05252;margin:1px 0 0">−949</p></div>
-      </div>
-    </div>
-    <div style="background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(77,95,212,0.08);padding:8px 10px;display:flex;align-items:center;gap:8px">
-      <div style="width:26px;height:26px;border-radius:9px;background:#ECEEFF;display:flex;align-items:center;justify-content:center;font-size:11px">🍽</div>
-      <div style="flex:1"><p style="font-size:11px;font-weight:600;color:#1A1A2E;margin:0">Dining</p><p style="font-size:9px;color:#9899BB;margin:1px 0 0">A&W · 19:21</p></div>
-      <p style="font-size:11px;font-weight:700;color:#1A1A2E;margin:0">24.80</p>
-    </div>
-  </div>`;
-
-  const previewWarmStone=`<div style="background:#FAFAF8;padding:12px 14px;font-family:'Nunito',system-ui,sans-serif">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <p style="font-size:13px;font-weight:800;color:#2C2416;margin:0">Family Wallet</p>
-      <div style="width:22px;height:22px;border-radius:50%;background:#F0EDE6;display:flex;align-items:center;justify-content:center"><span style="font-size:9px;color:#8A7A60">⚙</span></div>
-    </div>
-    <div style="background:#F5F0E8;border-radius:12px;border:0.5px solid rgba(44,36,22,0.1);padding:10px 12px;margin-bottom:7px">
-      <p style="font-size:9px;color:#A89880;margin:0 0 2px">Monthly Balance</p>
-      <p style="font-size:21px;font-weight:800;color:#2C2416;margin:0;letter-spacing:-0.02em">RM 214.32</p>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <div style="flex:1;padding:6px 8px;border-radius:8px;background:#fff;border:0.5px solid rgba(44,36,22,0.09)"><p style="font-size:8px;color:#2D9B6F;margin:0">Income</p><p style="font-size:11px;font-weight:800;color:#2D9B6F;margin:1px 0 0">+1,164</p></div>
-        <div style="flex:1;padding:6px 8px;border-radius:8px;background:#fff;border:0.5px solid rgba(44,36,22,0.09)"><p style="font-size:8px;color:#C05A3A;margin:0">Expenses</p><p style="font-size:11px;font-weight:800;color:#C05A3A;margin:1px 0 0">−949</p></div>
-      </div>
-    </div>
-    <div style="background:#fff;border-radius:10px;border:0.5px solid rgba(44,36,22,0.08);padding:8px 10px;display:flex;align-items:center;gap:8px">
-      <div style="width:26px;height:26px;border-radius:9px;background:#F5F0E8;display:flex;align-items:center;justify-content:center;font-size:11px">🍽</div>
-      <div style="flex:1"><p style="font-size:11px;font-weight:700;color:#2C2416;margin:0">Dining</p><p style="font-size:9px;color:#A89880;margin:1px 0 0">A&W · 19:21</p></div>
-      <p style="font-size:11px;font-weight:800;color:#2C2416;margin:0">24.80</p>
-    </div>
-  </div>`;
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-      <div><p style="font-size:9px;color:#8890A4;margin:0">Family Wallet</p><p style="font-size:20px;font-weight:500;color:#1A2035;margin:2px 0 0;letter-spacing:-0.03em;font-family:'DM Mono',monospace">RM 214.32</p></div>
-      <div style="width:26px;height:26px;border-radius:8px;background:#1A2035;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff">◎</div>
-    </div>
-    <div style="display:flex;gap:6px;margin-bottom:8px">
-      <div style="flex:1;padding:7px 8px;background:#fff;border-radius:8px;border:0.5px solid #DDE1E8"><p style="font-size:9px;color:#8890A4;margin:0">Income</p><p style="font-size:12px;font-weight:500;color:#2D9B6F;margin:2px 0 0">+1,164</p></div>
-      <div style="flex:1;padding:7px 8px;background:#fff;border-radius:8px;border:0.5px solid #DDE1E8"><p style="font-size:9px;color:#8890A4;margin:0">Expense</p><p style="font-size:12px;font-weight:500;color:#E05252;margin:2px 0 0">−949</p></div>
-      <div style="flex:1;padding:7px 8px;background:#1A2035;border-radius:8px"><p style="font-size:9px;color:rgba(255,255,255,0.4);margin:0">Safe/day</p><p style="font-size:12px;font-weight:500;color:#fff;margin:2px 0 0">58</p></div>
-    </div>
-    <div style="background:#fff;border-radius:8px;border:0.5px solid #DDE1E8;padding:8px 10px;display:flex;align-items:center;gap:8px">
-      <div style="width:26px;height:26px;border-radius:7px;background:#EAECF0;display:flex;align-items:center;justify-content:center;font-size:11px">🛒</div>
-      <div style="flex:1"><p style="font-size:11px;font-weight:500;color:#1A2035;margin:0">Aeon</p><p style="font-size:9px;color:#8890A4;margin:1px 0 0">Family</p></div>
-      <p style="font-size:11px;color:#E05252;margin:0">−50</p>
-    </div>
-  </div>`;
-
   return`<div class="settings-page fade-in">
     <button class="btn-ghost" onclick="goSettings()" style="margin-bottom:22px">← Back</button>
     <h2 style="font-size:24px;font-weight:700;margin-bottom:6px">Appearance</h2>
@@ -5099,10 +4924,6 @@ function renderAppearancePage(){
       ${styleCard('paper-white','Paper White','Pure white, ultra-clean minimalist',previewPaper)}
       ${styleCard('warm-cream','Warm Cream','Soft beige tones, organic feel',previewCream)}
       ${styleCard('cool-slate','Cool Slate','Structured, cool grey with navy accents',previewSlate)}
-      <p class="label" style="margin:20px 0 12px;letter-spacing:0.06em;font-size:10px">NEW — Clean & Minimal</p>
-      ${styleCard('ghost-white','Ghost White','Pure white, hairline borders, blue accent — Combifi-inspired',previewGhost)}
-      ${styleCard('soft-slate','Soft Slate','Cool grey page, white shadow cards, indigo accent — Tally-inspired',previewSoftSlate)}
-      ${styleCard('warm-stone','Warm Stone','Off-white paper, tan tones, Nunito — earthy & friendly',previewWarmStone)}
     </div>
 
     ${isMinimal?'':`<div class="settings-section">
@@ -5130,14 +4951,13 @@ function renderAppearancePage(){
 
       ${[
         {id:'original', name:'Classic', sub:'Sora + DM Mono', desc:'Sharp geometric sans with monospace numbers. Technical, precise.', sample:{ui:'Sora',num:'DM Mono'}},
-        {id:'inter',    name:'Sharp', sub:'Inter', desc:'The cleanest neutral sans. Sharp, highly legible — used by Combifi.', sample:{ui:'Inter',num:'Inter'}},
         {id:'tally',    name:'Fintech', sub:'Plus Jakarta Sans', desc:'Clean rounded sans for both text and numbers — closest to Tally AI.', sample:{ui:'Jakarta',num:'Jakarta'}},
         {id:'rounded',  name:'Friendly', sub:'Nunito', desc:'Soft, rounded letterforms. Warm and approachable.', sample:{ui:'Nunito',num:'Nunito'}},
         {id:'modern',   name:'Modern',  sub:'DM Sans + Figtree', desc:'Airy neutral body with balanced numeric display.', sample:{ui:'DM Sans',num:'Figtree'}},
       ].map(f=>{
         const active=(S.fontStyle||'original')===f.id;
-        const sampleFontUi=f.id==='original'?'Sora':f.id==='inter'?'Inter':f.id==='tally'?'Plus Jakarta Sans':f.id==='rounded'?'Nunito':'DM Sans';
-        const sampleFontNum=f.id==='original'?'DM Mono':f.id==='inter'?'Inter':f.id==='tally'?'Plus Jakarta Sans':f.id==='rounded'?'Nunito':'Figtree';
+        const sampleFontUi=f.id==='original'?'Sora':f.id==='tally'?'Plus Jakarta Sans':f.id==='rounded'?'Nunito':'DM Sans';
+        const sampleFontNum=f.id==='original'?'DM Mono':f.id==='tally'?'Plus Jakarta Sans':f.id==='rounded'?'Nunito':'Figtree';
         return`<div onclick="setFontStyle('${f.id}')" style="cursor:pointer;padding:14px 16px;border-radius:16px;border:2px solid ${active?'var(--accent)':'var(--border)'};background:${active?'rgba(108,99,255,0.06)':'rgba(255,255,255,0.02)'};margin-bottom:10px;transition:all 0.2s">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
             <div style="flex:1">
@@ -5148,7 +4968,7 @@ function renderAppearancePage(){
               <p style="font-size:11px;color:var(--dim);margin:0 0 10px">${f.desc}</p>
               <div style="background:rgba(128,128,128,0.06);border-radius:10px;padding:10px 12px;display:flex;align-items:baseline;justify-content:space-between">
                 <span style="font-family:'${sampleFontUi}',sans-serif;font-size:13px;font-weight:500;color:var(--muted)">Monthly balance</span>
-                <span style="font-family:'${sampleFontNum}',${f.id==='original'?'monospace':'sans-serif'};font-size:20px;font-weight:${f.id==='original'?700:f.id==='rounded'?800:600};color:var(--text);letter-spacing:${f.id==='original'?'-0.03em':'-0.02em'}">+214.32</span>
+                <span style="font-family:'${sampleFontNum}',${f.id==='original'?'monospace':'sans-serif'};font-size:20px;font-weight:${f.id==='original'?700:600};color:var(--text);letter-spacing:${f.id==='original'?'-0.03em':'-0.02em'}">+214.32</span>
               </div>
             </div>
             <div style="flex-shrink:0;margin-top:2px">${active?`<span style="font-size:10px;font-weight:700;color:var(--accent);background:rgba(108,99,255,0.15);padding:3px 10px;border-radius:8px">Active</span>`:`<span style="font-size:10px;color:var(--dim)">Tap</span>`}</div>
@@ -5617,17 +5437,18 @@ function applyColorMode(mode){
 
 function applyUiStyle(style){
   const root=document.documentElement;
-  root.classList.remove('ui-paper-white','ui-warm-cream','ui-cool-slate','ui-ghost-white','ui-soft-slate','ui-warm-stone');
-  const lightStyles=['paper-white','warm-cream','cool-slate','ghost-white','soft-slate','warm-stone'];
-  if(lightStyles.includes(style)){root.classList.add('ui-'+style);root.classList.add('light');}
+  // Remove all ui style classes first
+  root.classList.remove('ui-paper-white','ui-warm-cream','ui-cool-slate');
+  if(style==='paper-white'){root.classList.add('ui-paper-white');root.classList.add('light');}
+  else if(style==='warm-cream'){root.classList.add('ui-warm-cream');root.classList.add('light');}
+  else if(style==='cool-slate'){root.classList.add('ui-cool-slate');root.classList.add('light');}
+  // For 'original' style, just restore the user's colorMode preference
   if(style==='original'){applyColorMode(S.colorMode||'dark');}
   const meta=document.querySelector('meta[name="theme-color"]');
   if(meta){
-    const colors={
-      'paper-white':'#F7F7F5','warm-cream':'#FAF8F3','cool-slate':'#F2F4F7',
-      'ghost-white':'#F7F7F7','soft-slate':'#F5F6FA','warm-stone':'#FAFAF8'
-    };
-    meta.content=colors[style]||'#6C63FF';
+    if(style==='paper-white')meta.content='#F7F7F5';
+    else if(style==='warm-cream')meta.content='#FAF8F3';
+    else if(style==='cool-slate')meta.content='#F2F4F7';
   }
 }
 
@@ -5641,11 +5462,10 @@ window.setUiStyle=async style=>{
 
 function applyFontStyle(style){
   const root=document.documentElement;
-  root.classList.remove('font-tally','font-rounded','font-modern','font-inter');
+  root.classList.remove('font-tally','font-rounded','font-modern');
   if(style==='tally')root.classList.add('font-tally');
   else if(style==='rounded')root.classList.add('font-rounded');
   else if(style==='modern')root.classList.add('font-modern');
-  else if(style==='inter')root.classList.add('font-inter');
   // 'original' = no class added, uses default Sora + DM Mono
 }
 
