@@ -641,48 +641,77 @@ window.exitTotalView=()=>{
 function getMem(id){return(S.members&&S.members[id])?{...S.members[id],id}:{id,displayName:id,avatar:'👤',color:'#999',guest:false};}
 function allMembers(){return Object.entries(S.members||{}).map(([id,m])=>({id,...m}));}
 function filtered(){const f=S.filterMember,all=txArr();return f==='all'?all:all.filter(t=>t.member===f||(t.splitWith||[]).includes(f));}
-function debts(){
+// ── DEBT ENGINE ──
+// Formula: debt[person] = incurred_share - cash_paid
+// Positive → they owe others; negative → others owe them.
+// We accumulate as directional "X owes Y" pairs, then net out.
+function _computeDebts(txList, settlements, rate){
+  rate=rate||1;
   const d={};
-  txArr().forEach(t=>{
+  txList.forEach(t=>{
     if(t.type!=='expense')return;
+    const total=(t.amount||0)*rate;
+    if(total<=0)return;
 
-    // Step 1: co-payer contributions — each co-payer paid X toward the total,
-    // so the primary payer is "owed" less, and may actually owe the co-payer
-    // We model this as: co-payer has a credit of their contribution toward primary
-    // i.e. primary->coPayor for the amount they fronted on primary's behalf
-    if(t.coPayors?.length&&t.coPayorAmounts){
-      t.coPayors.forEach(uid=>{
-        const paid=parseFloat(t.coPayorAmounts[uid])||0;
-        if(paid>0){
-          // co-payer fronted 'paid' on behalf of the group
-          // primary owes co-payer back: primary->coPayor += paid
-          const k=t.member+'->'+uid;
-          d[k]=(d[k]||0)+paid;
-        }
-      });
+    // Who paid cash and how much
+    // payerAmounts is the authoritative source (new model).
+    // Fall back to coPayorAmounts for backward-compat with old records.
+    let paid={};
+    if(t.payerAmounts&&Object.keys(t.payerAmounts).length>0){
+      paid={...t.payerAmounts};
+    }else if(t.coPayors?.length&&t.coPayorAmounts){
+      // Legacy: reconstruct payer map from coPayorAmounts
+      const coSum=t.coPayors.reduce((s,id)=>s+(parseFloat(t.coPayorAmounts[id])||0),0);
+      paid[t.member]=Math.max(0,total-coSum);
+      t.coPayors.forEach(id=>paid[id]=(parseFloat(t.coPayorAmounts[id])||0)*rate);
+    }else{
+      paid[t.member]=total; // sole payer
     }
 
-    // Step 2: split debts — who owes what to the primary for their share
-    if(t.splitAmounts&&Object.keys(t.splitAmounts).length>1){
-      Object.entries(t.splitAmounts).forEach(([uid,amt])=>{
-        if(uid!==t.member&&(parseFloat(amt)||0)>0){
-          const k=uid+'->'+t.member;
-          d[k]=(d[k]||0)+(parseFloat(amt)||0);
-        }
-      });
+    // Who incurred the expense and their share
+    let incurred={};
+    if(t.splitAmounts&&Object.keys(t.splitAmounts).length>0){
+      Object.entries(t.splitAmounts).forEach(([uid,amt])=>incurred[uid]=(parseFloat(amt)||0)*rate);
     }else if(t.splitWith?.length){
-      const sh=t.amount/(t.splitWith.length+1);
-      t.splitWith.forEach(p=>{const k=p+'->'+t.member;d[k]=(d[k]||0)+sh;});
+      const all=[t.member,...t.splitWith];
+      const sh=total/all.length;
+      all.forEach(uid=>incurred[uid]=sh);
+    }else{
+      incurred[t.member]=total; // sole incurrer
     }
+
+    // Debt = incurred - paid for each person involved
+    const allPeople=new Set([...Object.keys(paid),...Object.keys(incurred)]);
+    allPeople.forEach(uid=>{
+      const owes=(incurred[uid]||0)-(paid[uid]||0);
+      // owes > 0 means uid needs to pay someone back
+      // We distribute who they owe proportionally to payers who overpaid
+      if(owes>0.005){
+        // Find payers who paid more than their incurred share (they are owed)
+        const overpayers=Object.entries(paid)
+          .map(([pid,pamt])=>({pid,surplus:(pamt||0)-(incurred[pid]||0)}))
+          .filter(x=>x.surplus>0.005);
+        const totalSurplus=overpayers.reduce((s,x)=>s+x.surplus,0);
+        if(totalSurplus>0.005){
+          overpayers.forEach(({pid,surplus})=>{
+            const share=owes*(surplus/totalSurplus);
+            if(share>0.005){
+              const k=uid+'->'+pid;
+              d[k]=(d[k]||0)+share;
+            }
+          });
+        }
+      }
+    });
   });
 
-  // subtract settlements
-  Object.values(S.settlements||{}).forEach(s=>{
+  // Subtract settlements
+  Object.values(settlements||{}).forEach(s=>{
     const k=s.from+'->'+s.to;
-    d[k]=(d[k]||0)-s.amount;
+    d[k]=(d[k]||0)-s.amount*rate;
   });
 
-  // net out: if A owes B and B owes A, simplify
+  // Net out opposing debts
   const netted={};
   Object.entries(d).forEach(([k,v])=>{
     const[f,t]=k.split('->');
@@ -690,10 +719,17 @@ function debts(){
     if(netted[rev]!==undefined){
       if(v>netted[rev]){netted[k]=v-netted[rev];delete netted[rev];}
       else{netted[rev]=netted[rev]-v;if(netted[rev]<=0.005)delete netted[rev];}
-    } else { netted[k]=v; }
+    }else{netted[k]=v;}
   });
-  return Object.entries(netted).filter(([,v])=>v>0.005).map(([k,v])=>{const[f,t]=k.split('->');return{from:f,to:t,amount:v};});
+  return Object.entries(netted).filter(([,v])=>v>0.005).map(([k,v])=>{
+    const[f,t]=k.split('->');return{from:f,to:t,amount:v};
+  });
 }
+
+function debts(){
+  return _computeDebts(txArr(),S.settlements||{},1);
+}
+
 // Compute debts across all ledgers for total view
 function totalDebts(){
   const result=[]; // [{lid, lname, licon, from, to, amount}]
@@ -703,47 +739,8 @@ function totalDebts(){
     const settlements=S.allLedgerSettlements[lid]||{};
     const cur=S.allLedgerCurrencies[lid]||'MYR';
     const rate=(CURRENCIES[cur]?.rateToMYR||1)/(CURRENCIES['MYR']?.rateToMYR||1);
-    const d={};
-    txs.forEach(t=>{
-      if(t.type!=='expense')return;
-
-      // Co-payer contributions: primary owes co-payer back for what they fronted
-      if(t.coPayors?.length&&t.coPayorAmounts){
-        t.coPayors.forEach(uid=>{
-          const paid=(parseFloat(t.coPayorAmounts[uid])||0)*rate;
-          if(paid>0){const k=t.member+'->'+uid;d[k]=(d[k]||0)+paid;}
-        });
-      }
-
-      // Split debts: who owes what to primary for their share
-      if(t.splitAmounts&&Object.keys(t.splitAmounts).length>1){
-        Object.entries(t.splitAmounts).forEach(([uid,amt])=>{
-          if(uid!==t.member&&(parseFloat(amt)||0)>0){
-            const k=uid+'->'+t.member;d[k]=(d[k]||0)+(parseFloat(amt)||0)*rate;
-          }
-        });
-      } else if(t.splitWith?.length){
-        const sh=t.amount/(t.splitWith.length+1)*rate;
-        t.splitWith.forEach(p=>{const k=p+'->'+t.member;d[k]=(d[k]||0)+sh;});
-      }
-    });
-    Object.values(settlements).forEach(s=>{
-      const k=s.from+'->'+s.to;
-      d[k]=(d[k]||0)-s.amount*rate;
-    });
-    // net out
-    const netted={};
-    Object.entries(d).forEach(([k,v])=>{
-      const[f,t]=k.split('->');
-      const rev=t+'->'+f;
-      if(netted[rev]!==undefined){
-        if(v>netted[rev]){netted[k]=v-netted[rev];delete netted[rev];}
-        else{netted[rev]=netted[rev]-v;if(netted[rev]<=0.005)delete netted[rev];}
-      } else { netted[k]=v; }
-    });
-    Object.entries(netted).filter(([,v])=>v>0.005).forEach(([k,v])=>{
-      const[f,t]=k.split('->');
-      result.push({lid,lname:linfo.name||lid,licon:linfo.icon||'💼',from:f,to:t,amount:v});
+    _computeDebts(txs,settlements,rate).forEach(({from,to,amount})=>{
+      result.push({lid,lname:linfo.name||lid,licon:linfo.icon||'💼',from,to,amount});
     });
   });
   return result;
@@ -763,7 +760,7 @@ function monthlyTotals(ym){
   const exp=m.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
   return{inc,exp,bal:inc-exp,month};
 }
-function blankForm(){return{type:'expense',amount:'',category:'food',subcat:'',description:'',member:'',coPayors:[],coPayorAmounts:{},coPayorMode:'equal',splitWith:[],splitMode:'equal',customSplits:{},date:td(),time:tt(),currency:S.ledgerCurrency,assetId:''};}
+function blankForm(){return{type:'expense',amount:'',category:'food',subcat:'',description:'',member:'',coPayors:[],coPayorAmounts:{},coPayorMode:'equal',splitWith:[],splitMode:'equal',customSplits:{},payerMode:'equal',payerAmounts:{},date:td(),time:tt(),currency:S.ledgerCurrency,assetId:''};}
 function toast(msg,col='var(--green)'){const el=document.createElement('div');el.className='toast';el.textContent=msg;el.style.color=col;document.body.appendChild(el);setTimeout(()=>el.remove(),2500);}
 function showLoad(){document.getElementById('loadingScreen').style.display='flex';}
 function hideLoad(){document.getElementById('loadingScreen').style.display='none';}
@@ -911,7 +908,7 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
           currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
           member:S.user?S.user.uid:'',
           splitWith:[],coPayors:[],coPayorAmounts:{},
-          coPayorMode:'equal',splitMode:'equal',customSplits:{},assetId:'',origAmount:null
+          coPayorMode:'equal',splitMode:'equal',customSplits:{},payerMode:'equal',payerAmounts:{},assetId:'',origAmount:null
         };
         S.editTxKey=null;S.view='add';render();
         window.history.replaceState({},'',window.location.pathname);
@@ -945,7 +942,7 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
         currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
         member:S.user?S.user.uid:'',
         splitWith:[],coPayors:[],coPayorAmounts:{},
-        coPayorMode:'equal',splitMode:'equal',customSplits:{},assetId:'',origAmount:null
+        coPayorMode:'equal',splitMode:'equal',customSplits:{},payerMode:'equal',payerAmounts:{},assetId:'',origAmount:null
       };
       S.editTxKey=null;S.view='add';render();
       toast('✨ Transaction from Shortcut — review and save!');
@@ -985,7 +982,7 @@ function tryClipboardShortcut(){
         currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
         member:S.user?S.user.uid:'',
         splitWith:[],coPayors:[],coPayorAmounts:{},
-        coPayorMode:'equal',splitMode:'equal',customSplits:{},assetId:'',origAmount:null
+        coPayorMode:'equal',splitMode:'equal',customSplits:{},payerMode:'equal',payerAmounts:{},assetId:'',origAmount:null
       };
       S.editTxKey=null;S.view='add';render();
       navigator.clipboard.writeText('').catch(function(){});
@@ -3673,61 +3670,61 @@ function renderAdd(){
       ${m.guest?'<div class="guest-badge">GUEST</div>':''}
     </button>`).join('');
 
-  // Co-payer section — mirrors buildSplitSection
+  // ── PAYERS SECTION (who actually put out cash) ──
   const coPayors=f.coPayors||[];
-  const coPayorAmounts=f.coPayorAmounts||{};
-  const coPayorMode=f.coPayorMode||'equal';
-  const isCoEqual=coPayorMode!=='custom';
+  const payerMode=f.payerMode||'equal';
+  const payerAmounts=f.payerAmounts||{};
+  const isPayEqual=payerMode!=='custom';
   const totalAmt=parseFloat(f.amount)||0;
   const otherMems=mList.filter(m=>m.id!==f.member);
 
-  // Equal mode: split total evenly among primary + all co-payers
-  const allPayers=coPayors.length?[f.member,...coPayors]:[];
+  const allPayers=[f.member,...coPayors];
   const equalPayShare=allPayers.length>1?totalAmt/allPayers.length:0;
+  const coPayorSum=isPayEqual
+    ?(coPayors.length>0?totalAmt/allPayers.length*coPayors.length:0)
+    :coPayors.reduce((s,id)=>s+(parseFloat(payerAmounts[id])||0),0);
+  const primPays=Math.max(0,totalAmt-coPayorSum);
 
-  // Custom mode: primary fronts the remainder
-  const coPayorSum=coPayors.reduce((s,id)=>s+(parseFloat(coPayorAmounts[id])||0),0);
-  const primFronts=Math.max(0,totalAmt-coPayorSum);
-
-  let coPayorDetail='';
+  let payerDetail='';
   if(coPayors.length>0){
-    if(isCoEqual){
-      coPayorDetail=`<p class="split-hint">Each payer pays ${fmt(equalPayShare,f.currency)}</p>`;
+    if(isPayEqual){
+      payerDetail=`<p class="split-hint">Each payer contributes ${fmt(equalPayShare,f.currency)}</p>`;
     }else{
       const rows=coPayors.map(id=>{
-        const m=getMem(id);const val=coPayorAmounts[id]!==undefined?coPayorAmounts[id]:'';
+        const m=getMem(id);const val=payerAmounts[id]!==undefined?payerAmounts[id]:'';
         return`<div class="split-member-row">
           <span style="font-size:20px">${m.avatar}</span>
           <span style="flex:1;font-size:13px;font-weight:600">${m.displayName}${m.guest?' 👻':''}</span>
-          <input type="number" inputmode="decimal" class="split-amount-input" placeholder="0.00" value="${val}" oninput="setCoPayorAmt('${id}',this.value)">
+          <input type="number" inputmode="decimal" class="split-amount-input" placeholder="0.00" value="${val}" oninput="setPayerAmt('${id}',this.value)">
         </div>`;}).join('');
-      coPayorDetail=`<div style="margin-top:10px">${rows}
+      payerDetail=`<div style="margin-top:10px">${rows}
         <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:${coPayorSum>totalAmt?'var(--red)':'var(--muted)'}">
-          <span>Allocated</span><span style="font-family:var(--font-num);font-weight:700">${fmt(coPayorSum,f.currency)} / ${fmt(totalAmt,f.currency)}</span>
+          <span>Others contribute</span><span style="font-family:var(--font-num);font-weight:700">${fmt(coPayorSum,f.currency)} / ${fmt(totalAmt,f.currency)}</span>
         </div>
-        <p style="font-size:11px;margin-top:4px;color:${coPayorSum>totalAmt?'var(--red)':primFronts>0?'var(--green)':'var(--accent2)'}">
-          ${coPayorSum>totalAmt?'⚠ Co-payer total exceeds amount':primFronts>0?getMem(f.member).displayName+' fronts '+fmt(primFronts,f.currency):'✓ Fully covered by co-payers'}
+        <p style="font-size:11px;margin-top:4px;color:${coPayorSum>totalAmt?'var(--red)':primPays>0?'var(--green)':'var(--accent2)'}">
+          ${coPayorSum>totalAmt?'⚠ Co-payer total exceeds amount':primPays>0?getMem(f.member).displayName+' pays '+fmt(primPays,f.currency):'✓ Fully covered by others'}
         </p>
       </div>`;
     }
   }
 
-  const coPayorSection=f.type==='expense'&&otherMems.length?`<div class="form-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <p class="label">Also paid by <span style="color:var(--dim);text-transform:none;letter-spacing:0;font-size:11px">(optional)</span></p>
+  const payerSection=f.type==='expense'&&otherMems.length?`<div class="form-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <p class="label">Payers <span style="color:var(--dim);text-transform:none;letter-spacing:0;font-size:11px">— who paid cash</span></p>
       ${coPayors.length>0?`<div style="display:flex;gap:6px">
-        <button onclick="setCoPayorMode('equal')" style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${isCoEqual?'var(--accent)':'rgba(255,255,255,0.06)'};color:${isCoEqual?'#fff':'var(--muted)'}">Equal</button>
-        <button onclick="setCoPayorMode('custom')" style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${!isCoEqual?'var(--accent)':'rgba(255,255,255,0.06)'};color:${!isCoEqual?'#fff':'var(--muted)'}">Custom</button>
+        <button onclick="setPayerMode('equal')" style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${isPayEqual?'var(--accent)':'rgba(255,255,255,0.06)'};color:${isPayEqual?'#fff':'var(--muted)'}">Equal</button>
+        <button onclick="setPayerMode('custom')" style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${!isPayEqual?'var(--accent)':'rgba(255,255,255,0.06)'};color:${!isPayEqual?'#fff':'var(--muted)'}">Custom</button>
       </div>`:''}
     </div>
+    <p style="font-size:11px;color:var(--dim);margin-bottom:10px;line-height:1.5">Primary payer selected above. Tap others who also paid:</p>
     <div class="member-grid">${otherMems.map(m=>`
-      <button class="member-box ${coPayors.includes(m.id)?'active':''}" style="${coPayors.includes(m.id)?'background:'+(m.color||'#888')+'CC;':''}" onclick="togCoPayor('${m.id}')">
+      <button class="member-box ${coPayors.includes(m.id)?'active':''}" style="${coPayors.includes(m.id)?'background:'+(m.color||'#888')+'CC;':''}" onclick="togPayer('${m.id}')">
         <div class="m-avatar">${m.avatar}</div><div>${m.displayName}</div>
         ${m.guest?'<div class="guest-badge">GUEST</div>':''}
-        ${coPayors.includes(m.id)?'<div style="font-size:9px;margin-top:2px">✓</div>':''}
+        ${coPayors.includes(m.id)?'<div style="font-size:9px;margin-top:2px">✓ paid</div>':''}
       </button>`).join('')}
     </div>
-    ${coPayorDetail}
+    ${payerDetail}
   </div>`:'';
 
   const splitMembers=mList.filter(m=>m.id!==f.member);
@@ -3865,7 +3862,7 @@ function renderAdd(){
     <div class="form-section"><p class="label" style="margin-bottom:10px">Paid by</p>
       <div class="member-grid">${paidBy||'<p style="color:var(--dim);font-size:13px">No members yet.</p>'}</div>
     </div>
-    ${coPayorSection}
+    ${payerSection}
     ${splitSection}
     ${buildAssetPicker(f)}
     <button class="btn-primary" onclick="submitForm()">${isEdit?'✓ Save Changes':'Save Entry ✓'}</button>
@@ -3878,51 +3875,37 @@ function buildSplitSection(f,splitMembers){
   const isEqual=f.splitMode!=='custom';
   const sel=f.splitWith||[];
   const totalAmt=parseFloat(f.amount)||0;
-
-  // The amount being split is what the primary payer fronted (after co-payer contributions)
-  const coPayors=f.coPayors||[];
-  const coPayorAmounts=f.coPayorAmounts||{};
-  const coPayorMode=f.coPayorMode||'equal';
-  let coPayorSum=0;
-  if(coPayors.length){
-    if(coPayorMode==='equal'){
-      coPayorSum=totalAmt/(coPayors.length+1)*coPayors.length;
-    }else{
-      coPayorSum=coPayors.reduce((s,id)=>s+(parseFloat(coPayorAmounts[id])||0),0);
-    }
-  }
-  const primFronted=Math.max(0,totalAmt-coPayorSum);
-  const splitBase=coPayors.length?primFronted:totalAmt;
-  const equalShare=sel.length>0?splitBase/(sel.length+1):0;
+  // Split is purely about who INCURRED the expense — independent of who paid
+  const allSplit=[f.member,...sel];
+  const equalShare=allSplit.length>1?totalAmt/allSplit.length:0;
 
   const memberBtns=splitMembers.map(m=>{
-    const isCoP=(f.coPayors||[]).includes(m.id);
+    const isPayer=(f.coPayors||[]).includes(m.id);
     return`<button class="member-box ${sel.includes(m.id)?'active':''}" style="${sel.includes(m.id)?'background:'+(m.color||'#888')+'CC;':''}" onclick="togSplit('${m.id}')">
       <div class="m-avatar">${m.avatar}</div>
       <div>${m.displayName}</div>
       ${m.guest?'<div class="guest-badge">GUEST</div>':''}
-      ${isCoP?'<div style="font-size:8px;margin-top:1px;color:#fff;opacity:0.8">co-pays</div>':''}
-      ${sel.includes(m.id)?'<div style="font-size:9px;margin-top:2px">✓</div>':''}
+      ${isPayer&&sel.includes(m.id)?'<div style="font-size:8px;margin-top:1px;color:#fff;opacity:0.8">paid ✓</div>':isPayer?'<div style="font-size:8px;margin-top:1px;color:#fff;opacity:0.8">paid</div>':sel.includes(m.id)?'<div style="font-size:9px;margin-top:2px">✓</div>':''}
     </button>`;}).join('');
 
   let splitDetail='';
   if(sel.length>0){
     if(isEqual){
-      splitDetail=`<p class="split-hint">Each pays ${fmt(equalShare,f.currency)}${coPayors.length?" (of "+fmt(splitBase,f.currency)+" fronted by "+getMem(f.member).displayName+")":""}</p>`;
+      splitDetail=`<p class="split-hint">Each owes ${fmt(equalShare,f.currency)} of the total</p>`;
     }else{
-      const rows=[f.member,...sel].map(uid=>{
+      const rows=allSplit.map(uid=>{
         const m=getMem(uid);const val=f.customSplits[uid]!==undefined?f.customSplits[uid]:'';
         return`<div class="split-member-row">
           <span style="font-size:20px">${m.avatar}</span>
-          <span style="flex:1;font-size:13px;font-weight:600">${m.displayName}${uid===f.member?' (paid)':''}${m.guest?' 👻':''}</span>
+          <span style="flex:1;font-size:13px;font-weight:600">${m.displayName}${m.guest?' 👻':''}</span>
           <input type="number" inputmode="decimal" class="split-amount-input" placeholder="0.00" value="${val}" oninput="setCustomSplit('${uid}',this.value)">
         </div>`;
       }).join('');
       const splitTotal=Object.values(f.customSplits).reduce((s,v)=>s+(parseFloat(v)||0),0);
-      const remaining=splitBase-splitTotal;
+      const remaining=totalAmt-splitTotal;
       splitDetail=`<div style="margin-top:10px">${rows}
         <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:${Math.abs(remaining)<0.01?'var(--green)':'var(--yellow)'}">
-          <span>Allocated</span><span>${fmt(splitTotal,f.currency)} / ${fmt(splitBase,f.currency)}</span>
+          <span>Allocated</span><span>${fmt(splitTotal,f.currency)} / ${fmt(totalAmt,f.currency)}</span>
         </div>
         ${Math.abs(remaining)>0.01?`<p style="font-size:11px;color:var(--yellow);margin-top:4px">Remaining: ${fmt(remaining,f.currency)}</p>`:'<p style="font-size:11px;color:var(--green);margin-top:4px">✓ Balanced</p>'}
       </div>`;
@@ -3930,18 +3913,18 @@ function buildSplitSection(f,splitMembers){
   }
 
   return`<div class="form-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <p class="label">Split with</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <p class="label">Split with <span style="color:var(--dim);text-transform:none;letter-spacing:0;font-size:11px">— who incurred this</span></p>
       ${sel.length>0?`<div style="display:flex;gap:6px">
         <button onclick="setSplitMode('equal')" style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${isEqual?'var(--accent)':'rgba(255,255,255,0.06)'};color:${isEqual?'#fff':'var(--muted)'}">Equal</button>
         <button onclick="setSplitMode('custom')" style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${!isEqual?'var(--accent)':'rgba(255,255,255,0.06)'};color:${!isEqual?'#fff':'var(--muted)'}">Custom</button>
       </div>`:''}
     </div>
+    <p style="font-size:11px;color:var(--dim);margin-bottom:10px;line-height:1.5">Primary payer included. Tap others who share this cost:</p>
     <div class="member-grid">${memberBtns}</div>
     ${splitDetail}
   </div>`;
 }
-
 // ── ASSET PICKER for Add/Edit form ──
 function buildAssetPicker(f){
   const assetArr=Object.entries(S.assets||{}).map(([id,a])=>({id,...a}));
@@ -5782,12 +5765,12 @@ window.goRecurForm =()=>{S.editRecurId=null;selRecurFreq=2;S.view='recurForm';re
 window.setFilter   =id=>{S.filterMember=id;render();};
 
 window.setTab      =t=>{S.tab=t;S.analyticsFilter={type:null,key:null};render();};
-window.setType     =type=>{S.addForm.type=type;S.addForm.splitWith=[];S.addForm.coPayors=[];S.addForm.coPayorAmounts={};S.addForm.coPayorMode='equal';S.addForm.splitMode='equal';S.addForm.customSplits={};S.addForm.subcat='';S.addForm.category=type==='income'?'income':'food';renderPage();};
+window.setType     =type=>{S.addForm.type=type;S.addForm.splitWith=[];S.addForm.coPayors=[];S.addForm.coPayorAmounts={};S.addForm.coPayorMode='equal';S.addForm.payerMode='equal';S.addForm.payerAmounts={};S.addForm.splitMode='equal';S.addForm.customSplits={};S.addForm.subcat='';S.addForm.category=type==='income'?'income':'food';renderPage();};
 window.setFF       =(k,v)=>{if(S.addForm)S.addForm[k]=v;};
 window.updateConversionDisplay=(val)=>{
   if(!S.addForm)return;
   const el=document.getElementById('convDisplay');
-  if(!el)return; // not visible (same currency as ledger)
+  if(!el)return;
   const dispCur=S.addForm.assetId&&S.assets[S.addForm.assetId]
     ?S.assets[S.addForm.assetId].currency||S.ledgerCurrency
     :S.addForm.currency;
@@ -5800,11 +5783,17 @@ window.updateConversionDisplay=(val)=>{
   el.innerHTML=`≈ ${cur?cur.symbol:''}${converted.toFixed(2)} <span style="color:var(--dim);font-size:10px;font-family:var(--font-ui)">in ${S.ledgerCurrency}</span>`;
 };
 window.pickAsset   =(id,cur)=>{if(!S.addForm)return;S.addForm.assetId=id;renderPage();};
-window.setFM       =id=>{S.addForm.member=id;S.addForm.splitWith=S.addForm.splitWith.filter(s=>s!==id);S.addForm.coPayors=(S.addForm.coPayors||[]).filter(s=>s!==id);S.addForm.coPayorMode="equal";S.addForm.coPayorAmounts={};S.addForm.customSplits={};renderPage();};
+// Changing primary payer clears co-payer lists and split
+window.setFM       =id=>{S.addForm.member=id;S.addForm.splitWith=S.addForm.splitWith.filter(s=>s!==id);S.addForm.coPayors=(S.addForm.coPayors||[]).filter(s=>s!==id);S.addForm.coPayorMode='equal';S.addForm.coPayorAmounts={};S.addForm.payerAmounts={};S.addForm.customSplits={};renderPage();};
 window.togSplit    =id=>{const sw=S.addForm.splitWith;S.addForm.splitWith=sw.includes(id)?sw.filter(s=>s!==id):[...sw,id];S.addForm.customSplits={};renderPage();};
-window.togCoPayor  =id=>{const cp=S.addForm.coPayors||[];const has=cp.includes(id);S.addForm.coPayors=has?cp.filter(s=>s!==id):[...cp,id];if(has){const a={...S.addForm.coPayorAmounts};delete a[id];S.addForm.coPayorAmounts=a;}renderPage();};
-window.setCoPayorAmt=(id,val)=>{if(S.addForm)S.addForm.coPayorAmounts={...S.addForm.coPayorAmounts,[id]:parseFloat(val)||0};};
-window.setCoPayorMode=mode=>{if(S.addForm){S.addForm.coPayorMode=mode;if(mode==="equal")S.addForm.coPayorAmounts={};renderPage();}};
+// Legacy co-payer toggles — kept for backward compat but now aliased to payer logic
+window.togCoPayor  =id=>{window.togPayer(id);};
+window.setCoPayorAmt=(id,val)=>{window.setPayerAmt(id,val);};
+window.setCoPayorMode=mode=>{window.setPayerMode(mode);};
+// New payer functions
+window.togPayer    =id=>{const cp=S.addForm.coPayors||[];const has=cp.includes(id);S.addForm.coPayors=has?cp.filter(s=>s!==id):[...cp,id];if(has){const a={...S.addForm.payerAmounts};delete a[id];S.addForm.payerAmounts=a;}S.addForm.payerAmounts={};renderPage();};
+window.setPayerAmt =(id,val)=>{if(S.addForm)S.addForm.payerAmounts={...S.addForm.payerAmounts,[id]:parseFloat(val)||0};};
+window.setPayerMode=mode=>{if(S.addForm){S.addForm.payerMode=mode;if(mode==='equal')S.addForm.payerAmounts={};renderPage();}};
 window.setSplitMode=mode=>{S.addForm.splitMode=mode;renderPage();};
 window.setCustomSplit=(uid,val)=>{if(S.addForm)S.addForm.customSplits[uid]=parseFloat(val)||0;};
 window.renderPage=renderPage; // expose for inline onclick
@@ -5819,6 +5808,8 @@ window.editTx=key=>{
     splitWith:[...(t.splitWith||[])],
     splitMode:t.splitAmounts&&Object.keys(t.splitAmounts).length>1?'custom':'equal',
     customSplits:t.splitAmounts?{...t.splitAmounts}:{},
+    payerMode:t.payerAmounts&&Object.keys(t.payerAmounts).length>1?'custom':'equal',
+    payerAmounts:t.payerAmounts?{...t.payerAmounts}:{},
     date:t.date,time:t.time||tt(),currency:t.currency||S.ledgerCurrency,assetId:t.assetId||'',origAmount:t.origAmount||null,
   };
   S.editTxKey=key;
@@ -5842,39 +5833,42 @@ window.submitForm=async()=>{
   const f=S.addForm;
   if(!f.amount||isNaN(parseFloat(f.amount))){alert('Enter an amount.');return;}
   if(!f.member){alert('Select who paid.');return;}
-  const coPayors=f.coPayors||[];
   const origAmount=parseFloat(f.amount);
-  const coPayorMode=f.coPayorMode||'equal';
 
-  // Resolve final co-payer amounts
-  let resolvedCoPayorAmounts={};
+  // ── PAYERS: resolve who paid cash and how much ──
+  const coPayors=f.coPayors||[];
+  const payerMode=f.payerMode||'equal';
+  let resolvedPayerAmounts={};  // id -> amount they paid
   if(coPayors.length){
-    if(coPayorMode==='equal'){
+    if(payerMode==='equal'){
       const share=origAmount/(coPayors.length+1);
-      coPayors.forEach(id=>resolvedCoPayorAmounts[id]=share);
+      resolvedPayerAmounts[f.member]=share;
+      coPayors.forEach(id=>resolvedPayerAmounts[id]=share);
     }else{
-      resolvedCoPayorAmounts={...(f.coPayorAmounts||{})};
-      const sum=coPayors.reduce((s,id)=>s+(parseFloat(resolvedCoPayorAmounts[id])||0),0);
-      if(sum>origAmount+0.01){alert('Co-payer total exceeds the amount.');return;}
+      const coSum=coPayors.reduce((s,id)=>s+(parseFloat((f.payerAmounts||{})[id])||0),0);
+      if(coSum>origAmount+0.01){alert('Co-payer total exceeds the amount.');return;}
+      resolvedPayerAmounts[f.member]=Math.max(0,origAmount-coSum);
+      coPayors.forEach(id=>resolvedPayerAmounts[id]=parseFloat((f.payerAmounts||{})[id])||0);
     }
+  }else{
+    resolvedPayerAmounts[f.member]=origAmount;
   }
 
-  // Primary payer's effective fronted amount (after co-payer contributions)
-  const coPayorSum=coPayors.reduce((s,id)=>s+(parseFloat(resolvedCoPayorAmounts[id])||0),0);
-  const primFronted=Math.max(0,origAmount-coPayorSum);
-
+  // ── SPLIT: resolve who incurred the expense and their share ──
+  // This is independent of who paid — purely about liability/burden
   let splitAmounts={};
   if(f.type==='expense'&&f.splitWith.length>0){
+    const allSplit=[f.member,...f.splitWith];
     if(f.splitMode==='custom'){
-      const all=[f.member,...f.splitWith];
-      const total=all.reduce((s,uid)=>s+(parseFloat(f.customSplits[uid])||0),0);
-      if(Math.abs(total-primFronted)>0.01){alert('Custom split must equal '+fmt(primFronted,f.currency)+'.');return;}
-      all.forEach(uid=>splitAmounts[uid]=parseFloat(f.customSplits[uid])||0);
+      const total=allSplit.reduce((s,uid)=>s+(parseFloat(f.customSplits[uid])||0),0);
+      if(Math.abs(total-origAmount)>0.01){alert('Custom split must equal '+fmt(origAmount,f.currency)+'.');return;}
+      allSplit.forEach(uid=>splitAmounts[uid]=parseFloat(f.customSplits[uid])||0);
     }else{
-      const all=[f.member,...f.splitWith];const sh=primFronted/all.length;
-      all.forEach(uid=>splitAmounts[uid]=sh);
+      const sh=origAmount/allSplit.length;
+      allSplit.forEach(uid=>splitAmounts[uid]=sh);
     }
   }
+
   const txAsset=f.assetId?S.assets[f.assetId]:null;
   const txCurrency=txAsset?.currency||f.currency||S.ledgerCurrency;
   const ledgerAmount=convertToLedger(origAmount,txCurrency);
@@ -5888,7 +5882,8 @@ window.submitForm=async()=>{
     description:f.description.trim()||getCats()[f.category]?.label||f.category,
     member:f.member,
     coPayors:coPayors.length?coPayors:null,
-    coPayorAmounts:coPayors.length?resolvedCoPayorAmounts:null,
+    coPayorAmounts:coPayors.length?resolvedPayerAmounts:null,
+    payerAmounts:Object.keys(resolvedPayerAmounts).length>1?resolvedPayerAmounts:null,
     splitWith:[...f.splitWith],
     splitAmounts:Object.keys(splitAmounts).length?splitAmounts:null,
     date:f.date||td(),
