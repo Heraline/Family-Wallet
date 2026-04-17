@@ -895,6 +895,7 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
         const desc=p.get('desc')||'';
         const cat=p.get('cat')||'food';
         const date=p.get('date')||new Date().toISOString().slice(0,10);
+        const time=p.get('time')||tt();
         const cur=p.get('cur')||S.ledgerCurrency||'MYR';
         const notes=p.get('notes')||'';
         const subcat=p.get('subcat')||'';
@@ -905,6 +906,7 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
           category:fuzzyMatchCat(cat,cats),
           subcat:fuzzyMatchSubcat(subcat,fuzzyMatchCat(cat,cats),cats),
           date:date,
+          time:time,
           currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
           member:S.user?S.user.uid:'',
           splitWith:[],coPayors:[],coPayorAmounts:{},
