@@ -7215,6 +7215,8 @@ window.pickProfColor=i=>{
   if(dot)dot.classList.add('selected');
 };
 window.setProfTab=tab=>{profTab=tab;renderPage();};
+window.openShortcutGuide=()=>{const modal=document.getElementById('shortcutGuideModal');if(modal){modal.style.display='block';modal.scrollTop=0;}};
+window.closeShortcutGuide=()=>{const modal=document.getElementById('shortcutGuideModal');if(modal)modal.style.display='none';};
 
 // ── SAFE AREA GAP FIX ──
 (function(){
