@@ -1198,7 +1198,7 @@ function renderNav(){
     <button class="nav-btn ${view==='calendar'?'active':''}" onclick="goCalendar()"><span class="nav-icon">📅</span><span>Calendar</span></button>
     <button class="fab" onclick="goAdd()">+</button>
     <button class="nav-btn ${view==='stats'?'active':''}" onclick="goStats()"><span class="nav-icon">📊</span><span>Statistics</span></button>
-    <button class="nav-btn ${view==='notifications'?'active':''}" onclick="goNotifications()" style="position:relative"><span class="nav-icon">🔔</span>${unread>0?`<span style="position:absolute;top:2px;right:12px;background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:999px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 3px">${unread>9?'9+':unread}</span>`:''}<span>Activity</span></button>`;
+    <button class="nav-btn ${view==='settings'?'active':''}" onclick="goSettings()"><span class="nav-icon">⚙️</span><span>Settings</span></button>`;
 }
 function renderPage(){
   const pg=document.getElementById('mainPage');if(!pg)return;
