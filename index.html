@@ -98,7 +98,7 @@
   /* Safari browser mode: allow html to scroll so address bar can hide */
   html.mode-browser{overflow-y:auto}
   html.mode-browser body{min-height:calc(100% + 60px)}
-  .page{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(90px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+  .page{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(110px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
   .page::-webkit-scrollbar{display:none}
   html.mode-standalone #scrollTrigger{display:none}
   .glow1{position:fixed;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(108,99,255,0.15),transparent 70%);pointer-events:none;z-index:0}
@@ -1628,7 +1628,7 @@ function renderHome(){
   const monthName=new Date().toLocaleDateString('en-MY',{month:'long',year:'numeric'});
   const tc=S.tab==='transactions'?renderTxs(fil):renderAnalytics(fil,mth.exp);
 
-  return`<div class="fade-in">
+  return`<div class="fade-in" style="padding-bottom:calc(110px + env(safe-area-inset-bottom))">
 
     <!-- TOP HEADER: date + ledger name -->
     <div style="padding:52px 20px 0;display:flex;justify-content:space-between;align-items:flex-start">
@@ -7325,7 +7325,7 @@ window.closeShortcutGuide=()=>{const modal=document.getElementById('shortcutGuid
     document.body.removeChild(probe);
     // Set page scroll padding to clear the nav bar (nav ~60px + safe area)
     document.querySelectorAll('.page').forEach(function(p){
-      p.style.paddingBottom=(70+safeH)+'px';
+      p.style.paddingBottom=(110+safeH)+'px';
     });
   }
   applyGap();
