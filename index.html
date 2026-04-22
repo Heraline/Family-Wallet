@@ -1328,7 +1328,7 @@ function renderHome(){
       const cat=cats[t.category]||DEFAULT_CATS.other;
       const myAmt=userShareMYR(t);
       const isShared=isTotalSplit(t);
-      return`<div class="tx-row surface">
+      return`<div class="tx-row surface" style="cursor:pointer" onclick="openTotalViewTxModal('${t._k}','${t._lid}')">
         <div class="tx-icon" style="background:${cat.color}22">${renderCatIcon(cat.icon,22,true)}</div>
         <div class="tx-info">
           <p class="tx-desc">${t.description}</p>
@@ -5752,7 +5752,7 @@ function renderTotalViewAllTx(){
     txs.map(t=>{
       const cat=cats[t.category]||DEFAULT_CATS.other;
       const myAmt=userShareMYR(t);
-      return`<div class="tx-row surface" style="margin:0 22px 8px;cursor:pointer" onclick="openTxDetail('${t._k}','${t._lid||S.activeLedgerId}')">
+      return`<div class="tx-row surface" style="margin:0 22px 8px;cursor:pointer" onclick="openTotalViewTxModal('${t._k}','${t._lid||S.activeLedgerId}')">
         <div class="tx-icon" style="background:${cat.color}22">${renderCatIcon(cat.icon,22,true)}</div>
         <div class="tx-info">
           <p class="tx-desc">${t.description}</p>
@@ -6013,7 +6013,36 @@ window.submitForm=async()=>{
 };
 
 window.openTxModal =k=>{S.splitModal=txArr().find(t=>t._k===k);renderModal();};
-window.closeModal  =()=>{S.splitModal=null;renderModal();};
+window.openTotalViewTxModal=async(k,lid)=>{
+  // If tx belongs to active ledger, open normally
+  if(lid===S.activeLedgerId){
+    S.splitModal=txArr().find(t=>t._k===k);
+    renderModal();
+    return;
+  }
+  // Otherwise find tx from allLedgerTxs
+  const txs=S.allLedgerTxs[lid]||{};
+  const t=Object.entries(txs).map(([_k,v])=>({...v,_k})).find(t=>t._k===k);
+  if(!t){toast('Could not load transaction','var(--red)');return;}
+  // Temporarily switch ledger context for modal
+  const prevLid=S.activeLedgerId;
+  const prevTxs=S.txs;
+  S.activeLedgerId=lid;
+  S.txs=txs;
+  S.splitModal={...t,_lid:lid};
+  renderModal();
+  // Restore after modal closes
+  S._totalViewModalRestore={lid:prevLid,txs:prevTxs};
+};
+window.closeModal  =()=>{
+  S.splitModal=null;
+  if(S._totalViewModalRestore){
+    S.activeLedgerId=S._totalViewModalRestore.lid;
+    S.txs=S._totalViewModalRestore.txs;
+    S._totalViewModalRestore=null;
+  }
+  renderModal();
+};
 window.delTx       =async k=>{if(!confirm('Delete this transaction?'))return;await remove(ref(db,'ledgerTransactions/'+S.activeLedgerId+'/'+k));};
 window.delTxModal  =async k=>{
   if(!confirm('Delete this transaction?'))return;
