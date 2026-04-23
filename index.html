@@ -1212,6 +1212,7 @@ function renderPage(){
     if(_v==='invite'){pg.innerHTML=renderInvite();_restoreScroll(_v);return;}
     if(_v==='budget'){pg.innerHTML=renderBudgetPage();attachBudgetListeners();_restoreScroll(_v);return;}
     if(_v==='categories'){pg.innerHTML=renderCategoriesPage();_restoreScroll(_v);return;}
+    if(_v==='catBudget'){pg.innerHTML=renderCatBudgetPage();attachCatBudgetListeners();_restoreScroll(_v);return;}
     if(_v==='guests'){pg.innerHTML=renderGuestsPage();_restoreScroll(_v);return;}
     if(_v==='assets'){pg.innerHTML=renderAssetsPage();_restoreScroll(_v);return;}
     if(_v==='assetForm'){pg.innerHTML=renderAssetForm();_restoreScroll(_v);return;}
@@ -4598,6 +4599,140 @@ function _scCurrentIcon(){
   return null; // no icon
 }
 
+
+function renderCatBudgetPage(){
+  const cats=getCats();const cur=getCur();
+  const ym=S.budgetMonth||new Date().toISOString().slice(0,7);
+  const catKeys=Object.keys(cats).filter(k=>k!=='income');
+
+  // Init draft budgets
+  const budgets=S.budgets||{};
+  if(!window._bgtDirty){
+    window._bgtDraft={};
+    Object.entries(budgets).forEach(([k,v])=>{window._bgtDraft[k]=v>0?String(v):'';});
+  }
+
+  // Compute spending per category
+  const catSpent={};
+  Object.values(S.txs||{}).forEach(t=>{
+    if(t.type!=='expense'||!t.date?.startsWith(ym))return;
+    catSpent[t.category]=(catSpent[t.category]||0)+(t.amount||0);
+  });
+
+  const catRows=catKeys.map(key=>{
+    const c=cats[key];
+    const subcatEntries=Object.entries(c.subcats||{});
+    const bgt=parseFloat(window._bgtDraft[key])||0;
+    const spent=catSpent[key]||0;
+    const pct=bgt>0?Math.min(100,(spent/bgt)*100):0;
+    const barColor=spent>bgt&&bgt>0?'var(--red)':pct>80?'var(--yellow)':'var(--accent)';
+
+    return`<div class="surface" style="padding:14px 16px;border-radius:14px;margin-bottom:10px">
+      <!-- Category header -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-size:22px;display:flex;align-items:center;justify-content:center">${renderCatIcon(c.icon,22,true)}</span>
+        <div style="flex:1">
+          <p style="font-size:14px;font-weight:600">${c.label}</p>
+          ${subcatEntries.length>0?`<p style="font-size:11px;color:var(--dim)">${subcatEntries.length} subcategor${subcatEntries.length===1?'y':'ies'}</p>`:''}
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="edit-btn" onclick="startEditCat('${key}');S.view='categories';render()">Edit</button>
+          ${key!=='income'&&key!=='other'?`<button class="delete-btn" onclick="deleteCat('${key}')">Del</button>`:''}
+        </div>
+      </div>
+
+      <!-- Subcategories -->
+      ${subcatEntries.length>0?`<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
+        ${subcatEntries.map(([sk,sv])=>{
+          const lbl=getSubcatLabel(sv);const ic=getSubcatIcon(sv);
+          return`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border)">
+            ${ic?`<span style="font-size:15px;display:flex;align-items:center;justify-content:center;width:22px;height:22px">${renderCatIcon(ic,16,true)}</span>`:'<span style="width:22px;height:22px;opacity:0.3;display:flex;align-items:center;justify-content:center">•</span>'}
+            <span style="flex:1;font-size:12px;font-weight:500">${lbl}</span>
+            <button class="edit-btn" style="font-size:10px;padding:3px 8px" onclick="startEditSubcat('${key}','${sk}');S.view='categories';render()">Edit</button>
+            <button class="delete-btn" style="font-size:10px;padding:3px 8px" onclick="deleteSubcat('${key}','${sk}')">Del</button>
+          </div>`;
+        }).join('')}
+      </div>`:''}
+
+      <!-- Add subcategory -->
+      <button onclick="startAddSubcat('${key}');S.view='categories';render()" style="font-size:11px;color:var(--accent2);background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:4px 10px;font-weight:600;margin-bottom:12px">+ Add Subcategory</button>
+
+      <!-- Budget input -->
+      <div style="border-top:1px solid var(--border);padding-top:10px">
+        <p style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:0.04em;text-transform:uppercase">Monthly Budget</p>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;color:var(--muted);font-weight:600">${cur.symbol}</span>
+          <input class="fw-input cb-bgt-input" data-cat="${key}" type="number" inputmode="decimal" placeholder="0.00"
+            value="${window._bgtDraft[key]||''}"
+            style="flex:1;margin:0;font-size:14px;padding:10px 12px"
+            oninput="window._bgtDirty=true;window._bgtDraft['${key}']=this.value;updateCbBgtPreview('${key}',this.value,${spent})">
+          ${spent>0?`<span style="font-size:11px;color:var(--muted);white-space:nowrap">spent ${cur.symbol}${spent.toFixed(2)}</span>`:''}
+        </div>
+        ${bgt>0?`<div style="margin-top:8px">
+          <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.08);overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px;transition:width 0.3s"></div>
+          </div>
+          <p id="cb-preview-${key}" style="font-size:10px;color:${barColor};margin-top:4px">${spent>bgt?`Over by ${cur.symbol}${(spent-bgt).toFixed(2)}`:`${cur.symbol}${(bgt-spent).toFixed(2)} remaining`}</p>
+        </div>`:`<div id="cb-preview-${key}"></div>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Add new category form
+  const addCatForm=`<div class="surface" style="padding:16px;border-radius:14px;margin-bottom:10px;border:1px dashed var(--border)">
+    <p style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--accent)">+ Add New Category</p>
+    <input id="catName" class="fw-input" type="text" placeholder="Category name" style="margin-bottom:12px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      ${CAT_ICONS.slice(0,16).map((ic,i)=>`<button onclick="pickCatEmoji(${i})" style="width:36px;height:36px;border-radius:9px;font-size:17px;background:rgba(255,255,255,0.06);border:2px solid transparent" class="cat-ic-btn" data-idx="${i}">${ic}</button>`).join('')}
+    </div>
+    <button onclick="saveCat()" style="width:100%;padding:11px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700">Save Category</button>
+  </div>`;
+
+  return`<div class="fade-in settings-page" style="padding-top:0;padding-bottom:calc(80px + env(safe-area-inset-bottom))">
+    <div style="position:sticky;top:0;z-index:20;background:var(--bg);padding:52px 22px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)">
+      <button class="btn-ghost" onclick="goSettings()" style="font-size:20px;padding:0;color:var(--muted)">←</button>
+      <p style="font-size:17px;font-weight:700;flex:1">Categories & Budget</p>
+      <button onclick="saveCatBudgets()" style="padding:8px 16px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">Save</button>
+    </div>
+    <div style="padding:16px 22px 0">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Manage your spending categories and set monthly budgets for each one.</p>
+      ${catRows}
+      ${addCatForm}
+    </div>
+  </div>`;
+}
+
+function attachCatBudgetListeners(){
+  // listeners attached inline via oninput/onclick
+}
+
+window.updateCbBgtPreview=(key,val,spent)=>{
+  const cur=getCur();
+  const bgt=parseFloat(val)||0;
+  const el=document.getElementById('cb-preview-'+key);
+  if(!el)return;
+  if(bgt>0){
+    const pct=Math.min(100,(spent/bgt)*100);
+    const barColor=spent>bgt?'var(--red)':pct>80?'var(--yellow)':'var(--accent)';
+    el.innerHTML=`<div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.08);overflow:hidden;margin-top:8px"><div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px"></div></div><p style="font-size:10px;color:${barColor};margin-top:4px">${spent>bgt?'Over by '+cur.symbol+(spent-bgt).toFixed(2):cur.symbol+(bgt-spent).toFixed(2)+' remaining'}</p>`;
+  } else {
+    el.innerHTML='';
+  }
+};
+
+window.saveCatBudgets=async()=>{
+  const nowYm=new Date().toISOString().slice(0,7);
+  const path=`ledgers/${S.activeLedgerId}/budgets/${nowYm}`;
+  const up={};
+  Object.entries(window._bgtDraft||{}).forEach(([k,v])=>{
+    const n=parseFloat(v)||0;
+    up[path+'/'+k]=n>0?n:null;
+  });
+  await update(ref(db),up);
+  window._bgtDirty=false;
+  toast('✓ Budgets saved');
+};
+
 function renderCategoriesPage(){
   const cats=getCats();
   const rows=Object.entries(cats).map(([key,c])=>{
@@ -5228,8 +5363,7 @@ function renderSettings(){
       <p class="label" style="margin-bottom:12px">Preference</p>
       <button onclick="goAppearance()" class="export-btn" style="margin-bottom:8px">🎨 Appearance</button>
       <button onclick="goPaymentMethods()" class="export-btn" style="margin-bottom:8px">💳 Payment Methods</button>
-      <button onclick="goCategories()" class="export-btn" style="margin-bottom:8px">✏️ Edit Categories</button>
-      <button onclick="goBudget()" class="export-btn" style="margin-bottom:8px">💰 Manage Budget</button>
+      <button onclick="goCatBudget()" class="export-btn" style="margin-bottom:8px">🗂️ Categories & Budget</button>
       ${S.totalView?`<div style="background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);border-radius:14px;padding:14px 16px;margin-top:4px">
         <p style="font-size:13px;font-weight:600;margin-bottom:4px">🏦 Asset Accounts &amp; 🔄 Recurring Transactions</p>
         <p style="font-size:12px;color:var(--muted);line-height:1.6">These are per-ledger settings.<br>Select a specific ledger to manage them.</p>
@@ -5852,6 +5986,7 @@ window.goSettings  =()=>{S.view='settings';render();};
 window.goInvite    =()=>{_code=null;S.view='invite';render();};
 window.goBudget    =()=>{const nowYm=new Date().toISOString().slice(0,7);if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;S.view='budget';render();};
 window.goCategories=()=>{editCatKey=null;editSubcatKey=null;S.view='categories';render();};
+window.goCatBudget=()=>{editCatKey=null;editSubcatKey=null;const nowYm=new Date().toISOString().slice(0,7);if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;window._bgtDraft={};S.view='catBudget';render();};
 window.goGuests    =()=>{S.view='guests';render();};
 window.goAssets    =()=>{if(S.totalView){openLedgerPicker();return;}S.view='assets';render();};
 window.goRecurring =()=>{if(S.totalView){openLedgerPicker();return;}S.view='recurring';render();processRecurring();};
