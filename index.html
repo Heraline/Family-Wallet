@@ -37,9 +37,12 @@
   :root.ui-paper-white .btn-primary{background:#111;box-shadow:none}
   :root.ui-paper-white .balance-amount{font-weight:300;letter-spacing:-0.04em}
   :root.ui-paper-white .tab-btn.active{background:#111;color:#fff}
-  :root.ui-paper-white .fab{background:#111;box-shadow:none}
-  :root.ui-paper-white .bottom-nav{background:#F7F7F5;border-top:0.5px solid rgba(0,0,0,0.09)}
-  :root.ui-paper-white .nav-btn.active{color:#111}
+  :root.ui-paper-white .fab{background:#111;box-shadow:0 6px 20px rgba(0,0,0,0.2)}
+  :root.ui-paper-white .bottom-nav{background:transparent}
+  :root.ui-paper-white .bottom-nav::after{background:linear-gradient(to top,#F7F7F5 40%,transparent)}
+  :root.ui-paper-white .nav-island{background:rgba(245,245,243,0.92);border:1px solid rgba(0,0,0,0.10);box-shadow:0 8px 32px rgba(0,0,0,0.12),inset 0 1px 0 rgba(255,255,255,0.9)}
+  :root.ui-paper-white .nav-btn{color:#999}
+  :root.ui-paper-white .nav-btn.active{background:rgba(0,0,0,0.08);color:#111}
   :root.ui-paper-white .glow1,:root.ui-paper-white .glow2{display:none}
   :root.ui-paper-white .tx-row{background:#fff;border:0.5px solid rgba(0,0,0,0.07)}
   :root.ui-paper-white .tx-icon{border-radius:10px}
@@ -56,9 +59,12 @@
   :root.ui-warm-cream .btn-primary{background:#2C2416;box-shadow:none}
   :root.ui-warm-cream .balance-amount{font-weight:300;letter-spacing:-0.04em}
   :root.ui-warm-cream .tab-btn.active{background:#2C2416;color:#FAF8F3}
-  :root.ui-warm-cream .fab{background:#2C2416;box-shadow:none}
-  :root.ui-warm-cream .bottom-nav{background:#FAF8F3;border-top:0.5px solid rgba(44,36,22,0.1)}
-  :root.ui-warm-cream .nav-btn.active{color:#2C2416}
+  :root.ui-warm-cream .fab{background:#2C2416;box-shadow:0 6px 20px rgba(44,36,22,0.3)}
+  :root.ui-warm-cream .bottom-nav{background:transparent}
+  :root.ui-warm-cream .bottom-nav::after{background:linear-gradient(to top,#FAF8F3 40%,transparent)}
+  :root.ui-warm-cream .nav-island{background:rgba(240,237,230,0.92);border:1px solid rgba(44,36,22,0.12);box-shadow:0 8px 32px rgba(44,36,22,0.10),inset 0 1px 0 rgba(255,255,255,0.8)}
+  :root.ui-warm-cream .nav-btn{color:#C4B8A8}
+  :root.ui-warm-cream .nav-btn.active{background:rgba(44,36,22,0.08);color:#2C2416}
   :root.ui-warm-cream .glow1,:root.ui-warm-cream .glow2{display:none}
   :root.ui-warm-cream .tx-row{background:#fff;border:0.5px solid rgba(44,36,22,0.07)}
   :root.ui-warm-cream .tx-icon{border-radius:12px;background:#EDE8DF}
@@ -75,9 +81,12 @@
   :root.ui-cool-slate .btn-primary{background:#1A2035;box-shadow:none}
   :root.ui-cool-slate .balance-amount{font-weight:500;letter-spacing:-0.03em}
   :root.ui-cool-slate .tab-btn.active{background:#1A2035;color:#fff}
-  :root.ui-cool-slate .fab{background:#1A2035;box-shadow:none}
-  :root.ui-cool-slate .bottom-nav{background:#F2F4F7;border-top:0.5px solid rgba(26,32,53,0.1)}
-  :root.ui-cool-slate .nav-btn.active{color:#1A2035}
+  :root.ui-cool-slate .fab{background:#1A2035;box-shadow:0 6px 20px rgba(26,32,53,0.25)}
+  :root.ui-cool-slate .bottom-nav{background:transparent}
+  :root.ui-cool-slate .bottom-nav::after{background:linear-gradient(to top,#F2F4F7 40%,transparent)}
+  :root.ui-cool-slate .nav-island{background:rgba(234,236,240,0.92);border:1px solid rgba(26,32,53,0.10);box-shadow:0 8px 32px rgba(26,32,53,0.08),inset 0 1px 0 rgba(255,255,255,0.9)}
+  :root.ui-cool-slate .nav-btn{color:#B0B8CC}
+  :root.ui-cool-slate .nav-btn.active{background:rgba(26,32,53,0.08);color:#1A2035}
   :root.ui-cool-slate .glow1,:root.ui-cool-slate .glow2{display:none}
   :root.ui-cool-slate .tx-row{background:#fff;border:0.5px solid rgba(26,32,53,0.07)}
   :root.ui-cool-slate .tx-icon{border-radius:9px;background:#EAECF0}
@@ -164,12 +173,14 @@
   .member-box .m-avatar{font-size:20px;margin-bottom:3px}
   .member-box.active{color:#fff}
   .split-hint{font-size:12px;color:var(--accent);text-align:center;margin-top:10px}
-  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--bg);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 30px calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:space-around;align-items:center;z-index:50}
-  .bottom-nav::after{content:'';position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:60px;background:var(--bg);z-index:-1}
-  .nav-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;color:var(--dim);font-size:11px;font-weight:600;padding:4px 12px}
-  .nav-btn.active{color:var(--accent)}
-  .nav-btn .nav-icon{font-size:22px}
-  .fab{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(108,99,255,0.4);margin-top:-18px;color:#fff}
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:transparent;padding:0 0 calc(16px + env(safe-area-inset-bottom));display:flex;justify-content:center;align-items:flex-end;z-index:50;pointer-events:none}
+  .bottom-nav::after{content:'';position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:100px;background:linear-gradient(to top,var(--bg) 40%,transparent);z-index:-1}
+  .nav-island{display:flex;align-items:center;gap:6px;background:rgba(22,22,36,0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.10);border-radius:999px;padding:8px 12px;box-shadow:0 8px 32px rgba(0,0,0,0.45),0 2px 8px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.08);pointer-events:all}
+  .nav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;color:var(--dim);font-size:10px;font-weight:600;padding:6px 14px;border-radius:999px;transition:all 0.2s;border:none;cursor:pointer}
+  .nav-btn.active{background:rgba(108,99,255,0.18);color:var(--accent)}
+  .nav-btn .nav-icon{font-size:20px;line-height:1}
+  .fab{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(108,99,255,0.5),0 2px 8px rgba(0,0,0,0.3);color:#fff;border:none;cursor:pointer;pointer-events:all;transition:transform 0.15s,box-shadow 0.15s;flex-shrink:0}
+  .fab:active{transform:scale(0.93);box-shadow:0 3px 12px rgba(108,99,255,0.4)}
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:flex-end;justify-content:center}
   .modal-sheet{width:100%;max-width:430px;background:var(--bg2);border-radius:24px 24px 0 0;padding:26px 22px calc(48px + env(safe-area-inset-bottom));border:1px solid var(--border);animation:slideUp 0.3s cubic-bezier(.22,.68,0,1.15) both;max-height:90svh;max-height:90dvh;overflow-y:auto}
   .modal-handle{width:40px;height:4px;border-radius:999px;background:rgba(255,255,255,0.2);margin:0 auto 22px}
@@ -1199,12 +1210,20 @@ function showErr(msg){
 function render(){_saveScroll();try{renderPage();}catch(e){showErr('render: '+e.stack||e.message);}renderNav();renderModal();}
 function renderNav(){
   const nav=document.getElementById('bottomNav');if(!nav)return;
-  const{view,tab}=S;
+  const{view}=S;
   const unread=unreadCount();
   nav.innerHTML=`
-    <button class="nav-btn ${view==='home'?'active':''}" onclick="goHome('transactions')"><span class="nav-icon">🏠</span><span>Today</span></button>
-    <button class="fab" onclick="goAdd()">+</button>
-    <button class="nav-btn ${view==='settings'?'active':''}" onclick="goSettings()"><span class="nav-icon">⚙️</span><span>Setting</span></button>`;
+    <div class="nav-island">
+      <button class="nav-btn ${view==='home'?'active':''}" onclick="goHome('transactions')">
+        <span class="nav-icon">🏠</span>
+        <span>Today</span>
+      </button>
+      <button class="fab" onclick="goAdd()">+</button>
+      <button class="nav-btn ${view==='settings'?'active':''}" onclick="goSettings()">
+        <span class="nav-icon">⚙️</span>
+        <span>Setting</span>
+      </button>
+    </div>`;
 }
 function renderPage(){
   const pg=document.getElementById('mainPage');if(!pg)return;
@@ -1377,30 +1396,48 @@ function renderHome(){
     const daysLeftTv=daysInMonthTv-todayDateTv.getDate()+1;
     const allDailySafe=allTotalBudget>0&&allRemaining>0?allRemaining/daysLeftTv:0;
 
+    const _greeting=(()=>{const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';})();
+    const _firstName=(S.user?.displayName||'').split(' ')[0]||'there';
+    const _avatarUrl=S.user?.photoURL||'';
+
     return`<div class="fade-in" style="padding-bottom:calc(100px + env(safe-area-inset-bottom))">
       <!-- HEADER -->
-      <div style="padding:52px 20px 0;display:flex;justify-content:flex-end;align-items:flex-start">
-        <div style="display:flex;gap:8px;align-items:center">
-          <div style="background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:20px;padding:4px;display:flex;align-items:center;gap:0">
-            <button onclick="" style="background:rgba(255,255,255,0.10);border:none;border-radius:14px;width:32px;height:32px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">🌐</button>
-            <button onclick="openLedgerPicker()" style="background:none;border:none;padding:3px 8px 3px 6px;display:flex;align-items:center;gap:4px;color:var(--text);font-family:var(--font-ui);font-size:13px;font-weight:600">
-              <span>All Ledgers</span><span style="color:var(--dim);font-size:12px">⌄</span>
-            </button>
-          </div>
-          <button onclick="goSearch()" style="background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 10px;font-size:16px">🔍</button>
-        <button onclick="goNotifications()" style="position:relative;background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 10px;font-size:16px">${unreadCount()>0?`<span style="position:absolute;top:4px;right:4px;background:var(--red);border-radius:999px;min-width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;padding:0 2px">${unreadCount()>9?'9+':unreadCount()}</span>`:''}🔔</button>
+      <div style="padding:52px 20px 14px;display:flex;align-items:center;justify-content:space-between">
+        <!-- Greeting left -->
+        <div style="flex:1;min-width:0">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:2px;letter-spacing:0.02em">${new Date().toLocaleDateString('en-MY',{weekday:'long',day:'numeric',month:'long'})}</p>
+          <p style="font-size:20px;font-weight:700;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_greeting}, ${_firstName}!</p>
+        </div>
+        <!-- Right icons -->
+        <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;margin-left:10px">
+          <button onclick="goNotifications()" style="position:relative;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.07);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:17px">${unreadCount()>0?`<span style="position:absolute;top:2px;right:2px;background:var(--red);border-radius:999px;min-width:13px;height:13px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff;padding:0 2px">${unreadCount()>9?'9+':unreadCount()}</span>`:''}🔔</button>
+          ${_avatarUrl?`<img src="${_avatarUrl}" onclick="goSettings()" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);cursor:pointer" onerror="this.style.display='none'">`:`<button onclick="goSettings()" style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff">${_firstName.charAt(0).toUpperCase()}</button>`}
         </div>
       </div>
 
-      <!-- SPENT TODAY + BALANCE -->
-      <div style="padding:18px 20px 0;display:flex;align-items:flex-end;justify-content:space-between">
-        <div>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:4px">My Spend Today</p>
-          <p style="font-family:var(--font-num);font-size:36px;font-weight:700;letter-spacing:-0.03em;color:var(--text)">RM ${spentToday.toFixed(2)}</p>
+      <!-- LEDGER SELECTOR PILL -->
+      <div style="padding:0 20px 0;margin-bottom:16px">
+        <div style="display:inline-flex;align-items:center;gap:0;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:999px;padding:5px 5px 5px 5px">
+          <span style="font-size:18px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.10);display:flex;align-items:center;justify-content:center">🌐</span>
+          <button onclick="openLedgerPicker()" style="background:none;border:none;padding:3px 10px 3px 8px;font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:4px">All Ledgers <span style="color:var(--dim);font-size:11px">⌄</span></button>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:20px;padding:7px 13px;margin-bottom:6px">
-          <span style="font-size:11px;color:var(--muted);font-weight:500">My Balance</span>
-          <span style="font-family:var(--font-num);font-size:14px;font-weight:700;color:${myBalance>=0?'var(--accent)':'var(--red)'}"> RM ${Math.abs(myBalance).toFixed(2)}</span>
+        <button onclick="goSearch()" style="margin-left:8px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.07);border:1px solid var(--border);font-size:16px">🔍</button>
+      </div>
+
+      <!-- HERO SPEND CARD -->
+      <div style="margin:0 20px 0;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);border-radius:24px;padding:22px 22px 20px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(108,99,255,0.35)">
+        <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.08)"></div>
+        <div style="position:absolute;bottom:-20px;right:40px;width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,0.06)"></div>
+        <p style="font-size:11px;color:rgba(255,255,255,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">My Spend Today</p>
+        <p style="font-family:var(--font-num);font-size:38px;font-weight:700;letter-spacing:-0.03em;color:#fff;margin-bottom:14px">${fmt(spentToday)}</p>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border-radius:999px;padding:6px 14px;display:flex;align-items:center;gap:6px">
+            <span style="font-size:10px;color:rgba(255,255,255,0.8);font-weight:500">My Balance</span>
+            <span style="font-family:var(--font-num);font-size:13px;font-weight:700;color:#fff">RM ${Math.abs(myBalance).toFixed(2)}</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="goSearch()" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;font-size:15px;display:flex;align-items:center;justify-content:center">🔍</button>
+          </div>
         </div>
       </div>
 
@@ -1703,31 +1740,48 @@ function renderHome(){
   const monthName=new Date().toLocaleDateString('en-MY',{month:'long',year:'numeric'});
   const tc=S.tab==='transactions'?renderTxs(fil):renderAnalytics(fil,mth.exp);
 
+  const _greeting=(()=>{const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';})();
+  const _firstName=(S.user?.displayName||'').split(' ')[0]||'there';
+  const _avatarUrl=S.user?.photoURL||'';
+
   return`<div class="fade-in" style="padding-bottom:calc(80px + env(safe-area-inset-bottom))">
 
     <!-- TOP HEADER: ledger name -->
-    <div style="padding:52px 20px 0;display:flex;justify-content:flex-end;align-items:flex-start">
-      <div style="display:flex;gap:8px;align-items:center">
-        <div style="background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:20px;padding:4px 4px 4px 4px;font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:0">
-          <button onclick="${S.totalView?'':'openLedgerIconModal()'}" style="background:rgba(255,255,255,0.10);border:none;border-radius:14px;width:32px;height:32px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0" id="headerLedgerIcon">${S.totalView?'🌐':linfo.icon||'🏠'}</button>
-          <button onclick="openLedgerPicker()" style="background:none;border:none;padding:3px 8px 3px 6px;display:flex;align-items:center;gap:4px;color:var(--text);font-family:var(--font-ui);font-size:13px;font-weight:600">
-            <span style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${S.totalView?'All Ledgers':linfo.name||'Ledger'}</span><span style="color:var(--dim);font-size:12px">⌄</span>
-          </button>
-        </div>
-        <button onclick="goSearch()" style="background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 10px;font-size:16px">🔍</button>
-        <button onclick="goNotifications()" style="position:relative;background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 10px;font-size:16px">${unreadCount()>0?`<span style="position:absolute;top:4px;right:4px;background:var(--red);border-radius:999px;min-width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;padding:0 2px">${unreadCount()>9?'9+':unreadCount()}</span>`:''}🔔</button>
+    <div style="padding:52px 20px 14px;display:flex;align-items:center;justify-content:space-between">
+      <!-- Greeting left -->
+      <div style="flex:1;min-width:0">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:2px;letter-spacing:0.02em">${new Date().toLocaleDateString('en-MY',{weekday:'long',day:'numeric',month:'long'})}</p>
+        <p style="font-size:20px;font-weight:700;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_greeting}, ${_firstName}!</p>
+      </div>
+      <!-- Right icons -->
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;margin-left:10px">
+        <button onclick="goNotifications()" style="position:relative;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.07);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:17px">${unreadCount()>0?`<span style="position:absolute;top:2px;right:2px;background:var(--red);border-radius:999px;min-width:13px;height:13px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff;padding:0 2px">${unreadCount()>9?'9+':unreadCount()}</span>`:''}🔔</button>
+        ${_avatarUrl?`<img src="${_avatarUrl}" onclick="goSettings()" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);cursor:pointer" onerror="this.style.display='none'">`:`<button onclick="goSettings()" style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff">${_firstName.charAt(0).toUpperCase()}</button>`}
       </div>
     </div>
 
-    <!-- SPENT TODAY + TOTAL BALANCE ROW -->
-    <div style="padding:18px 20px 0;display:flex;align-items:flex-end;justify-content:space-between">
-      <div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:4px">Spent Today</p>
-        <p style="font-family:var(--font-num);font-size:36px;font-weight:700;letter-spacing:-0.03em;color:var(--text)">${fmt(spentToday)}</p>
+    <!-- LEDGER SELECTOR PILL -->
+    <div style="padding:0 20px;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+      <div style="display:inline-flex;align-items:center;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:999px;padding:5px">
+        <button onclick="${S.totalView?'':'openLedgerIconModal()'}" style="font-size:18px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.10);border:none;display:flex;align-items:center;justify-content:center" id="headerLedgerIcon">${S.totalView?'🌐':linfo.icon||'🏠'}</button>
+        <button onclick="openLedgerPicker()" style="background:none;border:none;padding:3px 10px 3px 8px;font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:4px;max-width:110px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">
+          ${S.totalView?'All Ledgers':linfo.name||'Ledger'} <span style="color:var(--dim);font-size:11px">⌄</span>
+        </button>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:20px;padding:7px 13px;margin-bottom:6px;cursor:pointer" onclick="goInvite()">
-        <span style="font-size:11px;color:var(--muted);font-weight:500">Total Balance</span>
-        <span style="font-family:var(--font-num);font-size:14px;font-weight:700;color:${all.bal>=0?'var(--accent)':'var(--red)'}"> ${fmt(Math.abs(all.bal))}</span>
+      <button onclick="goSearch()" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.07);border:1px solid var(--border);font-size:16px;display:flex;align-items:center;justify-content:center">🔍</button>
+    </div>
+
+    <!-- HERO SPEND CARD -->
+    <div style="margin:0 20px 0;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);border-radius:24px;padding:22px 22px 20px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(108,99,255,0.35)">
+      <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.08)"></div>
+      <div style="position:absolute;bottom:-20px;right:40px;width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,0.06)"></div>
+      <p style="font-size:11px;color:rgba(255,255,255,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">Spent Today</p>
+      <p style="font-family:var(--font-num);font-size:38px;font-weight:700;letter-spacing:-0.03em;color:#fff;margin-bottom:14px">${fmt(spentToday)}</p>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border-radius:999px;padding:6px 14px;display:flex;align-items:center;gap:6px" onclick="goInvite()">
+          <span style="font-size:10px;color:rgba(255,255,255,0.8);font-weight:500">Total Balance</span>
+          <span style="font-family:var(--font-num);font-size:13px;font-weight:700;color:#fff">${fmt(Math.abs(all.bal))}</span>
+        </div>
       </div>
     </div>
 
