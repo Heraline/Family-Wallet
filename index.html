@@ -1379,10 +1379,7 @@ function renderHome(){
 
     return`<div class="fade-in" style="padding-bottom:calc(100px + env(safe-area-inset-bottom))">
       <!-- HEADER -->
-      <div style="padding:52px 20px 0;display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <p style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Today</p>
-        </div>
+      <div style="padding:52px 20px 0;display:flex;justify-content:flex-end;align-items:flex-start">
         <div style="display:flex;gap:8px;align-items:center">
           <div style="background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:20px;padding:4px;display:flex;align-items:center;gap:0">
             <button onclick="" style="background:rgba(255,255,255,0.10);border:none;border-radius:14px;width:32px;height:32px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">🌐</button>
@@ -1709,10 +1706,7 @@ function renderHome(){
   return`<div class="fade-in" style="padding-bottom:calc(80px + env(safe-area-inset-bottom))">
 
     <!-- TOP HEADER: ledger name -->
-    <div style="padding:52px 20px 0;display:flex;justify-content:space-between;align-items:flex-start">
-      <div>
-        <p style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Today</p>
-      </div>
+    <div style="padding:52px 20px 0;display:flex;justify-content:flex-end;align-items:flex-start">
       <div style="display:flex;gap:8px;align-items:center">
         <div style="background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:20px;padding:4px 4px 4px 4px;font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:0">
           <button onclick="${S.totalView?'':'openLedgerIconModal()'}" style="background:rgba(255,255,255,0.10);border:none;border-radius:14px;width:32px;height:32px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0" id="headerLedgerIcon">${S.totalView?'🌐':linfo.icon||'🏠'}</button>
