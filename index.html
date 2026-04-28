@@ -1418,7 +1418,10 @@ function renderHome(){
             <div class="card balance-card slide-up" style="padding:20px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
             <p style="font-size:15px;font-weight:700">${new Date().toLocaleDateString('en-MY',{month:'long'})} · My Finance</p>
-            <div style="background:rgba(108,99,255,0.15);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--accent)">${Object.keys(S.ledgers).length} ledgers</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button onclick="goCalendar()" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.07);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">📅</button>
+              <button onclick="goStats()" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.07);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">📊</button>
+            </div>
           </div>
 
           <!-- Expense / Income -->
@@ -1491,7 +1494,10 @@ function renderHome(){
           </div>`:''}
 
           <!-- Per ledger breakdown -->
-          ${ledgerRows?`<p style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;letter-spacing:0.04em;text-transform:uppercase">My Spend by Ledger</p>${ledgerRows}`:'<p style="font-size:13px;color:var(--dim);text-align:center;padding:8px 0">No expenses this month</p>'}
+          ${ledgerRows?`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <p style="font-size:12px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase">My Spend by Ledger</p>
+            <div style="background:rgba(108,99,255,0.15);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--accent)">${Object.keys(S.ledgers).length} ledgers</div>
+          </div>${ledgerRows}`:'<p style="font-size:13px;color:var(--dim);text-align:center;padding:8px 0">No expenses this month</p>'}
             </div><!-- end .card -->
           </div><!-- end slide 1 -->
 
