@@ -238,6 +238,15 @@
   .asset-card::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(108,99,255,0.12),transparent 70%);pointer-events:none}
   .asset-type-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:0.06em;text-transform:uppercase}
   .asset-balance{font-family:var(--font-num);font-size:26px;font-weight:700;letter-spacing:-0.02em;margin:8px 0 4px}
+  /* ── Summary card carousel ── */
+  .summary-carousel-wrap{margin:14px 20px 0;position:relative}
+  .summary-carousel-track{display:flex;gap:0;overflow:hidden;border-radius:22px}
+  .summary-carousel-slide{flex:0 0 100%;min-width:0}
+  .carousel-dots{display:flex;justify-content:center;gap:6px;margin-top:10px}
+  .carousel-dot{width:6px;height:6px;border-radius:50%;background:var(--dim);transition:all 0.25s;cursor:pointer}
+  .carousel-dot.active{background:var(--accent);width:18px;border-radius:3px}
+  /* Asset overview card (matches .card .balance-card style) */
+  .asset-overview-card{background:var(--bg3);border:1px solid rgba(78,205,196,0.25);border-radius:22px;box-shadow:0 0 40px rgba(78,205,196,0.06),0 8px 32px rgba(0,0,0,0.12);padding:20px;height:100%}
   /* Recurring cards */
   .recur-card{display:flex;align-items:center;gap:13px;padding:14px 16px;border-radius:15px;margin-bottom:8px}
   .recur-freq-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(78,205,196,0.15);color:var(--accent2);letter-spacing:0.05em}
@@ -1401,9 +1410,13 @@ function renderHome(){
         </div>
       </div>
 
-      <!-- MAIN SUMMARY CARD -->
-      <div style="margin:14px 20px 0">
-        <div class="card balance-card slide-up" style="padding:20px">
+      <!-- MAIN SUMMARY CARD CAROUSEL -->
+      <div class="summary-carousel-wrap" id="summaryCarouselWrap">
+        <div class="summary-carousel-track" id="summaryCarouselTrack">
+
+          <!-- SLIDE 1: Monthly Summary -->
+          <div class="summary-carousel-slide">
+            <div class="card balance-card slide-up" style="padding:20px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
             <p style="font-size:15px;font-weight:700">${new Date().toLocaleDateString('en-MY',{month:'long'})} · My Finance</p>
             <div style="background:rgba(108,99,255,0.15);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--accent)">${Object.keys(S.ledgers).length} ledgers</div>
@@ -1480,8 +1493,71 @@ function renderHome(){
 
           <!-- Per ledger breakdown -->
           ${ledgerRows?`<p style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;letter-spacing:0.04em;text-transform:uppercase">My Spend by Ledger</p>${ledgerRows}`:'<p style="font-size:13px;color:var(--dim);text-align:center;padding:8px 0">No expenses this month</p>'}
+            </div><!-- end .card -->
+          </div><!-- end slide 1 -->
+
+          <!-- SLIDE 2: Asset Accounts (Total View) -->
+          <div class="summary-carousel-slide">
+            <div class="asset-overview-card">
+              ${(()=>{
+                const assetArr=Object.values(S.ledgers||{}).flatMap(l=>Object.entries(l.assets||{}).map(([id,a])=>({id,...a,_ledger:l.name})));
+                const uniqueAssets=Object.entries(
+                  Object.values(S.ledgers||{}).reduce((acc,l)=>{
+                    Object.entries(l.assets||{}).forEach(([id,a])=>{acc[id]={...a,id};});
+                    return acc;
+                  },{})
+                ).map(([,a])=>a);
+                // Use assets from active ledger
+                const activeAssets=Object.entries(S.assets||{}).map(([id,a])=>({id,...a}));
+                const tot=totalAssets();
+                if(!activeAssets.length){
+                  return`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:180px;text-align:center;gap:10px">
+                    <span style="font-size:36px">🏦</span>
+                    <p style="font-size:14px;font-weight:700;color:var(--text)">No Asset Accounts</p>
+                    <p style="font-size:12px;color:var(--muted);line-height:1.5">Switch to a ledger to manage asset accounts</p>
+                    <button onclick="openLedgerPicker()" style="margin-top:6px;padding:8px 18px;border-radius:20px;background:rgba(78,205,196,0.15);border:1px solid rgba(78,205,196,0.3);color:var(--accent2);font-size:13px;font-weight:600">Select Ledger</button>
+                  </div>`;
+                }
+                const rows=activeAssets.map(a=>{
+                  const t=getAssetType(a.type);
+                  const bal=parseFloat(a.balance)||0;
+                  const isCredit=a.type==='credit';
+                  const dispIcon=a.customIcon?renderCatIcon(a.customIcon,16,true):(a.iconEmoji?`<span style="font-size:16px">${a.iconEmoji}</span>`:`<span style="font-size:16px">${t.icon}</span>`);
+                  const balColor=isCredit&&bal>0?'var(--red)':bal<0?'var(--red)':'var(--text)';
+                  return`<div onclick="goAssets()" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer">
+                    <div style="width:34px;height:34px;border-radius:10px;background:${t.color}18;display:flex;align-items:center;justify-content:center;flex-shrink:0">${dispIcon}</div>
+                    <div style="flex:1;min-width:0">
+                      <p style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name}</p>
+                      <p style="font-size:10px;color:var(--dim);margin-top:1px">${t.label}</p>
+                    </div>
+                    <p style="font-family:var(--font-num);font-size:13px;font-weight:700;color:${balColor};flex-shrink:0">${isCredit&&bal>0?'-':''}${fmt(Math.abs(bal),a.currency||S.ledgerCurrency)}</p>
+                  </div>`;
+                }).join('');
+                const netColor=tot>=0?'var(--accent2)':'var(--red)';
+                return`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                  <p style="font-size:15px;font-weight:700">Asset Accounts</p>
+                  <button onclick="goAssets()" style="width:34px;height:34px;border-radius:10px;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">🏦</button>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
+                  <div>
+                    <p style="font-size:11px;color:var(--muted);margin-bottom:3px">Net Worth</p>
+                    <p style="font-family:var(--font-num);font-size:28px;font-weight:700;color:${netColor}">${fmt(Math.abs(tot))}</p>
+                  </div>
+                  <span style="font-size:11px;color:var(--dim)">${activeAssets.length} account${activeAssets.length!==1?'s':''}</span>
+                </div>
+                <div>${rows}</div>
+                <button onclick="goAssets()" style="margin-top:12px;width:100%;padding:9px;border-radius:12px;background:rgba(78,205,196,0.10);border:1px solid rgba(78,205,196,0.2);color:var(--accent2);font-size:12px;font-weight:600">Manage Accounts →</button>`;
+              })()}
+            </div><!-- end .asset-overview-card -->
+          </div><!-- end slide 2 -->
+
+        </div><!-- end track -->
+        <!-- Carousel dots -->
+        <div class="carousel-dots" id="summaryCarouselDots">
+          <div class="carousel-dot active" onclick="summaryCarouselGo(0)"></div>
+          <div class="carousel-dot" onclick="summaryCarouselGo(1)"></div>
         </div>
-      </div>
+      </div><!-- end carousel wrap -->
 
       <!-- SPLITS QUICK BUTTONS -->
       ${(()=>{
@@ -1663,8 +1739,13 @@ function renderHome(){
     <!-- MEMBER FILTER PILLS -->
     <div class="member-scroll" style="padding:14px 20px 0">${pills}</div>
 
-    <!-- MAIN MONTHLY SUMMARY CARD -->
-    <div class="card balance-card slide-up" style="margin:14px 20px 0;padding:20px">
+    <!-- MAIN SUMMARY CARD CAROUSEL -->
+    <div class="summary-carousel-wrap" id="summaryCarouselWrap">
+      <div class="summary-carousel-track" id="summaryCarouselTrack">
+
+        <!-- SLIDE 1: Monthly Summary -->
+        <div class="summary-carousel-slide">
+          <div class="card balance-card slide-up" style="padding:20px">
 
       <!-- Card header: month + calendar/stats icons -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -1769,7 +1850,63 @@ function renderHome(){
           <strong style="color:${vsLastMonth<=0?'var(--green)':'var(--red)'}">${vsLastMonth>0?'+':''}${vsLastMonth.toFixed(1)}% ${vsLastMonth<=0?'decrease':'increase'}</strong>
         </span>
       </div>`:``}
-    </div>
+          </div><!-- end .card -->
+        </div><!-- end slide 1 -->
+
+        <!-- SLIDE 2: Asset Accounts -->
+        <div class="summary-carousel-slide">
+          <div class="asset-overview-card">
+            ${(()=>{
+              const assetArr=Object.entries(S.assets||{}).map(([id,a])=>({id,...a}));
+              const tot=totalAssets();
+              if(!assetArr.length){
+                return`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:180px;text-align:center;gap:10px">
+                  <span style="font-size:36px">🏦</span>
+                  <p style="font-size:14px;font-weight:700;color:var(--text)">No Asset Accounts</p>
+                  <p style="font-size:12px;color:var(--muted);line-height:1.5">Track your bank, e-wallet &amp; cash balances</p>
+                  <button onclick="goAssets()" style="margin-top:6px;padding:8px 18px;border-radius:20px;background:rgba(78,205,196,0.15);border:1px solid rgba(78,205,196,0.3);color:var(--accent2);font-size:13px;font-weight:600">+ Add Account</button>
+                </div>`;
+              }
+              const rows=assetArr.map(a=>{
+                const t=getAssetType(a.type);
+                const bal=parseFloat(a.balance)||0;
+                const isCredit=a.type==='credit';
+                const dispIcon=a.customIcon?renderCatIcon(a.customIcon,16,true):(a.iconEmoji?`<span style="font-size:16px">${a.iconEmoji}</span>`:`<span style="font-size:16px">${t.icon}</span>`);
+                const balColor=isCredit&&bal>0?'var(--red)':bal<0?'var(--red)':'var(--text)';
+                return`<div onclick="goAssets()" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer">
+                  <div style="width:34px;height:34px;border-radius:10px;background:${t.color}18;display:flex;align-items:center;justify-content:center;flex-shrink:0">${dispIcon}</div>
+                  <div style="flex:1;min-width:0">
+                    <p style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name}</p>
+                    <p style="font-size:10px;color:var(--dim);margin-top:1px">${t.label}</p>
+                  </div>
+                  <p style="font-family:var(--font-num);font-size:13px;font-weight:700;color:${balColor};flex-shrink:0">${isCredit&&bal>0?'-':''}${fmt(Math.abs(bal),a.currency||S.ledgerCurrency)}</p>
+                </div>`;
+              }).join('');
+              const netColor=tot>=0?'var(--accent2)':'var(--red)';
+              return`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                <p style="font-size:15px;font-weight:700">Asset Accounts</p>
+                <button onclick="goAssets()" style="width:34px;height:34px;border-radius:10px;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">🏦</button>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
+                <div>
+                  <p style="font-size:11px;color:var(--muted);margin-bottom:3px">Net Worth</p>
+                  <p style="font-family:var(--font-num);font-size:28px;font-weight:700;color:${netColor}">${fmt(Math.abs(tot))}</p>
+                </div>
+                <span style="font-size:11px;color:var(--dim)">${assetArr.length} account${assetArr.length!==1?'s':''}</span>
+              </div>
+              <div>${rows}</div>
+              <button onclick="goAssets()" style="margin-top:12px;width:100%;padding:9px;border-radius:12px;background:rgba(78,205,196,0.10);border:1px solid rgba(78,205,196,0.2);color:var(--accent2);font-size:12px;font-weight:600">Manage Accounts →</button>`;
+            })()}
+          </div><!-- end .asset-overview-card -->
+        </div><!-- end slide 2 -->
+
+      </div><!-- end track -->
+      <!-- Carousel dots -->
+      <div class="carousel-dots" id="summaryCarouselDots">
+        <div class="carousel-dot active" onclick="summaryCarouselGo(0)"></div>
+        <div class="carousel-dot" onclick="summaryCarouselGo(1)"></div>
+      </div>
+    </div><!-- end carousel wrap -->
 
     <!-- SPLITS & BALANCES QUICK BUTTONS -->
     ${(()=>{
@@ -5783,6 +5920,58 @@ window.setColorMode=async mode=>{
 };
 window.goAppearance=()=>{S.view='appearance';render();};
 window.goSearch=()=>{S.searchQuery='';S.view='search';render();};
+
+// ── Summary Card Carousel ──
+(function(){
+  let _carIdx=0;
+  let _carTouchX=0;
+  let _carDragging=false;
+
+  function _updateCarousel(idx,track,dots){
+    if(!track)return;
+    track.style.transform=`translateX(${-idx*100}%)`;
+    track.style.transition='transform 0.32s cubic-bezier(0.4,0,0.2,1)';
+    if(dots){
+      dots.querySelectorAll('.carousel-dot').forEach((d,i)=>{
+        d.classList.toggle('active',i===idx);
+      });
+    }
+    _carIdx=idx;
+  }
+
+  window.summaryCarouselGo=function(idx){
+    const track=document.getElementById('summaryCarouselTrack');
+    const dots=document.getElementById('summaryCarouselDots');
+    _updateCarousel(idx,track,dots);
+  };
+
+  // Attach touch/mouse swipe listeners after each render
+  const _origRenderPage=window.renderPage;
+  window.renderPage=function(){
+    _origRenderPage&&_origRenderPage.apply(this,arguments);
+    _carIdx=0; // reset to slide 1 on re-render
+    requestAnimationFrame(()=>{
+      const wrap=document.getElementById('summaryCarouselWrap');
+      const track=document.getElementById('summaryCarouselTrack');
+      if(!wrap||!track)return;
+      // Ensure no initial transform
+      track.style.transform='translateX(0)';
+      track.style.transition='none';
+
+      // Touch events
+      wrap.ontouchstart=e=>{_carTouchX=e.touches[0].clientX;_carDragging=true;};
+      wrap.ontouchmove=e=>{if(!_carDragging)return;e.stopPropagation();};
+      wrap.ontouchend=e=>{
+        if(!_carDragging)return;_carDragging=false;
+        const dx=e.changedTouches[0].clientX-_carTouchX;
+        const slides=track.querySelectorAll('.summary-carousel-slide');
+        const max=slides.length-1;
+        if(dx<-40&&_carIdx<max)_updateCarousel(_carIdx+1,track,document.getElementById('summaryCarouselDots'));
+        else if(dx>40&&_carIdx>0)_updateCarousel(_carIdx-1,track,document.getElementById('summaryCarouselDots'));
+      };
+    });
+  };
+})();
 window.setSplitsTab=tab=>{S.splitsTab=tab;renderPage();};
 window.setSplitsHistFilter=f=>{S.splitsHistFilter=f;renderPage();};
 let _searchTimer=null;
