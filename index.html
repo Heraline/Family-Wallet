@@ -251,7 +251,7 @@
   .asset-balance{font-family:var(--font-num);font-size:26px;font-weight:700;letter-spacing:-0.02em;margin:8px 0 4px}
   /* ── Summary card carousel ── */
   .summary-carousel-wrap{margin:14px 20px 0;position:relative}
-  .summary-carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:0}
+  .summary-carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:0;align-items:start}
   .summary-carousel-track::-webkit-scrollbar{display:none}
   .summary-carousel-slide{flex:0 0 100%;scroll-snap-align:start;min-width:0}
   .carousel-dots{display:flex;justify-content:center;gap:6px;margin-top:10px}
@@ -5975,7 +5975,11 @@ window.setColorMode=async mode=>{
   renderPage();
 };
 window.goAppearance=()=>{S.view='appearance';render();};
-window.toggleMemberSpending=()=>{S.memberSpendingCollapsed=!S.memberSpendingCollapsed;renderPage();};
+window.toggleMemberSpending=()=>{
+  S.memberSpendingCollapsed=!S.memberSpendingCollapsed;
+  renderPage();
+  requestAnimationFrame(()=>_syncCarouselHeight(document.getElementById('summaryCarouselTrack')));
+};
 window.goSearch=()=>{S.searchQuery='';S.view='search';render();};
 
 // ── Summary Card Carousel — dot sync via scroll events ──
@@ -5987,14 +5991,22 @@ window.summaryCarouselGo=function(idx){
   track.scrollTo({left:idx*slideW,behavior:'smooth'});
 };
 
+function _syncCarouselHeight(track){
+  if(!track)return;
+  const idx=Math.round(track.scrollLeft/(track.querySelector('.summary-carousel-slide')?.offsetWidth||track.offsetWidth));
+  const slide=track.querySelectorAll('.summary-carousel-slide')[idx];
+  if(slide)track.style.height=slide.offsetHeight+'px';
+}
+
 function _attachCarouselDots(){
   const track=document.getElementById('summaryCarouselTrack');
   const dots=document.getElementById('summaryCarouselDots');
   if(!track||!dots)return;
-  // Update dots on scroll
+  _syncCarouselHeight(track);
   track.addEventListener('scroll',function(){
     const idx=Math.round(track.scrollLeft/(track.querySelector('.summary-carousel-slide')?.offsetWidth||track.offsetWidth));
     dots.querySelectorAll('.carousel-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+    _syncCarouselHeight(track);
   },{passive:true});
 }
 
