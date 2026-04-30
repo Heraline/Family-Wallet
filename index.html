@@ -453,15 +453,15 @@ const S={
   txs:{},members:{},cats:{},budgets:{},ledgerCurrency:'MYR',
   assets:{},recurring:{},settlements:{},
   view:'home',tab:'transactions',filterMember:'all',
-  budgetMonth:new Date().toISOString().slice(0,7),
+  budgetMonth:localYm(),
   budgetScope:'ledger',   // 'ledger' | 'all'
   allBudgets:{},          // {ym: {_total, cat...}} for All Ledgers budget
   notifSeen:{},           // {activityId: true} — read markers stored in Firebase
   settleDetailModal:null, // {sk, s, lid} for settlement detail popup
-  historyMonth:new Date().toISOString().slice(0,7),
-  calendarMonth:new Date().toISOString().slice(0,7),
+  historyMonth:localYm(),
+  calendarMonth:localYm(),
   calendarDay:null,
-  statsMonth:new Date().toISOString().slice(0,7),
+  statsMonth:localYm(),
   statsTab:'overview', // overview | budget | members | trend
   statsMember:'all',
   addForm:null,
@@ -492,7 +492,8 @@ const S={
 };
 
 // ── UTILS ──
-function td(){return new Date().toISOString().slice(0,10);}
+function td(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function localYm(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
 function tt(){const n=new Date();return n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');}
 function getCats(){return Object.keys(S.cats).length?S.cats:DEFAULT_CATS;}
 // Subcategory value can be a plain string (legacy) or {label, icon}
@@ -914,7 +915,7 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
         const amount=p.get('amount')||'';
         const desc=p.get('desc')||'';
         const cat=p.get('cat')||'food';
-        const date=p.get('date')||new Date().toISOString().slice(0,10);
+        const date=p.get('date')||td();
         const time=p.get('time')||tt();
         const cur=p.get('cur')||S.ledgerCurrency||'MYR';
         const notes=p.get('notes')||'';
@@ -959,7 +960,7 @@ function showApp(){document.getElementById('authContainer').innerHTML='';documen
         amount:String(parseFloat(d.amount)||''),
         description:d.notes?((d.desc||'')+' — '+d.notes).substring(0,80):(d.desc||''),
         category:cat,subcat:subcat,
-        date:d.date||new Date().toISOString().slice(0,10),
+        date:d.date||td(),
         time:d.time||tt(),
         currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
         member:S.user?S.user.uid:'',
@@ -999,7 +1000,7 @@ function tryClipboardShortcut(){
         amount:String(parseFloat(d.amount)||''),
         description:d.notes?((d.desc||'')+' — '+d.notes).substring(0,80):(d.desc||''),
         category:cat,subcat:subcat,
-        date:d.date||new Date().toISOString().slice(0,10),
+        date:d.date||td(),
         time:d.time||tt(),
         currency:CURRENCIES[cur]?cur:(S.ledgerCurrency||'MYR'),
         member:S.user?S.user.uid:'',
@@ -1267,7 +1268,7 @@ function renderHome(){
   if(S.totalView){
     const uid=S.user.uid;
     const allTxs=totalTxArr();
-    const nowYm=new Date().toISOString().slice(0,7);
+    const nowYm=localYm();
     const todayStr=td();
     const cats=getCats();
     const [y,mo]=nowYm.split('-').map(Number);
@@ -1631,7 +1632,7 @@ function renderHome(){
   const memCnt=Object.keys(mems).length;
 
   // Budget for current month
-  const nowYm=new Date().toISOString().slice(0,7);
+  const nowYm=localYm();
   const memFilter=S.filterMember;
   const isFiltered=memFilter!=='all';
   // Always sync budget month to current month on home view
@@ -1988,7 +1989,7 @@ function renderHome(){
 function renderStats(){
   const ym=S.statsMonth;
   const [yr,mo]=ym.split('-').map(Number);
-  const nowYm=new Date().toISOString().slice(0,7);
+  const nowYm=localYm();
   const isCurrentMonth=ym===nowYm;
   const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'short',year:'numeric'});
   const cats=getCats();
@@ -2578,7 +2579,7 @@ function attachStatsListeners(){
   document.getElementById('statsNextBtn')?.addEventListener('click',()=>{
     const[yr,mo]=S.statsMonth.split('-').map(Number);
     const next=`${mo===12?yr+1:yr}-${String(mo===12?1:mo+1).padStart(2,'0')}`;
-    if(next<=new Date().toISOString().slice(0,7)){
+    if(next<=localYm()){
       S.statsMonth=next;
       if(S.statsTab==='budget')switchBudgetMonth(S.statsMonth);
       else renderPage();
@@ -2596,7 +2597,7 @@ function attachStatsListeners(){
 function renderCalendar(){
   const ym=S.calendarMonth;
   const [yr,mo]=ym.split('-').map(Number);
-  const nowYm=new Date().toISOString().slice(0,7);
+  const nowYm=localYm();
   const todayStr=td();
   const isCurrentMonth=ym===nowYm;
   const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'short',year:'numeric'});
@@ -2765,7 +2766,7 @@ function attachCalendarListeners(){
     const[yr,mo]=S.calendarMonth.split('-').map(Number);
     const ny=mo===12?yr+1:yr,nm=mo===12?1:mo+1;
     const next=`${ny}-${String(nm).padStart(2,'0')}`;
-    if(next<=new Date().toISOString().slice(0,7)){
+    if(next<=localYm()){
       S.calendarMonth=next;S.calendarDay=null;renderPage();
     }
   });
@@ -3171,7 +3172,7 @@ function renderPaymentMethodsPage(){
 function renderHistory(){
   const ym=S.historyMonth;
   const [yr,mo]=ym.split('-').map(Number);
-  const nowYm=new Date().toISOString().slice(0,7);
+  const nowYm=localYm();
   const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
   const prevYm=`${mo===1?yr-1:yr}-${String(mo===1?12:mo-1).padStart(2,'0')}`;
   const nextYm=`${mo===12?yr+1:yr}-${String(mo===12?1:mo+1).padStart(2,'0')}`;
@@ -3379,7 +3380,7 @@ function attachHistoryListeners(){
     const[yr,mo]=ym.split('-').map(Number);
     const ny=mo===12?yr+1:yr,nm=mo===12?1:mo+1;
     const next=`${ny}-${String(nm).padStart(2,'0')}`;
-    if(next<=new Date().toISOString().slice(0,7))window.setHistoryMonth(next);
+    if(next<=localYm())window.setHistoryMonth(next);
   });
 }
 
@@ -3526,7 +3527,7 @@ function renderTxByMember(){
   const monthTxs=txs.filter(t=>t.date&&t.date.startsWith(S.historyMonth));
   const inc=monthTxs.filter(t=>t.type==='income'&&t.member===mid).reduce((s,t)=>s+t.amount,0);
   const exp=monthTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const nowYm=new Date().toISOString().slice(0,8).slice(0,7);
+  const nowYm=localYm();
   const ym=S.historyMonth;
   const [yr,mo]=ym.split('-').map(Number);
   const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
@@ -3627,7 +3628,7 @@ function renderTxByCategory(){
   const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
   const monthTxs=txs.filter(t=>t.date&&t.date.startsWith(ym));
   const total=monthTxs.reduce((s,t)=>s+t.amount,0);
-  const nowYm=new Date().toISOString().slice(0,7);
+  const nowYm=localYm();
   const isCurrentMonth=ym===nowYm;
   const g={};monthTxs.sort((a,b)=>b.date.localeCompare(a.date)||(b.ts||0)-(a.ts||0)).forEach(t=>{if(!g[t.date])g[t.date]=[];g[t.date].push(t);});
   const allMonths=[...new Set(txs.map(t=>t.date?.slice(0,7)).filter(Boolean))].sort().reverse();
@@ -3710,7 +3711,7 @@ function renderTxByShared(){
   const ym=S.historyMonth;
   const [yr,mo]=ym.split('-').map(Number);
   const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
-  const nowYm=new Date().toISOString().slice(0,7);
+  const nowYm=localYm();
   const isCurrentMonth=ym===nowYm;
 
   // True split = 2+ people with non-zero share
@@ -4597,7 +4598,7 @@ function renderBudgetPage(){
   const cats=getCats();const cur=getCur();
   const ym=S.budgetMonth;
   const [yr,mo]=ym.split('-').map(Number);
-  const nowYm=new Date().toISOString().slice(0,7);
+  const nowYm=localYm();
   const isCurrentMonth=ym===nowYm;
   const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
   if(S.totalView)S.budgetScope='all';
@@ -4818,7 +4819,7 @@ function attachBudgetListeners(){
   });
   document.getElementById('budgetBackBtn')?.addEventListener('click',()=>{
     window._bgtDirty=false;
-    const nowYm=new Date().toISOString().slice(0,7);
+    const nowYm=localYm();
     if(ym!==nowYm)switchBudgetMonth(nowYm);
     goHome('analytics');
   });
@@ -4875,7 +4876,7 @@ function _scCurrentIcon(){
 
 function renderCatBudgetPage(){
   const cats=getCats();const cur=getCur();
-  const ym=S.budgetMonth||new Date().toISOString().slice(0,7);
+  const ym=S.budgetMonth||localYm();
   const catKeys=Object.keys(cats).filter(k=>k!=='income');
 
   // Init draft budgets
@@ -5022,7 +5023,7 @@ window.updateCbBgtPreview=(key,val,spent)=>{
 };
 
 window.saveCatBudgets=async()=>{
-  const nowYm=new Date().toISOString().slice(0,7);
+  const nowYm=localYm();
   const path=`ledgers/${S.activeLedgerId}/budgets/${nowYm}`;
   const up={};
   Object.entries(window._bgtDraft||{}).forEach(([k,v])=>{
@@ -6045,7 +6046,7 @@ window.doSearch=(val,clear)=>{
 };
 window.goSplits=(showHistory)=>{S.splitsTab=showHistory?'settled':'pending';if(showHistory)S.splitsHistFilter='active';S.view='splits';render();};
 window.goPaymentMethods=()=>{_pmIconMode='emoji';_pmIconEmoji=0;_pmIconImage=-1;_pmCustomIcon=null;_pmCroppedIcon=null;_pmCropImg=null;_pmCropZoom=1;S.view='paymentMethods';render();};
-window.goTxByShared=()=>{S.historyMonth=new Date().toISOString().slice(0,7);S.view='txByShared';render();};
+window.goTxByShared=()=>{S.historyMonth=localYm();S.view='txByShared';render();};
 
 // ── Payment method icon picker state ──
 let _pmIconMode='emoji';
@@ -6228,7 +6229,7 @@ function renderTotalViewAllTx(){
   const uid=S.user.uid;
   const allTxs=totalTxArr();
   const cats=getCats();
-  const ym=S.totalViewTxMonth||new Date().toISOString().slice(0,7);
+  const ym=S.totalViewTxMonth||localYm();
   const allMonths=[...new Set(allTxs.map(t=>t.date?.slice(0,7)).filter(Boolean))].sort().reverse();
 
   const userShareMYR=t=>{
@@ -6288,13 +6289,13 @@ function renderTotalViewAllTx(){
   </div>`;
 }
 
-window.goTxByMember=id=>{S.txFilterMember=id;S.historyMonth=new Date().toISOString().slice(0,7);S.view='txByMember';render();};
-window.goTotalViewAllTx=()=>{S.totalViewTxMonth=new Date().toISOString().slice(0,7);S.view='totalViewAllTx';render();};
+window.goTxByMember=id=>{S.txFilterMember=id;S.historyMonth=localYm();S.view='txByMember';render();};
+window.goTotalViewAllTx=()=>{S.totalViewTxMonth=localYm();S.view='totalViewAllTx';render();};
 function attachTotalViewAllTxListeners(){
   const picker=document.getElementById('totalViewMonthPicker');
   if(picker){picker.addEventListener('change',function(){S.totalViewTxMonth=this.value;renderPage();});}
 }
-window.goTxByCategory=key=>{S.txFilterCategory=key;S.historyMonth=new Date().toISOString().slice(0,7);S.view='txByCategory';render();};
+window.goTxByCategory=key=>{S.txFilterCategory=key;S.historyMonth=localYm();S.view='txByCategory';render();};
 window.goHome      =t=>{S.view='home';if(t)S.tab=t;render();};
 window.goNotifications=()=>{S.view='notifications';render();};
 window.markAllNotifRead=async()=>{
@@ -6359,9 +6360,9 @@ window.tapNotif=async(id,type,txKey,settleKey,lid)=>{
 window.goAdd       =()=>{S.addForm=blankForm();S.editTxKey=null;S.view='add';render();};
 window.goSettings  =()=>{S.view='settings';render();};
 window.goInvite    =()=>{_code=null;S.view='invite';render();};
-window.goBudget    =()=>{const nowYm=new Date().toISOString().slice(0,7);if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;S.view='budget';render();};
+window.goBudget    =()=>{const nowYm=localYm();if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;S.view='budget';render();};
 window.goCategories=()=>{editCatKey=null;editSubcatKey=null;S.view='categories';render();};
-window.goCatBudget=()=>{editCatKey=null;editSubcatKey=null;const nowYm=new Date().toISOString().slice(0,7);if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;window._bgtDraft={};S.view='catBudget';render();};
+window.goCatBudget=()=>{editCatKey=null;editSubcatKey=null;const nowYm=localYm();if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;window._bgtDraft={};S.view='catBudget';render();};
 window.goGuests    =()=>{S.view='guests';render();};
 window.goAssets    =()=>{if(S.totalView){openLedgerPicker();return;}S.view='assets';render();};
 window.goRecurring =()=>{if(S.totalView){openLedgerPicker();return;}S.view='recurring';render();processRecurring();};
@@ -7092,7 +7093,7 @@ Extract the transaction details and return ONLY a valid JSON object with no mark
 {
   "amount": <number, the total amount paid — look for "TOTAL", "JUMLAH", "合计", or the largest amount>,
   "description": <string, the merchant or store name, max 40 chars>,
-  "date": <string, YYYY-MM-DD format. Use today's date if not visible: ${new Date().toISOString().slice(0,10)}>,
+  "date": <string, YYYY-MM-DD format. Use today's date if not visible: ${td()}>,
   "time": <string, HH:MM 24-hour format. Extract from receipt if visible (e.g. receipt timestamp, transaction time). Use current time if not found: ${tt()}>,
   "category": <string, ONE of these exact keys: ${catKeys}>,
   "currency": <string, 3-letter ISO code. Default to MYR if not shown>,
@@ -7258,7 +7259,7 @@ window.scanFromShortcut=async()=>{
     const subcatKeys=c.subcats?Object.keys(c.subcats):[];
     return k+(subcatKeys.length?' (subcats: '+subcatKeys.join(', ')+')':'');
   }).join('; ');
-  const prompt='Extract the transaction from this receipt image. Return ONLY a raw JSON object with no markdown, no backticks, no explanation: {"amount":0.00,"description":"merchant name max 40 chars","date":"'+new Date().toISOString().slice(0,10)+'","time":"'+tt()+'","category":"food","subcat":"","currency":"MYR","notes":""}. Available categories with subcategories: '+catDescriptions+'. Rules: amount is a plain number. category must be one of: '+catKeys.join(', ')+'. subcat must be a valid subcat key for the chosen category or empty string. Default currency to MYR.';
+  const prompt='Extract the transaction from this receipt image. Return ONLY a raw JSON object with no markdown, no backticks, no explanation: {"amount":0.00,"description":"merchant name max 40 chars","date":"'+td()+'","time":"'+tt()+'","category":"food","subcat":"","currency":"MYR","notes":""}. Available categories with subcategories: '+catDescriptions+'. Rules: amount is a plain number. category must be one of: '+catKeys.join(', ')+'. subcat must be a valid subcat key for the chosen category or empty string. Default currency to MYR.';
   try{
     let parsed;
     if(aiProvider==='openai'){
