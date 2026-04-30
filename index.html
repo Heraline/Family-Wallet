@@ -889,8 +889,8 @@ function switchBudgetMonth(ym){
   const fn=s=>{S.budgets=s.exists()?s.val():{};if(S.view==='budget'||S.view==='stats')renderPage();};
   onValue(r,fn);S.listeners.push({r,fn,tag:'budget'});
   const r2=ref(db,'users/'+S.user.uid+'/budgets/'+ym);
-  const fn2=s=>{S.allBudgets=s.exists()?s.val():{};if(S.view==='budget')renderPage();};
-  onValue(r2,fn2);S.listeners.push({r2,fn:fn2,tag:'allbudget'});
+  const fn2=s=>{S.allBudgets=s.exists()?s.val():{};if(S.view==='budget'||S.view==='home'||S.view==='totalView')renderPage();};
+  onValue(r2,fn2);S.listeners.push({r:r2,fn:fn2,tag:'allbudget'});
 }
 function showAuth(){document.getElementById('authContainer').innerHTML=renderAuth();document.getElementById('ledgerContainer').innerHTML='';document.getElementById('bottomNav').style.display='none';document.getElementById('mainPage').innerHTML='';}
 function showApp(){document.getElementById('authContainer').innerHTML='';document.getElementById('ledgerContainer').innerHTML='';document.getElementById('bottomNav').style.display='flex';render();
@@ -1397,7 +1397,7 @@ function renderHome(){
     const allRemaining=allTotalBudget-myExp;
     const todayDateTv=new Date();
     const daysInMonthTv=new Date(todayDateTv.getFullYear(),todayDateTv.getMonth()+1,0).getDate();
-    const daysLeftTv=daysInMonthTv-todayDateTv.getDate()+1;
+    const daysLeftTv=Math.max(1, daysInMonthTv-todayDateTv.getDate()+1); // include today, min 1
     const allDailySafe=allTotalBudget>0&&allRemaining>0?allRemaining/daysLeftTv:0;
 
     const _greeting=(()=>{const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';})();
@@ -1634,7 +1634,9 @@ function renderHome(){
   const nowYm=new Date().toISOString().slice(0,7);
   const memFilter=S.filterMember;
   const isFiltered=memFilter!=='all';
-  const homeMonthBudgets=S.budgetMonth===nowYm?S.budgets:{};
+  // Always sync budget month to current month on home view
+  if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);
+  const homeMonthBudgets=S.budgets||{};
   const catBudgetTotal=Object.entries(homeMonthBudgets).filter(([k])=>k!=='_total'&&!k.includes('__')).reduce((s,[,v])=>s+(parseFloat(v)||0),0);
   const manualBudgetTotal=parseFloat(homeMonthBudgets._total)||0;
   const totalBudget=manualBudgetTotal>0?manualBudgetTotal:catBudgetTotal;
@@ -1701,10 +1703,10 @@ function renderHome(){
 
   const totalMemberSpend=memberSpend.reduce((s,m)=>s+m.spent,0);
 
-  // Daily safe spend: remaining budget / days left in month
+  // Daily safe spend: remaining budget / days left in month (including today)
   const todayDate=new Date();
   const daysInMonth=new Date(todayDate.getFullYear(),todayDate.getMonth()+1,0).getDate();
-  const daysLeft=daysInMonth-todayDate.getDate()+1; // include today
+  const daysLeft=Math.max(1, daysInMonth-todayDate.getDate()+1); // include today, min 1
   const dailySafeSpend=totalBudget>0&&remaining>0?remaining/daysLeft:0;
 
   // Compare to last month (use full totals for 'all', filtered share for specific member)
