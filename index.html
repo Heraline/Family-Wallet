@@ -506,15 +506,15 @@ const S={
   displayTimezone:null, // personal view tz override (null = use ledgerTimezone)
   assets:{},recurring:{},settlements:{},
   view:'home',tab:'transactions',filterMember:'all',
-  budgetMonth:localYm(),
+  budgetMonth:(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');})(),
   budgetScope:'ledger',   // 'ledger' | 'all'
   allBudgets:{},          // {ym: {_total, cat...}} for All Ledgers budget
   notifSeen:{},           // {activityId: true} — read markers stored in Firebase
   settleDetailModal:null, // {sk, s, lid} for settlement detail popup
-  historyMonth:localYm(),
-  calendarMonth:localYm(),
+  historyMonth:(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');})(),
+  calendarMonth:(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');})(),
   calendarDay:null,
-  statsMonth:localYm(),
+  statsMonth:(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');})(),
   statsTab:'overview', // overview | budget | members | trend
   statsMember:'all',
   addForm:null,
