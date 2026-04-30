@@ -1503,7 +1503,7 @@ function renderHome(){
     const allBudgetUsedPct=allTotalBudget>0?Math.min(100,(myExp/allTotalBudget)*100):0;
     const allBudgetBarColor=myExp>allTotalBudget?'var(--red)':allBudgetUsedPct>80?'var(--yellow)':'#6C63FF';
     const allRemaining=allTotalBudget-myExp;
-    const todayDateTv=new Date();
+    const todayDateTv=nowInTz(lTz());
     const daysInMonthTv=new Date(todayDateTv.getFullYear(),todayDateTv.getMonth()+1,0).getDate();
     const daysLeftTv=Math.max(1, daysInMonthTv-todayDateTv.getDate()+1); // include today, min 1
     const allDailySafe=allTotalBudget>0&&allRemaining>0?allRemaining/daysLeftTv:0;
@@ -1616,7 +1616,7 @@ function renderHome(){
             <div style="display:flex;justify-content:space-between;align-items:center">
               <span style="font-size:12px;color:rgba(255,255,255,0.7)">Remaining <strong style="color:#fff">${Math.round(Math.abs(allRemaining))}</strong> / ${Math.round(allTotalBudget)}</span>
               ${allDailySafe>0
-                ?`<span style="font-size:12px;color:rgba(255,255,255,0.7)">Daily Safe: <strong style="color:#fff">${Math.round(allDailySafe)}</strong></span>`
+                ?`<span style="font-size:12px;color:rgba(255,255,255,0.7)">Daily Safe: <strong style="color:${allDailySafe<20?'#ffb3b3':allDailySafe<50?'#ffe08a':'#fff'}">${allDailySafe.toFixed(2)}</strong><span style="font-size:10px;opacity:0.6;margin-left:3px">/ ${daysLeftTv}d left</span></span>`
                 :allRemaining<=0?`<span style="font-size:12px;color:rgba(255,100,100,0.9);font-weight:600">Over budget</span>`:``
               }
             </div>`}
@@ -1812,7 +1812,7 @@ function renderHome(){
   const totalMemberSpend=memberSpend.reduce((s,m)=>s+m.spent,0);
 
   // Daily safe spend: remaining budget / days left in month (including today)
-  const todayDate=new Date();
+  const todayDate=nowInTz(lTz());
   const daysInMonth=new Date(todayDate.getFullYear(),todayDate.getMonth()+1,0).getDate();
   const daysLeft=Math.max(1, daysInMonth-todayDate.getDate()+1); // include today, min 1
   const dailySafeSpend=totalBudget>0&&remaining>0?remaining/daysLeft:0;
@@ -1938,7 +1938,7 @@ function renderHome(){
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:12px;color:rgba(255,255,255,0.7)">Remaining <strong style="color:#fff">${Math.round(Math.abs(remaining))}</strong> / ${Math.round(totalBudget)}</span>
           ${dailySafeSpend>0
-            ?`<span style="font-size:12px;color:rgba(255,255,255,0.7)">Daily Safe: <strong style="color:#fff">${Math.round(dailySafeSpend)}</strong></span>`
+            ?`<span style="font-size:12px;color:rgba(255,255,255,0.7)">Daily Safe: <strong style="color:${dailySafeSpend<20?'#ffb3b3':dailySafeSpend<50?'#ffe08a':'#fff'}">${dailySafeSpend.toFixed(2)}</strong><span style="font-size:10px;opacity:0.6;margin-left:3px">/ ${daysLeft}d left</span></span>`
             :remaining<=0?`<span style="font-size:12px;color:rgba(255,100,100,0.9);font-weight:600">Over budget</span>`:``
           }
         </div>`}
