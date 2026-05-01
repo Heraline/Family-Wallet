@@ -2790,93 +2790,93 @@ function renderCalendar(){
   const topDateLine1=nowDate.toLocaleDateString('en-MY',{weekday:'long'});
   const topDateLine2=nowDate.toLocaleDateString('en-MY',{day:'numeric',month:'long'});
 
-  return`<div class="fade-in" style="display:flex;flex-direction:column;min-height:100%;background:var(--bg);padding-bottom:calc(90px + env(safe-area-inset-bottom))">
+  return`<div class="fade-in" style="display:flex;flex-direction:column;min-height:100%;background:linear-gradient(160deg,#C8D8F0 0%,#D8E8F8 30%,#EAF0FA 60%,#F4F6FC 100%);padding-bottom:calc(90px + env(safe-area-inset-bottom))">
 
     <!-- TOP BAR: date left + budget circle right -->
     <div style="padding:52px 20px 0;display:flex;align-items:flex-start;justify-content:space-between">
       <div>
-        <p style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:2px">${topDateLine1}</p>
-        <p style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:var(--text);line-height:1.1">${topDateLine2}</p>
-        <p style="font-size:12px;color:var(--dim);margin-top:3px">${monthLabel}${S.totalView?' · My Finance':''}</p>
+        <p style="font-size:12px;color:rgba(30,40,80,0.5);font-weight:500;margin-bottom:2px">${topDateLine1}</p>
+        <p style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:#1A2050;line-height:1.1">${topDateLine2}</p>
+        <p style="font-size:12px;color:rgba(30,40,80,0.4);margin-top:3px">${monthLabel}${S.totalView?' · My Finance':''}</p>
       </div>
       <!-- Circular budget progress -->
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
         <div style="position:relative;width:64px;height:64px">
           <svg width="64" height="64" style="transform:rotate(-90deg)">
-            <circle cx="32" cy="32" r="${circleR}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/>
+            <circle cx="32" cy="32" r="${circleR}" fill="none" stroke="rgba(30,40,80,0.1)" stroke-width="5"/>
             ${calTotalBudget>0
-              ?`<circle cx="32" cy="32" r="${circleR}" fill="none" stroke="${circleColor}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${circleDash} ${circleC.toFixed(1)}" stroke-dashoffset="0" style="transition:stroke-dasharray 0.6s ease"/>`
-              :`<circle cx="32" cy="32" r="${circleR}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="5" stroke-dasharray="4 6"/>`
+              ?`<circle cx="32" cy="32" r="${circleR}" fill="none" stroke="${circleColor}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${circleDash} ${circleC.toFixed(1)}"/>`
+              :`<circle cx="32" cy="32" r="${circleR}" fill="none" stroke="rgba(30,40,80,0.12)" stroke-width="5" stroke-dasharray="4 6"/>`
             }
           </svg>
           <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
             ${calTotalBudget>0
-              ?`<p style="font-size:13px;font-weight:800;color:var(--text);line-height:1">${Math.round(calRemainingPct)}%</p>
-                <p style="font-size:8px;color:var(--dim);margin-top:1px">left</p>`
+              ?`<p style="font-size:13px;font-weight:800;color:#1A2050;line-height:1">${Math.round(calRemainingPct)}%</p>
+                <p style="font-size:8px;color:rgba(30,40,80,0.45);margin-top:1px">left</p>`
               :`<p style="font-size:16px">💰</p>`
             }
           </div>
         </div>
-        <p style="font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--muted)">Budget</p>
+        <p style="font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,40,80,0.4)">Budget</p>
       </div>
     </div>
 
     <!-- MONTH NAV -->
-    <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px 0">
-      <button id="calPrevBtn" style="width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,0.07);border:none;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
-      <p style="font-size:13px;font-weight:600;color:var(--muted)">${monthLabel}</p>
-      <button id="calNextBtn" style="width:30px;height:30px;border-radius:9px;background:${isCurrentMonth?'rgba(255,255,255,0.03)':'rgba(255,255,255,0.07)'};border:none;color:${isCurrentMonth?'var(--dim)':'var(--text)'};font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center" ${isCurrentMonth?'disabled':''}>›</button>
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:16px 20px 0">
+      <button id="calPrevBtn" style="width:30px;height:30px;border-radius:10px;background:rgba(30,40,80,0.08);border:none;color:#1A2050;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+      <p style="font-size:13px;font-weight:700;color:rgba(30,40,80,0.6);letter-spacing:0.01em">${monthLabel}</p>
+      <button id="calNextBtn" style="width:30px;height:30px;border-radius:10px;background:${isCurrentMonth?'rgba(30,40,80,0.03)':'rgba(30,40,80,0.08)'};border:none;color:${isCurrentMonth?'rgba(30,40,80,0.2)':'#1A2050'};font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center" ${isCurrentMonth?'disabled':''}>›</button>
     </div>
 
-    <!-- SUMMARY CARD (Today's focus equivalent) -->
-    <div style="margin:14px 16px 0;background:linear-gradient(135deg,rgba(108,99,255,0.18) 0%,rgba(78,205,196,0.10) 100%);border:1px solid rgba(108,99,255,0.25);border-radius:22px;padding:18px 20px">
-      <p style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">${monthLabel} Summary</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <!-- SUMMARY CARD -->
+    <div style="margin:14px 16px 0;background:#fff;border-radius:24px;box-shadow:0 8px 32px rgba(30,50,120,0.10),0 2px 8px rgba(30,50,120,0.06);padding:20px 22px">
+      <p style="font-size:10px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:rgba(30,40,80,0.4);margin-bottom:14px">${monthLabel} Overview</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
         <div>
-          <p style="font-size:10px;color:var(--muted);margin-bottom:3px">Income</p>
-          <p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:#4A9EFF">${fmt(totalInc)}</p>
+          <p style="font-size:10px;color:rgba(30,40,80,0.45);margin-bottom:4px">Income</p>
+          <p style="font-family:var(--font-num);font-size:17px;font-weight:700;color:#3B82F6">${fmt(totalInc)}</p>
         </div>
         <div>
-          <p style="font-size:10px;color:var(--muted);margin-bottom:3px">Expense</p>
-          <p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:var(--red)">${fmt(totalExp)}</p>
+          <p style="font-size:10px;color:rgba(30,40,80,0.45);margin-bottom:4px">Expense</p>
+          <p style="font-family:var(--font-num);font-size:17px;font-weight:700;color:#EF4444">${fmt(totalExp)}</p>
         </div>
         <div>
-          <p style="font-size:10px;color:var(--muted);margin-bottom:3px">Carry-over</p>
-          <p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:var(--text)">${fmt(Math.abs(carryOver))}</p>
+          <p style="font-size:10px;color:rgba(30,40,80,0.45);margin-bottom:4px">Carry-over</p>
+          <p style="font-family:var(--font-num);font-size:17px;font-weight:700;color:#1A2050">${fmt(Math.abs(carryOver))}</p>
         </div>
         <div>
-          <p style="font-size:10px;color:var(--muted);margin-bottom:3px">Balance</p>
-          <p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:${balance+carryOver>=0?'#4A9EFF':'var(--red)'}"> ${fmt(Math.abs(balance+carryOver))}</p>
+          <p style="font-size:10px;color:rgba(30,40,80,0.45);margin-bottom:4px">Balance</p>
+          <p style="font-family:var(--font-num);font-size:17px;font-weight:700;color:${balance+carryOver>=0?'#3B82F6':'#EF4444'}">${fmt(Math.abs(balance+carryOver))}</p>
         </div>
       </div>
       ${calTotalBudget>0?`
-      <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <p style="font-size:10px;color:var(--muted)">Budget used</p>
-          <p style="font-size:10px;font-weight:600;color:${circleColor}">${calUsedPct.toFixed(0)}% of ${fmt(calTotalBudget)}</p>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(30,40,80,0.07)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+          <p style="font-size:10px;color:rgba(30,40,80,0.45)">Budget used</p>
+          <p style="font-size:10px;font-weight:700;color:${calUsedPct>80?'#EF4444':calUsedPct>60?'#F59E0B':'#6C63FF'}">${calUsedPct.toFixed(0)}% of ${fmt(calTotalBudget)}</p>
         </div>
-        <div style="height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden">
-          <div style="height:100%;width:${calUsedPct}%;background:${circleColor};border-radius:3px;transition:width 0.5s ease"></div>
+        <div style="height:5px;background:rgba(30,40,80,0.08);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${calUsedPct}%;background:${calUsedPct>80?'#EF4444':calUsedPct>60?'#F59E0B':'#6C63FF'};border-radius:3px"></div>
         </div>
       </div>`:''}
     </div>
 
     <!-- CALENDAR SECTION LABEL -->
-    <div style="padding:18px 20px 6px;display:flex;align-items:center;justify-content:space-between">
-      <p style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)">This month</p>
-      ${selDay?`<button onclick="selectCalDay(null)" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600">Clear ×</button>`:''}
+    <div style="padding:20px 20px 8px;display:flex;align-items:center;justify-content:space-between">
+      <p style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(30,40,80,0.4)">This month</p>
+      ${selDay?`<button onclick="selectCalDay(null)" style="font-size:11px;color:#6C63FF;background:none;border:none;cursor:pointer;font-weight:600">Clear ×</button>`:''} 
     </div>
 
     <!-- CALENDAR CARD -->
-    <div style="margin:0 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:22px;overflow:hidden">
+    <div style="margin:0 16px;background:#fff;border-radius:22px;box-shadow:0 8px 32px rgba(30,50,120,0.10),0 2px 8px rgba(30,50,120,0.06);overflow:hidden">
 
       <!-- DAY LABELS -->
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:12px 8px 4px">
-        ${DAY_LABELS.map((d,i)=>`<div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.04em;color:${i===0?'rgba(255,99,99,0.7)':i===6?'rgba(74,158,255,0.7)':'var(--muted)'};">${d}</div>`).join('')}
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:14px 10px 4px">
+        ${DAY_LABELS.map((d,i)=>`<div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.05em;color:${i===0?'rgba(239,68,68,0.7)':i===6?'rgba(59,130,246,0.7)':'rgba(30,40,80,0.35)'};">${d}</div>`).join('')}
       </div>
 
       <!-- GRID -->
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:0 8px 10px;gap:2px">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px 12px;gap:2px">
         ${cells.map((d,i)=>{
           if(!d)return`<div></div>`;
           const dateStr=`${yr}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -2886,12 +2886,11 @@ function renderCalendar(){
           const col=(i%7);
           const isSun=col===0,isSat=col===6;
           const future=dateStr>todayStr;
-          const hasActivity=dd.inc>0||dd.exp>0;
-          const barW=dd.exp>0?Math.max(2,Math.round((dd.exp/maxDayExp)*20)):0;
-          return`<div onclick="selectCalDay('${dateStr}')" style="position:relative;display:flex;flex-direction:column;align-items:center;padding:5px 2px 5px;border-radius:12px;cursor:pointer;transition:all 0.15s;background:${isSel?'var(--accent)':isToday?'rgba(108,99,255,0.2)':'transparent'}">
-            <span style="font-size:13px;font-weight:${isToday||isSel?'800':'500'};color:${isSel?'#fff':isToday?'var(--accent)':future?'rgba(255,255,255,0.22)':isSun?'rgba(255,99,99,0.85)':isSat?'rgba(74,158,255,0.85)':'var(--text)'};line-height:1.3">${d}</span>
-            <div style="height:7px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;margin-top:2px">
-              ${dd.exp>0?`<div style="width:${barW}px;height:3px;border-radius:2px;min-width:4px;background:${isSel?'rgba(255,255,255,0.7)':'var(--red)'}"></div>`:dd.inc>0?`<div style="width:6px;height:3px;border-radius:2px;background:${isSel?'rgba(255,255,255,0.5)':'#4A9EFF'}"></div>`:''}
+          const barW=dd.exp>0?Math.max(4,Math.round((dd.exp/maxDayExp)*20)):0;
+          return`<div onclick="selectCalDay('${dateStr}')" style="position:relative;display:flex;flex-direction:column;align-items:center;padding:6px 2px 5px;border-radius:12px;cursor:pointer;transition:all 0.15s;background:${isSel?'#6C63FF':isToday?'rgba(108,99,255,0.12)':'transparent'}">
+            <span style="font-size:13px;font-weight:${isToday||isSel?'800':'500'};color:${isSel?'#fff':isToday?'#6C63FF':future?'rgba(30,40,80,0.2)':isSun?'rgba(239,68,68,0.75)':isSat?'rgba(59,130,246,0.75)':'#1A2050'};line-height:1.3">${d}</span>
+            <div style="height:7px;display:flex;align-items:center;justify-content:center;margin-top:2px">
+              ${dd.exp>0?`<div style="width:${barW}px;height:3px;border-radius:2px;min-width:4px;background:${isSel?'rgba(255,255,255,0.7)':'#EF4444'}"></div>`:dd.inc>0?`<div style="width:6px;height:3px;border-radius:2px;background:${isSel?'rgba(255,255,255,0.5)':'#3B82F6'}"></div>`:''}
             </div>
           </div>`;
         }).join('')}
@@ -2900,18 +2899,20 @@ function renderCalendar(){
 
     <!-- SELECTED DAY PANEL -->
     ${selDay?`
-    <div style="margin:12px 16px 0;animation:slideUp 0.2s ease">
-      <div style="background:linear-gradient(135deg,rgba(108,99,255,0.15),rgba(78,205,196,0.08));border:1px solid rgba(108,99,255,0.25);border-radius:20px;padding:14px 16px;margin-bottom:10px">
-        <p style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{weekday:'long'})}</p>
+    <div style="margin:14px 16px 0;animation:slideUp 0.2s ease">
+      <div style="background:#fff;border-radius:20px;box-shadow:0 8px 32px rgba(30,50,120,0.10),0 2px 8px rgba(30,50,120,0.06);padding:16px 18px;margin-bottom:10px">
+        <p style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#6C63FF;margin-bottom:2px">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{weekday:'long'})}</p>
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <p style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:var(--text)">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{day:'numeric',month:'long'})}</p>
-          ${(daily[selDay]?.exp||0)>0||(daily[selDay]?.inc||0)>0
-            ?`<div style="text-align:right">${(daily[selDay]?.exp||0)>0?`<p style="font-size:12px;font-weight:700;color:var(--red)">−${fmt(daily[selDay].exp)}</p>`:''} ${(daily[selDay]?.inc||0)>0?`<p style="font-size:12px;font-weight:700;color:#4A9EFF">+${fmt(daily[selDay].inc)}</p>`:''}</div>`
-            :''}
+          <p style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#1A2050">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{day:'numeric',month:'long'})}</p>
+          <div style="display:flex;gap:10px;align-items:center">
+            ${(daily[selDay]?.exp||0)>0?`<p style="font-size:13px;font-weight:700;color:#EF4444">−${fmt(daily[selDay].exp)}</p>`:''}
+            ${(daily[selDay]?.inc||0)>0?`<p style="font-size:13px;font-weight:700;color:#3B82F6">+${fmt(daily[selDay].inc)}</p>`:''}
+            <button onclick="selectCalDay(null)" style="width:28px;height:28px;border-radius:8px;background:rgba(30,40,80,0.06);border:none;color:rgba(30,40,80,0.4);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+          </div>
         </div>
       </div>
       ${selDayTxs.length===0
-        ?`<div style="text-align:center;padding:24px 0;color:var(--dim)">
+        ?`<div style="text-align:center;padding:24px 0;color:rgba(30,40,80,0.35)">
             <p style="font-size:24px;margin-bottom:6px">🗓</p>
             <p style="font-size:13px;font-weight:500">No transactions this day</p>
           </div>`
@@ -2919,138 +2920,25 @@ function renderCalendar(){
           const cat=cats[t.category]||DEFAULT_CATS.other;
           const mem=getMem(t.member);
           const disp=txDisp(t);
-          return`<div onclick="openTxModal('${t._k}')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background 0.15s" onmouseenter="this.style.background='rgba(255,255,255,0.07)'" onmouseleave="this.style.background='rgba(255,255,255,0.04)'">
-            <div style="width:40px;height:40px;border-radius:13px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">${renderCatIcon(cat.icon,22,true)}</div>
+          return`<div onclick="openTxModal('${t._k}')" style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(30,50,120,0.07);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:box-shadow 0.15s" onmouseenter="this.style.boxShadow='0 4px 20px rgba(30,50,120,0.13)'" onmouseleave="this.style.boxShadow='0 2px 12px rgba(30,50,120,0.07)'">
+            <div style="width:42px;height:42px;border-radius:13px;background:${cat.color}18;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">${renderCatIcon(cat.icon,22,true)}</div>
             <div style="flex:1;min-width:0">
-              <p style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.description||cat.label}</p>
+              <p style="font-size:13px;font-weight:600;color:#1A2050;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.description||cat.label}</p>
               <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
-                <span style="font-size:10px;font-weight:600;background:${(mem.color||'#999')}22;color:${mem.color||'#999'};padding:2px 6px;border-radius:5px">${mem.avatar} ${mem.displayName}</span>
-                ${disp.time?`<span style="font-size:10px;color:var(--dim)">${disp.time}</span>`:''}
+                <span style="font-size:10px;font-weight:600;background:${(mem.color||'#999')}18;color:${mem.color||'#6C63FF'};padding:2px 7px;border-radius:5px">${mem.avatar} ${mem.displayName}</span>
+                ${disp.time?`<span style="font-size:10px;color:rgba(30,40,80,0.35)">${disp.time}</span>`:''}
               </div>
             </div>
             <div style="text-align:right;flex-shrink:0">
-              <p style="font-size:14px;font-weight:700;color:${t.type==='income'?'#4A9EFF':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</p>
-              <p style="font-size:10px;color:var(--dim);margin-top:1px">${cat.label}</p>
+              <p style="font-size:14px;font-weight:700;color:${t.type==='income'?'#3B82F6':'#1A2050'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</p>
+              <p style="font-size:10px;color:rgba(30,40,80,0.35);margin-top:1px">${cat.label}</p>
             </div>
           </div>`;
         }).join('')}
-    </div>`:''}
+    </div>`:''} 
 
     <style>
       @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    </style>
-  </div>`;
-
-  // Month name + year split for big header
-  const [monthName,yearName]=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'}).split(' ');
-
-  return`<div class="fade-in" style="display:flex;flex-direction:column;min-height:100%;background:var(--bg);padding-bottom:calc(90px + env(safe-area-inset-bottom))">
-
-    <!-- HEADER (original) -->
-    <div style="padding:52px 16px 0;display:flex;align-items:center;gap:8px">
-      <button onclick="goHome()" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.07);border:none;color:var(--text);font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">←</button>
-      <button id="calPrevBtn" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.07);border:none;color:var(--text);font-size:18px;cursor:pointer;flex-shrink:0">‹</button>
-      <div style="flex:1;text-align:center">
-        <p style="font-size:17px;font-weight:700;letter-spacing:-0.01em">${monthLabel}${S.totalView?' · My Finance':''} <span style="color:var(--dim);font-size:14px">▾</span></p>
-      </div>
-      <button id="calNextBtn" style="width:34px;height:34px;border-radius:10px;background:${isCurrentMonth?'rgba(255,255,255,0.03)':'rgba(255,255,255,0.07)'};border:none;color:${isCurrentMonth?'var(--dim)':'var(--text)'};font-size:18px;cursor:pointer;flex-shrink:0" ${isCurrentMonth?'disabled':''}>›</button>
-    </div>
-
-    <!-- SUMMARY ROW (original 4-cell grid) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;margin:12px 16px 0;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;overflow:hidden">
-      <div style="padding:10px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)">
-        <p style="font-size:10px;color:var(--muted);margin-bottom:2px">Income</p>
-        <p style="font-family:var(--font-num);font-size:14px;font-weight:700;color:#4A9EFF">${fmt(totalInc)}</p>
-      </div>
-      <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
-        <p style="font-size:10px;color:var(--muted);margin-bottom:2px">Expense</p>
-        <p style="font-family:var(--font-num);font-size:14px;font-weight:700;color:var(--red)">${fmt(totalExp)}</p>
-      </div>
-      <div style="padding:10px 14px;border-right:1px solid var(--border)">
-        <p style="font-size:10px;color:var(--muted);margin-bottom:2px">Carry-over</p>
-        <p style="font-family:var(--font-num);font-size:14px;font-weight:700;color:var(--text)">${fmt(Math.abs(carryOver))}</p>
-      </div>
-      <div style="padding:10px 14px">
-        <p style="font-size:10px;color:var(--muted);margin-bottom:2px">Balance</p>
-        <p style="font-family:var(--font-num);font-size:14px;font-weight:700;color:${balance+carryOver>=0?'#4A9EFF':'var(--red)'}"> ${fmt(Math.abs(balance+carryOver))}</p>
-      </div>
-    </div>
-
-    <!-- CALENDAR CARD -->
-    <div style="margin:0 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:24px;overflow:hidden">
-
-      <!-- DAY LABELS -->
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:14px 8px 6px">
-        ${DAY_LABELS.map((d,i)=>`<div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.04em;color:${i===0?'rgba(255,99,99,0.7)':i===6?'rgba(74,158,255,0.7)':'var(--muted)'};">${d}</div>`).join('')}
-      </div>
-
-      <!-- CALENDAR GRID -->
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:0 8px 12px;gap:3px">
-        ${cells.map((d,i)=>{
-          if(!d)return`<div></div>`;
-          const dateStr=`${yr}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-          const dd=daily[dateStr]||{inc:0,exp:0};
-          const isToday=dateStr===todayStr;
-          const isSel=dateStr===selDay;
-          const col=(i%7);
-          const isSun=col===0,isSat=col===6;
-          const future=dateStr>todayStr;
-          const hasActivity=dd.inc>0||dd.exp>0;
-          const barH=dd.exp>0?Math.max(2,Math.round((dd.exp/maxDayExp)*18)):0;
-          return`<div onclick="selectCalDay('${dateStr}')" style="position:relative;display:flex;flex-direction:column;align-items:center;padding:6px 2px 5px;border-radius:14px;cursor:pointer;transition:all 0.15s;background:${isSel?'var(--accent)':isToday?'rgba(108,99,255,0.2)':'transparent'}">
-            <span style="font-size:13px;font-weight:${isToday||isSel?'800':'500'};color:${isSel?'#fff':isToday?'var(--accent)':future?'rgba(255,255,255,0.25)':isSun?'rgba(255,99,99,0.85)':isSat?'rgba(74,158,255,0.85)':'var(--text)'};line-height:1.3">${d}</span>
-            ${hasActivity?`<div style="display:flex;flex-direction:column;align-items:center;gap:1px;margin-top:3px">
-              ${dd.exp>0?`<div style="width:${Math.min(24,8+barH)}px;height:3px;border-radius:2px;background:${isSel?'rgba(255,255,255,0.7)':'var(--red)'}"></div>`:''}
-              ${dd.inc>0?`<div style="width:${Math.min(18,6)}px;height:3px;border-radius:2px;background:${isSel?'rgba(255,255,255,0.5)':'#4A9EFF'}"></div>`:''}
-            </div>`:`<div style="height:7px"></div>`}
-          </div>`;
-        }).join('')}
-      </div>
-    </div>
-
-    <!-- SELECTED DAY PANEL -->
-    ${selDay?`
-    <div style="margin:12px 16px 0;animation:slideUp 0.2s ease">
-      <!-- Day header card -->
-      <div style="background:linear-gradient(135deg,rgba(108,99,255,0.15),rgba(78,205,196,0.08));border:1px solid rgba(108,99,255,0.25);border-radius:20px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <p style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);margin-bottom:3px">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{weekday:'long'})}</p>
-          <p style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:var(--text)">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{day:'numeric',month:'long'})}</p>
-          ${(daily[selDay]?.exp||0)>0||( daily[selDay]?.inc||0)>0?`<p style="font-size:12px;color:var(--muted);margin-top:4px">${(daily[selDay]?.exp||0)>0?`<span style="color:var(--red)">−${fmt(daily[selDay].exp)}</span>`:''}${(daily[selDay]?.exp||0)>0&&(daily[selDay]?.inc||0)>0?' · ':''}${(daily[selDay]?.inc||0)>0?`<span style="color:#4A9EFF">+${fmt(daily[selDay].inc)}</span>`:''}</p>`:''}
-        </div>
-        <button onclick="selectCalDay(null)" style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.08);border:none;color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
-      </div>
-
-      <!-- Transactions -->
-      ${selDayTxs.length===0
-        ?`<div style="text-align:center;padding:28px 0;color:var(--dim)">
-            <p style="font-size:28px;margin-bottom:8px">🗓</p>
-            <p style="font-size:13px;font-weight:500">No transactions this day</p>
-          </div>`
-        :selDayTxs.map(t=>{
-          const cat=cats[t.category]||DEFAULT_CATS.other;
-          const mem=getMem(t.member);
-          const disp=txDisp(t);
-          return`<div onclick="openTxModal('${t._k}')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background 0.15s" onmouseenter="this.style.background='rgba(255,255,255,0.07)'" onmouseleave="this.style.background='rgba(255,255,255,0.04)'">
-            <div style="width:42px;height:42px;border-radius:14px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">${renderCatIcon(cat.icon,24,true)}</div>
-            <div style="flex:1;min-width:0">
-              <p style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.description||cat.label}</p>
-              <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
-                <span style="font-size:10px;font-weight:600;background:${(mem.color||'#999')}22;color:${mem.color||'#999'};padding:2px 7px;border-radius:6px">${mem.avatar} ${mem.displayName}</span>
-                ${disp.time?`<span style="font-size:10px;color:var(--dim)">${disp.time}</span>`:''}
-              </div>
-            </div>
-            <div style="text-align:right;flex-shrink:0">
-              <p style="font-size:14px;font-weight:700;color:${t.type==='income'?'#4A9EFF':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</p>
-              <p style="font-size:10px;color:var(--dim);margin-top:2px">${cat.label}</p>
-            </div>
-          </div>`;
-        }).join('')}
-    </div>`
-    :''}
-
-    <style>
-      @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
     </style>
   </div>`;
 }
