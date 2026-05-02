@@ -1380,9 +1380,12 @@ function renderHomePageSections(){
 
 // ─── PAGE 0 SECTIONS: Spending & Transactions ───
 function renderHomePage0Sections(){
+  const nowYm=localYm();
   const fil=filtered();
   const mth=monthlyTotals();
-  const tc=S.tab==='transactions'?renderTxs(fil):renderAnalytics(fil,mth.exp);
+  // Filter to current month only for analytics (so category bars show this month, not all-time)
+  const filMonth=fil.filter(t=>t.date&&t.date.startsWith(nowYm));
+  const tc=S.tab==='transactions'?renderTxs(fil):renderAnalytics(filMonth,mth.exp);
 
   // Splits quick buttons
   const dbs=debts();
