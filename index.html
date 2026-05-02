@@ -1449,10 +1449,48 @@ function renderHomePage1Sections(){
   // Tab 2 content
   let tab2Content='';
   if(tab2==='transactions'){
-    // All transactions including asset-related, no member filter
+    // Regular transactions
     const allTxs=txArr();
-    const recent=allTxs.slice(0,20);
-    const txRows=recent.length?recent.map(t=>{
+    // Asset inter-transfers — normalise into a display-compatible shape
+    const allTransfers=Object.entries(S.assetTransfers||{}).map(([id,t])=>{
+      const fromA=S.assets?.[t.fromId];
+      const toA=S.assets?.[t.toId];
+      const fromIcon=fromA?(fromA.iconEmoji||getAssetType(fromA.type).icon):'🏦';
+      const toIcon=toA?(toA.iconEmoji||getAssetType(toA.type).icon):'🏦';
+      return{
+        _k:id,_isTransfer:true,
+        date:t.date,time:t.time||'',ts:t.createdAt||0,
+        amount:t.amount,currency:t.currency||S.ledgerCurrency,
+        description:t.note||(fromA&&toA?`${fromA.name} → ${toA.name}`:'Transfer'),
+        _fromName:fromA?.name||'Deleted',_toName:toA?.name||'Deleted',
+        _fromIcon:fromIcon,_toIcon:toIcon,
+        fromId:t.fromId,toId:t.toId
+      };
+    });
+
+    // Merge and sort by date+time desc
+    const combined=[...allTxs,...allTransfers].sort((a,b)=>{
+      const da=(a.date||'')+(a.time||'');
+      const db=(b.date||'')+(b.time||'');
+      return da>db?-1:da<db?1:(b.ts||0)-(a.ts||0);
+    }).slice(0,30);
+
+    const txRows=combined.length?combined.map(t=>{
+      if(t._isTransfer){
+        // Render transfer row
+        return`<div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin:0 16px 8px;cursor:pointer" onclick="goAssets()">
+          <div style="width:40px;height:40px;border-radius:13px;background:rgba(78,205,196,0.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⇄</div>
+          <div style="flex:1;min-width:0">
+            <p style="font-size:13px;font-weight:600;color:var(--text)">${t._fromIcon} ${t._fromName} <span style="color:var(--dim);font-size:11px">→</span> ${t._toIcon} ${t._toName}</p>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+              <span style="font-size:10px;font-weight:600;background:rgba(78,205,196,0.12);color:#4ECDC4;padding:2px 7px;border-radius:5px">⇄ Transfer</span>
+              ${t.date?`<span style="font-size:10px;color:var(--dim)">${t.date}${t.time?' · '+t.time:''}</span>`:''}
+            </div>
+          </div>
+          <p style="font-size:14px;font-weight:700;color:#4ECDC4;flex-shrink:0">${fmt(t.amount,t.currency)}</p>
+        </div>`;
+      }
+      // Regular tx row
       const cat=cats[t.category]||DEFAULT_CATS.other;
       const mem=getMem(t.member);
       const disp=txDisp(t);
@@ -1469,8 +1507,10 @@ function renderHomePage1Sections(){
         <p class="tx-amount" style="color:${t.type==='income'?'var(--green)':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</p>
       </div>`;
     }).join(''):`<div class="empty">No transactions yet.</div>`;
-    const hasMore=allTxs.length>20;
-    tab2Content=`${txRows}${hasMore?`<div style="padding:0 22px 8px"><button onclick="goTxByShared()" style="width:100%;padding:13px;border-radius:14px;background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.25);color:var(--accent);font-size:13px;font-weight:600">View all transactions →</button></div>`:''}`;
+
+    const totalCount=allTxs.length+allTransfers.length;
+    const hasMore=totalCount>30;
+    tab2Content=`${txRows}${hasMore?`<div style="padding:0 22px 8px"><button onclick="goAssets()" style="width:100%;padding:13px;border-radius:14px;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);color:#4ECDC4;font-size:13px;font-weight:600">View all ${totalCount} transactions →</button></div>`:''}`;
   } else {
     // Analytics — member balances + per member paid
     const dbs=debts();
