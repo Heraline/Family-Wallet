@@ -507,6 +507,7 @@ const S={
   ledgerTimezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   displayTimezone:null,
   ledgerTags:[],       // custom tags for this ledger
+  iconLibrary:{},      // {id:{data,createdAt}} — per user, cross-ledger
   assets:{},recurring:{},settlements:{},
   view:'home',tab:'transactions',filterMember:'all',
   budgetMonth:(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');})(),
@@ -929,6 +930,11 @@ onAuthStateChanged(auth,async user=>{
     const fnSeen=s=>{S.notifSeen=s.exists()?s.val():{};safeRender();};
     onValue(rSeen,fnSeen);
     S.persistentListeners.push({r:rSeen,fn:fnSeen});
+    // iconLibrary — per user, cross-ledger
+    const rLib=ref(db,'users/'+S.user.uid+'/iconLibrary');
+    const fnLib=s=>{S.iconLibrary=s.exists()?s.val():{};safeRender();};
+    onValue(rLib,fnLib);
+    S.persistentListeners.push({r:rLib,fn:fnLib});
   }
       const last=localStorage.getItem('fw_lid_'+S.user.uid);
       const pick=(last&&S.ledgers[last])?last:Object.keys(S.ledgers)[0];
@@ -1369,6 +1375,7 @@ function renderPage(){
     if(_v==='splits'){pg.innerHTML=renderSplitsPage();_restoreScroll(_v);return;}
     if(_v==='paymentMethods'){pg.innerHTML=renderPaymentMethodsPage();_restoreScroll(_v);return;}
     if(_v==='tagManagement'){pg.innerHTML=renderTagManagementPage();_restoreScroll(_v);return;}
+    if(_v==='iconLibrary'){pg.innerHTML=renderIconLibraryPage();_restoreScroll(_v);return;}
     if(_v==='txByShared'){pg.innerHTML=renderTxByShared();attachTxBySharedListeners();_restoreScroll(_v);return;}
     if(_v==='txByMember'){pg.innerHTML=renderTxByMember();attachTxByMemberListeners();_restoreScroll(_v);return;}
     if(_v==='txByCategory'){pg.innerHTML=renderTxByCategory();attachTxByCategoryListeners();_restoreScroll(_v);return;}
@@ -5649,6 +5656,76 @@ window.addGuest=async()=>{
 window.removeGuest=async id=>{if(!confirm('Remove this guest member?'))return;await remove(ref(db,`ledgerMembers/${S.activeLedgerId}/${id}`));toast('Guest removed');};
 
 // ── APPEARANCE ──
+function renderIconLibraryPage(){
+  const libItems=Object.entries(S.iconLibrary||{}).sort((a,b)=>b[1].createdAt-a[1].createdAt);
+  const editMode=window._libPageEditMode||false;
+
+  const customGrid=`
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:2px">
+      <!-- Upload cell -->
+      <label style="aspect-ratio:1;border-radius:16px;border:2px dashed rgba(108,99,255,0.4);background:rgba(108,99,255,0.05);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:4px">
+        <span style="font-size:24px">⬆️</span>
+        <span style="font-size:9px;color:var(--accent);font-weight:600">Upload</span>
+        <input type="file" accept="image/*" style="display:none" onchange="handleLibPageUpload(event)">
+      </label>
+      ${libItems.map(([id,item])=>`<div style="position:relative;aspect-ratio:1">
+        <div style="width:100%;height:100%;border-radius:16px;border:2px solid var(--border);background:rgba(255,255,255,0.04);padding:5px;overflow:hidden">
+          <img src="${item.data}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">
+        </div>
+        ${editMode?`<button onclick="deleteLibIcon('${id}')" style="position:absolute;top:-5px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;border:2px solid var(--bg);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2">✕</button>`:''}
+      </div>`).join('')}
+    </div>`;
+
+  const bankGrid=`
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:2px">
+      ${BANK_PRESETS.map((p,i)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+        <div style="width:52px;height:52px;border-radius:50%;background:${p.bg};display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 3px 10px rgba(0,0,0,0.25)">${p.emoji}</div>
+        <span style="font-size:9px;color:var(--dim);text-align:center;line-height:1.2;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.label}</span>
+      </div>`).join('')}
+    </div>`;
+
+  const activeTab=window._libPageTab||'custom';
+
+  return`<div class="fade-in settings-page" style="padding-bottom:40px">
+    <div style="padding:52px 20px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button onclick="goSettings()" style="background:rgba(255,255,255,0.07);border:none;border-radius:12px;padding:8px 12px;font-size:16px;color:var(--text);cursor:pointer">←</button>
+        <div>
+          <p style="font-size:11px;color:var(--dim);margin-bottom:2px">Preference</p>
+          <p style="font-size:20px;font-weight:800;letter-spacing:-0.02em">Icon Library</p>
+        </div>
+      </div>
+      ${activeTab==='custom'?`<button onclick="window._libPageEditMode=!window._libPageEditMode;renderPage()" style="padding:7px 16px;border-radius:10px;background:${editMode?'rgba(255,107,107,0.15)':'rgba(255,255,255,0.07)'};border:1px solid ${editMode?'rgba(255,107,107,0.3)':'var(--border)'};color:${editMode?'var(--red)':'var(--text)'};font-size:13px;font-weight:700;cursor:pointer">${editMode?'Done':'Edit'}</button>`:''}
+    </div>
+
+    <!-- TABS -->
+    <div style="display:flex;gap:8px;padding:0 20px;margin-bottom:16px">
+      <button onclick="window._libPageTab='custom';window._libPageEditMode=false;renderPage()" style="flex:1;padding:9px;border-radius:14px;font-size:13px;font-weight:700;border:1.5px solid ${activeTab==='custom'?'var(--accent)':'var(--border)'};background:${activeTab==='custom'?'rgba(108,99,255,0.15)':'rgba(255,255,255,0.04)'};color:${activeTab==='custom'?'var(--accent)':'var(--muted)'}">🖼 My Icons ${libItems.length?`(${libItems.length})`:''}</button>
+      <button onclick="window._libPageTab='bank';window._libPageEditMode=false;renderPage()" style="flex:1;padding:9px;border-radius:14px;font-size:13px;font-weight:700;border:1.5px solid ${activeTab==='bank'?'var(--accent)':'var(--border)'};background:${activeTab==='bank'?'rgba(108,99,255,0.15)':'rgba(255,255,255,0.04)'};color:${activeTab==='bank'?'var(--accent)':'var(--muted)'}">🏦 Bank & Apps</button>
+    </div>
+
+    <!-- CONTENT -->
+    <div style="padding:0 20px">
+      ${activeTab==='custom'?`
+        ${libItems.length===0&&!editMode?`<div style="text-align:center;padding:48px 0">
+          <p style="font-size:36px;margin-bottom:12px">📭</p>
+          <p style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">No icons yet</p>
+          <p style="font-size:13px;color:var(--dim);line-height:1.6">Upload icons from Categories, Ledgers,<br>Asset Accounts or Payment Methods —<br>they'll appear here automatically.</p>
+        </div>`:customGrid}`
+      :bankGrid}
+    </div>
+
+    ${activeTab==='custom'&&libItems.length>0?`<p style="font-size:11px;color:var(--dim);text-align:center;margin-top:16px;padding:0 20px">Icons are private to your account · ${libItems.length} icon${libItems.length!==1?'s':''} saved</p>`:''}
+  </div>`;
+}
+
+window.handleLibPageUpload=e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{saveToIconLibrary(ev.target.result);};
+  reader.readAsDataURL(file);
+};
+
 function renderTagManagementPage(){
   const mList=allMembers();
   const memberNames=mList.map(m=>m.displayName);
@@ -6173,6 +6250,7 @@ function renderSettings(){
       <button onclick="goPaymentMethods()" class="export-btn" style="margin-bottom:8px">💳 Payment Methods</button>
       <button onclick="goBudget()" class="export-btn" style="margin-bottom:8px">🗂️ Categories & Budget</button>
       <button onclick="goTagManagement()" class="export-btn" style="margin-bottom:8px">🏷️ Tag Management</button>
+      <button onclick="goIconLibrary()" class="export-btn" style="margin-bottom:8px">📚 Icon Library</button>
       ${S.totalView?`<div style="background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);border-radius:14px;padding:14px 16px;margin-top:4px">
         <p style="font-size:13px;font-weight:600;margin-bottom:4px">🏦 Asset Accounts &amp; 🔄 Recurring Transactions</p>
         <p style="font-size:12px;color:var(--muted);line-height:1.6">These are per-ledger settings.<br>Select a specific ledger to manage them.</p>
@@ -6485,6 +6563,7 @@ window.setColorMode=async mode=>{
 };
 window.goAppearance=()=>{S.view='appearance';render();};
 window.goTagManagement=()=>{S.view='tagManagement';render();};
+window.goIconLibrary=()=>{S.view='iconLibrary';render();};
 window.toggleMemberSpending=()=>{
   S.memberSpendingCollapsed=!S.memberSpendingCollapsed;
   renderPage();
@@ -6593,20 +6672,97 @@ function _pmCurrentIcon(){
   return CAT_ICONS[Math.max(0,_pmIconEmoji)]||'💳';
 }
 
+// ── ICON LIBRARY ──
+async function saveToIconLibrary(base64){
+  if(!S.user||!base64)return;
+  // Compress: draw to 80x80 canvas then re-export at quality 0.75
+  try{
+    const img=new Image();
+    img.src=base64;
+    await new Promise(r=>img.onload=r);
+    const c=document.createElement('canvas');c.width=80;c.height=80;
+    const ctx=c.getContext('2d');ctx.drawImage(img,0,0,80,80);
+    const compressed=c.toDataURL('image/jpeg',0.75);
+    const id='ic_'+Date.now();
+    await set(ref(db,'users/'+S.user.uid+'/iconLibrary/'+id),{data:compressed,createdAt:Date.now()});
+    toast('📚 Saved to Icon Library');
+  }catch(e){console.error('saveToIconLibrary',e);}
+}
+
+// Bank/app preset icons — emoji + label combos
+const BANK_PRESETS=[
+  {emoji:'🟢',label:'GrabPay',bg:'#00B14F',color:'#fff'},
+  {emoji:'🚗',label:'Grab',bg:'#00B14F',color:'#fff'},
+  {emoji:'💙',label:'Touch n Go',bg:'#0064B0',color:'#fff'},
+  {emoji:'🧧',label:'Boost',bg:'#E31E52',color:'#fff'},
+  {emoji:'🔵',label:'BigPay',bg:'#0052CC',color:'#fff'},
+  {emoji:'💚',label:'ShopeePay',bg:'#EE4D2D',color:'#fff'},
+  {emoji:'🟠',label:'Lazada',bg:'#F57224',color:'#fff'},
+  {emoji:'🏦',label:'Maybank',bg:'#FECC02',color:'#000'},
+  {emoji:'🏛️',label:'CIMB',bg:'#D8232A',color:'#fff'},
+  {emoji:'💳',label:'Public Bank',bg:'#003087',color:'#fff'},
+  {emoji:'🏪',label:'RHB',bg:'#005BAA',color:'#fff'},
+  {emoji:'🏢',label:'Hong Leong',bg:'#002B5B',color:'#fff'},
+  {emoji:'🌐',label:'Ambank',bg:'#E31837',color:'#fff'},
+  {emoji:'🏗️',label:'OCBC',bg:'#E31837',color:'#fff'},
+  {emoji:'🔴',label:'BSN',bg:'#CC0001',color:'#fff'},
+  {emoji:'🟡',label:'Agrobank',bg:'#007B40',color:'#fff'},
+  {emoji:'📺',label:'Netflix',bg:'#E50914',color:'#fff'},
+  {emoji:'🎵',label:'Spotify',bg:'#1DB954',color:'#fff'},
+  {emoji:'▶️',label:'YouTube',bg:'#FF0000',color:'#fff'},
+  {emoji:'🐼',label:'FoodPanda',bg:'#D70F64',color:'#fff'},
+  {emoji:'🟩',label:'WhatsApp',bg:'#25D366',color:'#fff'},
+  {emoji:'🛒',label:'Shopee',bg:'#EE4D2D',color:'#fff'},
+  {emoji:'🎮',label:'Steam',bg:'#1b2838',color:'#fff'},
+  {emoji:'🎮',label:'PlayStation',bg:'#003791',color:'#fff'},
+  {emoji:'🟩',label:'Xbox',bg:'#107C10',color:'#fff'},
+  {emoji:'🎧',label:'Discord',bg:'#5865F2',color:'#fff'},
+  {emoji:'✈️',label:'AirAsia',bg:'#FF0000',color:'#fff'},
+  {emoji:'🛩️',label:'MAS',bg:'#003087',color:'#fff'},
+  {emoji:'⚡',label:'TNB',bg:'#0072BC',color:'#fff'},
+  {emoji:'📱',label:'Celcom',bg:'#009FDA',color:'#fff'},
+  {emoji:'📡',label:'Maxis',bg:'#002868',color:'#fff'},
+  {emoji:'📶',label:'Digi',bg:'#FFD100',color:'#000'},
+  {emoji:'🚀',label:'U Mobile',bg:'#FF6B00',color:'#fff'},
+  {emoji:'🏎️',label:'Proton',bg:'#003087',color:'#fff'},
+  {emoji:'🚙',label:'Perodua',bg:'#E31837',color:'#fff'},
+  {emoji:'🚗',label:'Toyota',bg:'#CC0000',color:'#fff'},
+  {emoji:'🏍️',label:'Honda',bg:'#CC0001',color:'#fff'},
+  {emoji:'🚘',label:'Nissan',bg:'#C3002F',color:'#fff'},
+  {emoji:'🚐',label:'Mazda',bg:'#B22222',color:'#fff'},
+  {emoji:'⭐',label:'Mercedes',bg:'#222222',color:'#fff'},
+];
+
+function _renderBankPresetIcon(p,size=52){
+  return`<div style="width:${size}px;height:${size}px;border-radius:50%;background:${p.bg};display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.42)}px;flex-shrink:0" title="${p.label}">${p.emoji}</div>`;
+}
+
 function _buildIconPickerHTML(ns,iconMode,iconEmoji,iconImage,customIcon,croppedIcon,cropZoom){
-  const eMode=iconMode==='emoji',iMode=iconMode==='image',cMode=iconMode==='custom';
+  const eMode=iconMode==='emoji',iMode=iconMode==='image',cMode=iconMode==='custom',lMode=iconMode==='library';
+  const libSubTab=window[`_${ns}LibSubTab`]||'custom';
+  const libItems=Object.entries(S.iconLibrary||{}).sort((a,b)=>b[1].createdAt-a[1].createdAt);
+  const libEditMode=window[`_${ns}LibEdit`]||false;
+
   return`<div>
+    <!-- MODE TABS -->
     <div style="display:flex;background:rgba(255,255,255,0.05);border-radius:12px;padding:3px;margin-bottom:12px">
-      <button class="${ns}-mode-btn" data-mode="emoji" onclick="setIconMode_${ns}('emoji')" style="flex:1;padding:8px;border-radius:10px;font-size:13px;font-weight:600;transition:all 0.15s;${eMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Emoji</button>
-      <button class="${ns}-mode-btn" data-mode="image" onclick="setIconMode_${ns}('image')" style="flex:1;padding:8px;border-radius:10px;font-size:13px;font-weight:600;transition:all 0.15s;${iMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Image</button>
-      <button class="${ns}-mode-btn" data-mode="custom" onclick="setIconMode_${ns}('custom')" style="flex:1;padding:8px;border-radius:10px;font-size:13px;font-weight:600;transition:all 0.15s;${cMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Upload</button>
+      <button class="${ns}-mode-btn" data-mode="emoji" onclick="setIconMode_${ns}('emoji')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${eMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Emoji</button>
+      <button class="${ns}-mode-btn" data-mode="image" onclick="setIconMode_${ns}('image')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${iMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Image</button>
+      <button class="${ns}-mode-btn" data-mode="custom" onclick="setIconMode_${ns}('custom')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${cMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Upload</button>
+      <button class="${ns}-mode-btn" data-mode="library" onclick="setIconMode_${ns}('library')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${lMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">📚</button>
     </div>
+
+    <!-- EMOJI GRID -->
     <div id="${ns}EmojiGrid" style="display:${eMode?'flex':'none'};gap:6px;flex-wrap:wrap">
       ${CAT_ICONS.map((ic,i)=>`<button onclick="pickIconEmoji_${ns}(${i})" class="${ns}-ic-btn" style="width:38px;height:38px;border-radius:10px;font-size:18px;background:rgba(255,255,255,0.06);border:2px solid ${i===iconEmoji?'var(--accent)':'transparent'}">${ic}</button>`).join('')}
     </div>
+
+    <!-- IMAGE GRID -->
     <div id="${ns}ImageGrid" style="display:${iMode?'grid':'none'};grid-template-columns:repeat(5,1fr);gap:8px;max-height:240px;overflow-y:auto;padding:2px">
       ${CAT_IMAGE_ICONS.map((img,i)=>`<button onclick="pickIconImage_${ns}(${i})" class="${ns}-img-btn" style="aspect-ratio:1;border-radius:12px;background:${i===iconImage?'rgba(108,99,255,0.15)':'rgba(255,255,255,0.04)'};border:2px solid ${i===iconImage?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;padding:6px" title="${img.label}"><img src="${img.url}" style="width:100%;height:100%;object-fit:contain;border-radius:4px" loading="lazy"></button>`).join('')}
     </div>
+
+    <!-- UPLOAD / CROP -->
     <div id="${ns}CustomGrid" style="display:${cMode?'block':'none'}">
       ${customIcon?`
       <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
@@ -6630,6 +6786,43 @@ function _buildIconPickerHTML(ns,iconMode,iconEmoji,iconImage,customIcon,cropped
         <p style="font-size:11px;color:var(--dim)">SVG, PNG or JPG · Any size</p>
       </label>
       <input id="${ns}FileInput" type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp" style="display:none" onchange="handleIconFileUpload_${ns}(event)">`}
+    </div>
+
+    <!-- LIBRARY -->
+    <div id="${ns}LibraryGrid" style="display:${lMode?'block':'none'}">
+      <!-- Sub-tabs: Bank | Custom -->
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <button onclick="setIconLibSubTab_${ns}('bank')" style="flex:1;padding:7px;border-radius:10px;font-size:12px;font-weight:700;border:1.5px solid ${libSubTab==='bank'?'var(--accent)':'var(--border)'};background:${libSubTab==='bank'?'rgba(108,99,255,0.15)':'rgba(255,255,255,0.04)'};color:${libSubTab==='bank'?'var(--accent)':'var(--muted)'}">🏦 Bank & Apps</button>
+        <button onclick="setIconLibSubTab_${ns}('custom')" style="flex:1;padding:7px;border-radius:10px;font-size:12px;font-weight:700;border:1.5px solid ${libSubTab==='custom'?'var(--accent)':'var(--border)'};background:${libSubTab==='custom'?'rgba(108,99,255,0.15)':'rgba(255,255,255,0.04)'};color:${libSubTab==='custom'?'var(--accent)':'var(--muted)'}">🖼 My Library ${libItems.length?`(${libItems.length})`:''}</button>
+      </div>
+
+      <!-- BANK PRESETS -->
+      ${libSubTab==='bank'?`
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-height:260px;overflow-y:auto;padding:2px">
+        ${BANK_PRESETS.map((p,i)=>`<button onclick="pickBankPreset_${ns}(${i})" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px">
+          <div style="width:46px;height:46px;border-radius:50%;background:${p.bg};display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">${p.emoji}</div>
+          <span style="font-size:9px;color:var(--dim);text-align:center;line-height:1.2;max-width:46px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.label}</span>
+        </button>`).join('')}
+      </div>`:`
+
+      <!-- MY CUSTOM LIBRARY -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <p style="font-size:11px;color:var(--dim)">${libItems.length?libItems.length+' saved icons':'No icons saved yet'}</p>
+        ${libItems.length?`<button onclick="toggleLibEdit_${ns}()" style="font-size:11px;font-weight:700;color:${libEditMode?'var(--red)':'var(--accent)'};background:none;border:none;cursor:pointer">${libEditMode?'Done':'Edit'}</button>`:''}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:240px;overflow-y:auto;padding:2px">
+        <!-- Upload cell -->
+        <label style="aspect-ratio:1;border-radius:12px;border:2px dashed rgba(108,99,255,0.4);background:rgba(108,99,255,0.05);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px" title="Upload new">
+          ⬆️
+          <input type="file" accept="image/*" style="display:none" onchange="handleIconFileUpload_${ns}(event);setIconMode_${ns}('custom')">
+        </label>
+        ${libItems.map(([id,item])=>`<div style="position:relative;aspect-ratio:1">
+          <button onclick="${libEditMode?'':`pickLibIcon_${ns}('${id}')`}" style="width:100%;height:100%;border-radius:12px;border:2px solid var(--border);background:rgba(255,255,255,0.04);padding:4px;cursor:pointer;overflow:hidden">
+            <img src="${item.data}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+          </button>
+          ${libEditMode?`<button onclick="deleteLibIcon('${id}')" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:2px solid var(--bg);font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2">✕</button>`:''}
+        </div>`).join('')}
+      </div>`}
     </div>
   </div>`;
 }
@@ -6687,13 +6880,60 @@ function _attachIconCropListeners(ns,getState,setState){
   canvas.addEventListener('touchend',()=>setState({dragging:false}));
 }
 
-// ── PM icon picker handlers ──
-window.setIconMode_pm=mode=>{
-  _pmIconMode=mode;
-  document.querySelectorAll('.pm-mode-btn').forEach(b=>{const a=b.dataset.mode===mode;b.style.background=a?'rgba(108,99,255,0.8)':'transparent';b.style.color=a?'#fff':'var(--dim)';});
-  ['Emoji','Image','Custom'].forEach(n=>{const el=document.getElementById('pm'+n+'Grid');if(el)el.style.display=n.toLowerCase()===mode?(n==='Image'?'grid':n==='Custom'?'block':'flex'):'none';});
-  if(mode==='Custom')requestAnimationFrame(()=>{_attachIconCropListeners('pm',()=>({img:_pmCropImg,zoom:_pmCropZoom,offX:_pmCropOffX,offY:_pmCropOffY,dragging:_pmCropDragging,lastX:_pmCropLastX,lastY:_pmCropLastY,lastDist:_pmCropLastDist}),s=>{if(s.img!==undefined)_pmCropImg=s.img;if(s.zoom!==undefined)_pmCropZoom=s.zoom;if(s.offX!==undefined)_pmCropOffX=s.offX;if(s.offY!==undefined)_pmCropOffY=s.offY;if(s.dragging!==undefined)_pmCropDragging=s.dragging;if(s.lastX!==undefined)_pmCropLastX=s.lastX;if(s.lastY!==undefined)_pmCropLastY=s.lastY;if(s.lastDist!==undefined)_pmCropLastDist=s.lastDist;});_drawIconCrop('pm',document.getElementById('pmCropCanvas'),_pmCropImg,_pmCropZoom,_pmCropOffX,_pmCropOffY);});
+// ── Generic icon library handlers (work across all namespaces) ──
+function _setIconModeGeneric(ns,mode){
+  document.querySelectorAll(`.${ns}-mode-btn`).forEach(b=>{const a=b.dataset.mode===mode;b.style.background=a?'rgba(108,99,255,0.8)':'transparent';b.style.color=a?'#fff':'var(--dim)';});
+  ['Emoji','Image','Custom','Library'].forEach(n=>{const el=document.getElementById(ns+n+'Grid');if(el)el.style.display=n.toLowerCase()===mode?(n==='Image'?'grid':'block'):'none';});
+  if(mode==='Custom')requestAnimationFrame(()=>{_attachIconCropListeners(ns,()=>_iconCropState(ns),s=>_setIconCropState(ns,s));_drawIconCrop(ns,document.getElementById(ns+'CropCanvas'),_iconCropState(ns).img,_iconCropState(ns).zoom,_iconCropState(ns).offX,_iconCropState(ns).offY);});
+}
+window.setIconLibSubTab_pm    =t=>{window._pmLibSubTab=t;renderPage();};
+window.setIconLibSubTab_asset =t=>{window._assetLibSubTab=t;renderPage();};
+window.setIconLibSubTab_ledger=t=>{window._ledgerLibSubTab=t;renderPage();};
+window.setIconLibSubTab_cat   =t=>{window._catLibSubTab=t;renderPage();};
+window.toggleLibEdit_pm    =()=>{window._pmLibEdit=!window._pmLibEdit;renderPage();};
+window.toggleLibEdit_asset =()=>{window._assetLibEdit=!window._assetLibEdit;renderPage();};
+window.toggleLibEdit_ledger=()=>{window._ledgerLibEdit=!window._ledgerLibEdit;renderPage();};
+window.toggleLibEdit_cat   =()=>{window._catLibEdit=!window._catLibEdit;renderPage();};
+window.deleteLibIcon=async id=>{
+  if(!S.user)return;
+  await set(ref(db,'users/'+S.user.uid+'/iconLibrary/'+id),null);
+  toast('Icon removed from library');
 };
+// Pick from library — sets croppedIcon for the namespace
+function _pickLibIconForNs(ns,id){
+  const item=S.iconLibrary[id];if(!item)return;
+  const data=item.data;
+  if(ns==='pm'){_pmIconMode='custom';_pmCroppedIcon=data;_pmCustomIcon=data;renderPage();}
+  else if(ns==='asset'){_assetIconMode='custom';_assetCroppedIcon=data;_assetCustomIcon=data;renderPage();}
+  else if(ns==='ledger'){_ledgerIconMode='custom';_ledgerCroppedIcon=data;_ledgerCustomIcon=data;renderPage();}
+  else if(ns==='cat'){window._catCroppedIcon=data;window._catCustomIcon=data;window._catIconMode='custom';renderPage();}
+}
+window.pickLibIcon_pm    =id=>_pickLibIconForNs('pm',id);
+window.pickLibIcon_asset =id=>_pickLibIconForNs('asset',id);
+window.pickLibIcon_ledger=id=>_pickLibIconForNs('ledger',id);
+window.pickLibIcon_cat   =id=>_pickLibIconForNs('cat',id);
+// Pick bank preset — uses emoji rendered to canvas, stored as croppedIcon
+function _pickBankPresetForNs(ns,idx){
+  const p=BANK_PRESETS[idx];if(!p)return;
+  // Render preset to a canvas then use as custom icon
+  const c=document.createElement('canvas');c.width=80;c.height=80;
+  const ctx=c.getContext('2d');
+  ctx.beginPath();ctx.arc(40,40,40,0,Math.PI*2);ctx.fillStyle=p.bg;ctx.fill();
+  ctx.font='32px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.emoji,40,42);
+  const data=c.toDataURL('image/png');
+  _pickLibIconForNs(ns,-1);// clear first
+  if(ns==='pm'){_pmIconMode='custom';_pmCroppedIcon=data;_pmCustomIcon=data;renderPage();}
+  else if(ns==='asset'){_assetIconMode='custom';_assetCroppedIcon=data;_assetCustomIcon=data;renderPage();}
+  else if(ns==='ledger'){_ledgerIconMode='custom';_ledgerCroppedIcon=data;_ledgerCustomIcon=data;renderPage();}
+  else if(ns==='cat'){window._catCroppedIcon=data;window._catCustomIcon=data;window._catIconMode='custom';renderPage();}
+}
+window.pickBankPreset_pm    =i=>_pickBankPresetForNs('pm',i);
+window.pickBankPreset_asset =i=>_pickBankPresetForNs('asset',i);
+window.pickBankPreset_ledger=i=>_pickBankPresetForNs('ledger',i);
+window.pickBankPreset_cat   =i=>_pickBankPresetForNs('cat',i);
+
+// ── PM icon picker handlers ──
+window.setIconMode_pm=mode=>{_pmIconMode=mode;_setIconModeGeneric('pm',mode);};
 window.pickIconEmoji_pm=i=>{_pmIconEmoji=i;_pmIconImage=-1;document.querySelectorAll('.pm-ic-btn').forEach(b=>b.style.borderColor='transparent');const btn=document.querySelectorAll('.pm-ic-btn')[i];if(btn)btn.style.borderColor='var(--accent)';};
 window.pickIconImage_pm=i=>{_pmIconImage=i;_pmIconEmoji=-1;document.querySelectorAll('.pm-img-btn').forEach(b=>{b.style.borderColor='transparent';b.style.background='rgba(255,255,255,0.04)';});const btn=document.querySelectorAll('.pm-img-btn')[i];if(btn){btn.style.borderColor='var(--accent)';btn.style.background='rgba(108,99,255,0.15)';}};
 window.handleIconFileUpload_pm=e=>{
@@ -6709,6 +6949,7 @@ window.confirmIconCrop_pm=()=>{
   const off=document.createElement('canvas');off.width=200;off.height=200;
   const ctx=off.getContext('2d');if(_pmCropImg)ctx.drawImage(_pmCropImg,_pmCropOffX,_pmCropOffY,_pmCropImg.naturalWidth*_pmCropZoom,_pmCropImg.naturalHeight*_pmCropZoom);
   _pmCroppedIcon=off.toDataURL('image/png');
+  saveToIconLibrary(_pmCroppedIcon);
   const hint=document.querySelector('#pmCustomGrid p');if(hint){hint.style.color='var(--green)';hint.textContent='✓ Cropped & ready';}
 };
 window.clearIconCustom_pm=()=>{_pmCustomIcon=null;_pmCroppedIcon=null;_pmCropImg=null;_pmCropZoom=1;renderPage();};
@@ -8158,12 +8399,7 @@ function _assetCurrentIcon(){
   return CAT_ICONS[Math.max(0,_assetIconEmoji)]||'🏦';
 }
 
-window.setIconMode_asset=mode=>{
-  _assetIconMode=mode;
-  document.querySelectorAll('.asset-mode-btn').forEach(b=>{const a=b.dataset.mode===mode;b.style.background=a?'rgba(108,99,255,0.8)':'transparent';b.style.color=a?'#fff':'var(--dim)';});
-  ['Emoji','Image','Custom'].forEach(n=>{const el=document.getElementById('asset'+n+'Grid');if(el)el.style.display=n.toLowerCase()===mode?(n==='Image'?'grid':n==='Custom'?'block':'flex'):'none';});
-  if(mode==='Custom')requestAnimationFrame(()=>{_attachIconCropListeners('asset',()=>({img:_assetCropImg,zoom:_assetCropZoom,offX:_assetCropOffX,offY:_assetCropOffY,dragging:_assetCropDragging,lastX:_assetCropLastX,lastY:_assetCropLastY,lastDist:_assetCropLastDist}),s=>{if(s.img!==undefined)_assetCropImg=s.img;if(s.zoom!==undefined)_assetCropZoom=s.zoom;if(s.offX!==undefined)_assetCropOffX=s.offX;if(s.offY!==undefined)_assetCropOffY=s.offY;if(s.dragging!==undefined)_assetCropDragging=s.dragging;if(s.lastX!==undefined)_assetCropLastX=s.lastX;if(s.lastY!==undefined)_assetCropLastY=s.lastY;if(s.lastDist!==undefined)_assetCropLastDist=s.lastDist;});_drawIconCrop('asset',document.getElementById('assetCropCanvas'),_assetCropImg,_assetCropZoom,_assetCropOffX,_assetCropOffY);});
-};
+window.setIconMode_asset=mode=>{_assetIconMode=mode;_setIconModeGeneric('asset',mode);};
 window.pickIconEmoji_asset=i=>{_assetIconEmoji=i;_assetIconImage=-1;document.querySelectorAll('.asset-ic-btn').forEach(b=>b.style.borderColor='transparent');const btn=document.querySelectorAll('.asset-ic-btn')[i];if(btn)btn.style.borderColor='var(--accent)';};
 window.pickIconImage_asset=i=>{_assetIconImage=i;_assetIconEmoji=-1;document.querySelectorAll('.asset-img-btn').forEach(b=>{b.style.borderColor='transparent';b.style.background='rgba(255,255,255,0.04)';});const btn=document.querySelectorAll('.asset-img-btn')[i];if(btn){btn.style.borderColor='var(--accent)';btn.style.background='rgba(108,99,255,0.15)';}};
 window.handleIconFileUpload_asset=e=>{
@@ -8179,6 +8415,7 @@ window.confirmIconCrop_asset=()=>{
   const off=document.createElement('canvas');off.width=200;off.height=200;
   const ctx=off.getContext('2d');if(_assetCropImg)ctx.drawImage(_assetCropImg,_assetCropOffX,_assetCropOffY,_assetCropImg.naturalWidth*_assetCropZoom,_assetCropImg.naturalHeight*_assetCropZoom);
   _assetCroppedIcon=off.toDataURL('image/png');
+  saveToIconLibrary(_assetCroppedIcon);
   const hint=document.querySelector('#assetCustomGrid p');if(hint){hint.style.color='var(--green)';hint.textContent='✓ Cropped & ready';}
 };
 window.clearIconCustom_asset=()=>{_assetCustomIcon=null;_assetCroppedIcon=null;_assetCropImg=null;_assetCropZoom=1;renderPage();};
@@ -8198,12 +8435,7 @@ function _ledgerCurrentIcon(){
   return CAT_ICONS[Math.max(0,_ledgerIconEmoji)]||'🏠';
 }
 
-window.setIconMode_ledger=mode=>{
-  _ledgerIconMode=mode;
-  document.querySelectorAll('.ledger-mode-btn').forEach(b=>{const a=b.dataset.mode===mode;b.style.background=a?'rgba(108,99,255,0.8)':'transparent';b.style.color=a?'#fff':'var(--dim)';});
-  ['Emoji','Image','Custom'].forEach(n=>{const el=document.getElementById('ledger'+n+'Grid');if(el)el.style.display=n.toLowerCase()===mode?(n==='Image'?'grid':n==='Custom'?'block':'flex'):'none';});
-  if(mode==='Custom')requestAnimationFrame(()=>{_attachIconCropListeners('ledger',()=>({img:_ledgerCropImg,zoom:_ledgerCropZoom,offX:_ledgerCropOffX,offY:_ledgerCropOffY,dragging:_ledgerCropDragging,lastX:_ledgerCropLastX,lastY:_ledgerCropLastY,lastDist:_ledgerCropLastDist}),s=>{if(s.img!==undefined)_ledgerCropImg=s.img;if(s.zoom!==undefined)_ledgerCropZoom=s.zoom;if(s.offX!==undefined)_ledgerCropOffX=s.offX;if(s.offY!==undefined)_ledgerCropOffY=s.offY;if(s.dragging!==undefined)_ledgerCropDragging=s.dragging;if(s.lastX!==undefined)_ledgerCropLastX=s.lastX;if(s.lastY!==undefined)_ledgerCropLastY=s.lastY;if(s.lastDist!==undefined)_ledgerCropLastDist=s.lastDist;});_drawIconCrop('ledger',document.getElementById('ledgerCropCanvas'),_ledgerCropImg,_ledgerCropZoom,_ledgerCropOffX,_ledgerCropOffY);});
-};
+window.setIconMode_ledger=mode=>{_ledgerIconMode=mode;_setIconModeGeneric('ledger',mode);};
 window.pickIconEmoji_ledger=i=>{_ledgerIconEmoji=i;_ledgerIconImage=-1;document.querySelectorAll('.ledger-ic-btn').forEach(b=>b.style.borderColor='transparent');const btn=document.querySelectorAll('.ledger-ic-btn')[i];if(btn)btn.style.borderColor='var(--accent)';};
 window.pickIconImage_ledger=i=>{_ledgerIconImage=i;_ledgerIconEmoji=-1;document.querySelectorAll('.ledger-img-btn').forEach(b=>{b.style.borderColor='transparent';b.style.background='rgba(255,255,255,0.04)';});const btn=document.querySelectorAll('.ledger-img-btn')[i];if(btn){btn.style.borderColor='var(--accent)';btn.style.background='rgba(108,99,255,0.15)';}};
 window.handleIconFileUpload_ledger=e=>{
@@ -8222,6 +8454,7 @@ window.confirmIconCrop_ledger=()=>{
   const off=document.createElement('canvas');off.width=200;off.height=200;
   const ctx=off.getContext('2d');if(_ledgerCropImg)ctx.drawImage(_ledgerCropImg,_ledgerCropOffX,_ledgerCropOffY,_ledgerCropImg.naturalWidth*_ledgerCropZoom,_ledgerCropImg.naturalHeight*_ledgerCropZoom);
   _ledgerCroppedIcon=off.toDataURL('image/png');
+  saveToIconLibrary(_ledgerCroppedIcon);
   const hint=document.querySelector('#ledgerCustomGrid p');if(hint){hint.style.color='var(--green)';hint.textContent='✓ Cropped & ready';}
 };
 window.clearIconCustom_ledger=()=>{_ledgerCustomIcon=null;_ledgerCroppedIcon=null;_ledgerCropImg=null;_ledgerCropZoom=1;
