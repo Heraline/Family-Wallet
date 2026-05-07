@@ -5271,11 +5271,11 @@ window.selCatIcon=0;window.selCatColor=0;window.selCatIconMode='emoji';window.se
 let _scIconMode='emoji',_scIconEmoji=0,_scIconImage=-1,_scCustomIcon=null,_scCroppedIcon=null;
 let _scCropZoom=1,_scCropOffX=0,_scCropOffY=0,_scCropImg=null,_scCropDragging=false,_scCropLastX=0,_scCropLastY=0,_scCropLastDist=0;
 function _scCurrentIcon(){
-  if(_scIconMode==='custom'&&_scCroppedIcon)return _scCroppedIcon;
-  if(_scIconMode==='custom'&&_scCustomIcon)return _scCustomIcon;
+  if((_scIconMode==='custom'||_scIconMode==='upload')&&_scCroppedIcon)return _scCroppedIcon;
+  if((_scIconMode==='custom'||_scIconMode==='upload')&&_scCustomIcon)return _scCustomIcon;
   if(_scIconMode==='image'&&_scIconImage>=0&&_scIconImage<CAT_IMAGE_ICONS.length)return CAT_IMAGE_ICONS[_scIconImage].url;
   if(_scIconMode==='emoji'&&_scIconEmoji>=0)return CAT_ICONS[_scIconEmoji]||null;
-  return null; // no icon
+  return null;
 }
 
 
@@ -5488,7 +5488,7 @@ function renderCategoriesPage(){
           <button class="sc-mode-btn" data-mode="none" onclick="setScIconMode('none')" style="flex:1;padding:7px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${_scIconMode==='none'?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">None</button>
           <button class="sc-mode-btn" data-mode="emoji" onclick="setScIconMode('emoji')" style="flex:1;padding:7px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${_scIconMode==='emoji'?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Emoji</button>
           <button class="sc-mode-btn" data-mode="image" onclick="setScIconMode('image')" style="flex:1;padding:7px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${_scIconMode==='image'?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Image</button>
-          <button class="sc-mode-btn" data-mode="custom" onclick="setScIconMode('custom')" style="flex:1;padding:7px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${_scIconMode==='custom'?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Upload</button>
+          <button class="sc-mode-btn" data-mode="upload" onclick="setScIconMode('upload')" style="flex:1;padding:7px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${(_scIconMode==='upload'||_scIconMode==='custom')?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Upload</button>
         </div>
         <div id="scEmojiGrid" style="display:${_scIconMode==='emoji'?'flex':'none'};gap:5px;flex-wrap:wrap">
           ${CAT_ICONS.map((ic,i)=>`<button onclick="pickScEmoji(${i})" class="sc-ic-btn" style="width:36px;height:36px;border-radius:9px;font-size:17px;background:rgba(255,255,255,0.06);border:2px solid ${i===_scIconEmoji&&_scIconMode==='emoji'?'var(--accent)':'transparent'}">${ic}</button>`).join('')}
@@ -5496,8 +5496,8 @@ function renderCategoriesPage(){
         <div id="scImageGrid" style="display:${_scIconMode==='image'?'grid':'none'};grid-template-columns:repeat(5,1fr);gap:8px;max-height:240px;overflow-y:auto;padding:2px">
           ${CAT_IMAGE_ICONS.map((img,i)=>`<button onclick="pickScImage(${i})" class="sc-img-btn" style="aspect-ratio:1;border-radius:12px;background:${i===_scIconImage&&_scIconMode==='image'?'rgba(108,99,255,0.15)':'rgba(255,255,255,0.04)'};border:2px solid ${i===_scIconImage&&_scIconMode==='image'?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;padding:6px" title="${img.label}"><img src="${img.url}" style="width:100%;height:100%;object-fit:contain;border-radius:4px" loading="lazy"></button>`).join('')}
         </div>
-        <div id="scCustomGrid" style="display:${_scIconMode==='custom'?'block':'none'}">
-          ${_scCustomIcon?`
+        <div id="scCustomGrid" style="display:${(_scIconMode==='upload'||_scIconMode==='custom')?'block':'none'}">
+          ${(_scCustomIcon&&_scCropImg)?`
           <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
             <div style="position:relative;width:180px;height:180px;border-radius:16px;overflow:hidden;border:2px solid var(--accent);background:rgba(255,255,255,0.06);touch-action:none">
               <canvas id="scCropCanvas" width="180" height="180" style="display:block;width:180px;height:180px;cursor:grab"></canvas>
@@ -5513,12 +5513,23 @@ function renderCategoriesPage(){
             </div>
             ${_scCroppedIcon?`<p style="font-size:11px;color:var(--green);font-weight:600">✓ Cropped & ready</p>`:'<p style="font-size:11px;color:var(--dim)">Drag · pinch to zoom · Tap "Use this"</p>'}
           </div>`:`
-          <label for="scFileInput" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 16px;border-radius:16px;border:2px dashed rgba(108,99,255,0.4);background:rgba(108,99,255,0.05);cursor:pointer">
-            <span style="font-size:32px">📁</span>
-            <p style="font-size:14px;font-weight:600;color:var(--accent)">Tap to upload icon</p>
-            <p style="font-size:11px;color:var(--dim)">SVG, PNG or JPG</p>
-          </label>
-          <input id="scFileInput" type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp" style="display:none" onchange="handleScFileUpload(event)">`}
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <p style="font-size:11px;color:var(--dim)">${(()=>{const items=Object.entries(S.iconLibrary||{});return items.length?items.length+' saved icons':'No icons saved yet';})()}</p>
+            ${Object.keys(S.iconLibrary||{}).length?`<button onclick="toggleScLibEdit()" style="font-size:11px;font-weight:700;color:${window._scLibEdit?'var(--red)':'var(--accent)'};background:none;border:none;cursor:pointer">${window._scLibEdit?'Done':'Edit'}</button>`:''}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:240px;overflow-y:auto;padding:2px">
+            <label style="aspect-ratio:1;border-radius:12px;border:2px dashed rgba(108,99,255,0.5);background:rgba(108,99,255,0.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:3px" title="Upload new icon">
+              <span style="font-size:18px">⬆️</span>
+              <span style="font-size:8px;font-weight:700;color:var(--accent)">Upload</span>
+              <input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp,image/*" style="display:none" onchange="handleScFileUpload(event)">
+            </label>
+            ${Object.entries(S.iconLibrary||{}).sort((a,b)=>b[1].createdAt-a[1].createdAt).map(([id,item])=>`<div style="position:relative;aspect-ratio:1">
+              <button onclick="${window._scLibEdit?'':`pickScLibIcon('${id}')`}" style="width:100%;height:100%;border-radius:12px;border:2px solid ${_scCroppedIcon===item.data?'var(--accent)':'var(--border)'};background:rgba(255,255,255,0.04);padding:4px;cursor:pointer;overflow:hidden">
+                <img src="${item.data}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+              </button>
+              ${window._scLibEdit?`<button onclick="deleteLibIcon('${id}')" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:2px solid var(--bg);font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2">✕</button>`:''}
+            </div>`).join('')}
+          </div>`}
         </div>
         ${_scCurrentIcon()?`<div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border)">
           <span style="font-size:20px;display:flex;align-items:center;justify-content:center">${renderCatIcon(_scCurrentIcon(),20,true)}</span>
@@ -5540,7 +5551,7 @@ function renderCategoriesPage(){
         <div style="display:flex;background:rgba(255,255,255,0.05);border-radius:12px;padding:3px;margin-bottom:12px">
           <button class="cat-mode-btn" data-mode="emoji" onclick="setCatIconMode('emoji')" style="flex:1;padding:8px;border-radius:10px;font-size:13px;font-weight:600;transition:all 0.15s;${window.selCatIconMode==='emoji'?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Emoji</button>
           <button class="cat-mode-btn" data-mode="image" onclick="setCatIconMode('image')" style="flex:1;padding:8px;border-radius:10px;font-size:13px;font-weight:600;transition:all 0.15s;${window.selCatIconMode==='image'?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Image</button>
-          <button class="cat-mode-btn" data-mode="custom" onclick="setCatIconMode('custom')" style="flex:1;padding:8px;border-radius:10px;font-size:13px;font-weight:600;transition:all 0.15s;${window.selCatIconMode==='custom'?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Upload</button>
+          <button class="cat-mode-btn" data-mode="upload" onclick="setCatIconMode('upload')" style="flex:1;padding:8px;border-radius:10px;font-size:13px;font-weight:600;transition:all 0.15s;${(window.selCatIconMode==='upload'||window.selCatIconMode==='custom')?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Upload</button>
         </div>
         <div id="catEmojiGrid" style="display:${window.selCatIconMode==='emoji'?'flex':'none'};gap:6px;flex-wrap:wrap">
           ${CAT_ICONS.map((ic,i)=>`<button onclick="pickCatEmoji(${i})" class="cat-ic-btn" style="width:38px;height:38px;border-radius:10px;font-size:18px;background:rgba(255,255,255,0.06);border:2px solid ${i===window.selCatIcon?'var(--accent)':'transparent'}">${ic}</button>`).join('')}
@@ -5548,8 +5559,8 @@ function renderCategoriesPage(){
         <div id="catImageGrid" style="display:${window.selCatIconMode==='image'?'grid':'none'};grid-template-columns:repeat(5,1fr);gap:8px;max-height:260px;overflow-y:auto;padding:2px">
           ${CAT_IMAGE_ICONS.map((img,i)=>`<button onclick="pickCatImage(${i})" class="cat-img-btn" style="aspect-ratio:1;border-radius:12px;background:${i===window.selCatImageIcon?'rgba(108,99,255,0.15)':'rgba(255,255,255,0.04)'};border:2px solid ${i===window.selCatImageIcon?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;padding:6px;transition:all 0.15s" title="${img.label}"><img src="${img.url}" style="width:100%;height:100%;object-fit:contain;border-radius:4px" loading="lazy"></button>`).join('')}
         </div>
-        <div id="catCustomGrid" style="display:${window.selCatIconMode==='custom'?'block':'none'}">
-          ${window.selCatCustomIcon?`
+        <div id="catCustomGrid" style="display:${(window.selCatIconMode==='upload'||window.selCatIconMode==='custom')?'block':'none'}">
+          ${(window.selCatCustomIcon&&window._cropImg)?`
           <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
             <div style="position:relative;width:200px;height:200px;border-radius:16px;overflow:hidden;border:2px solid var(--accent);background:rgba(255,255,255,0.06);touch-action:none" id="cropContainer">
               <canvas id="cropCanvas" width="200" height="200" style="display:block;width:200px;height:200px;cursor:grab"></canvas>
@@ -5565,12 +5576,23 @@ function renderCategoriesPage(){
             </div>
             ${window.selCatCroppedIcon?`<p style="font-size:11px;color:var(--green);font-weight:600">✓ Cropped & ready</p>`:'<p style="font-size:11px;color:var(--dim)">Drag to reposition · Scroll/pinch to zoom · Tap "Use this" to confirm</p>'}
           </div>`:`
-          <label for="catFileInput" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:32px 16px;border-radius:16px;border:2px dashed rgba(108,99,255,0.4);background:rgba(108,99,255,0.05);cursor:pointer;transition:all 0.2s">
-            <span style="font-size:36px">📁</span>
-            <p style="font-size:14px;font-weight:600;color:var(--accent)">Tap to upload icon</p>
-            <p style="font-size:11px;color:var(--dim)">SVG, PNG or JPG · Any size</p>
-          </label>
-          <input id="catFileInput" type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp" style="display:none" onchange="handleCatFileUpload(event)">`}
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <p style="font-size:11px;color:var(--dim)">${(()=>{const items=Object.entries(S.iconLibrary||{});return items.length?items.length+' saved icons':'No icons saved yet';})()}</p>
+            ${Object.keys(S.iconLibrary||{}).length?`<button onclick="toggleCatLibEdit()" style="font-size:11px;font-weight:700;color:${window._catLibEdit?'var(--red)':'var(--accent)'};background:none;border:none;cursor:pointer">${window._catLibEdit?'Done':'Edit'}</button>`:''}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:260px;overflow-y:auto;padding:2px">
+            <label style="aspect-ratio:1;border-radius:12px;border:2px dashed rgba(108,99,255,0.5);background:rgba(108,99,255,0.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:3px" title="Upload new icon">
+              <span style="font-size:20px">⬆️</span>
+              <span style="font-size:8px;font-weight:700;color:var(--accent)">Upload</span>
+              <input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp,image/*" style="display:none" onchange="handleCatFileUpload(event)">
+            </label>
+            ${Object.entries(S.iconLibrary||{}).sort((a,b)=>b[1].createdAt-a[1].createdAt).map(([id,item])=>`<div style="position:relative;aspect-ratio:1">
+              <button onclick="${window._catLibEdit?'':`pickCatLibIcon('${id}')`}" style="width:100%;height:100%;border-radius:12px;border:2px solid ${window.selCatCroppedIcon===item.data?'var(--accent)':'var(--border)'};background:rgba(255,255,255,0.04);padding:4px;cursor:pointer;overflow:hidden">
+                <img src="${item.data}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+              </button>
+              ${window._catLibEdit?`<button onclick="deleteLibIcon('${id}')" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:2px solid var(--bg);font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2">✕</button>`:''}
+            </div>`).join('')}
+          </div>`}
         </div>
       </div>
       <div style="margin-bottom:16px"><p class="label" style="margin-bottom:10px">Color</p>
@@ -7556,8 +7578,6 @@ window.updateCropZoom=val=>{
 };
 
 window.confirmCrop=()=>{
-  const canvas=document.getElementById('cropCanvas'); if(!canvas)return;
-  // Render a clean 200×200 square (no overlay) into an offscreen canvas
   const off=document.createElement('canvas');off.width=200;off.height=200;
   const ctx=off.getContext('2d');
   if(window._cropImg){
@@ -7565,10 +7585,10 @@ window.confirmCrop=()=>{
     ctx.drawImage(img,window._cropOffsetX,window._cropOffsetY,img.naturalWidth*z,img.naturalHeight*z);
   }
   window.selCatCroppedIcon=off.toDataURL('image/png');
-  // Show confirmed state
-  const hint=document.querySelector('#catCustomGrid p');
-  if(hint){hint.style.color='var(--green)';hint.textContent='✓ Cropped & ready';}
-  _updateCatPreview();
+  saveToIconLibrary(window.selCatCroppedIcon);
+  window._cropImg=null; // return to grid view
+  renderPage();
+  requestAnimationFrame(()=>_updateCatPreview());
 };
 
 window.clearCustomIcon=()=>{
@@ -7586,7 +7606,7 @@ function _updateCatPreview(){
   const color=CAT_COLORS[window.selCatColor]||CAT_COLORS[0];
   box.style.background=color+'22';
   let iconHtml;
-  if(window.selCatIconMode==='custom'&&window.selCatCroppedIcon){
+  if((window.selCatIconMode==='custom'||window.selCatIconMode==='upload')&&window.selCatCroppedIcon){
     iconHtml=renderCatIcon(window.selCatCroppedIcon,30,true);
   } else if(window.selCatIconMode==='image'&&window.selCatImageIcon>=0&&window.selCatImageIcon<CAT_IMAGE_ICONS.length){
     iconHtml=renderCatIcon(CAT_IMAGE_ICONS[window.selCatImageIcon].url,26,true);
@@ -7608,10 +7628,21 @@ window.setCatIconMode=mode=>{
   const customGrid=document.getElementById('catCustomGrid');
   if(emojiGrid)emojiGrid.style.display=mode==='emoji'?'flex':'none';
   if(imageGrid)imageGrid.style.display=mode==='image'?'grid':'none';
-  if(customGrid)customGrid.style.display=mode==='custom'?'block':'none';
-  if(mode==='custom')requestAnimationFrame(()=>{_attachCropListeners();_drawCrop();});
+  if(customGrid)customGrid.style.display=(mode==='upload'||mode==='custom')?'block':'none';
+  if((mode==='custom'||mode==='upload')&&window._cropImg)requestAnimationFrame(()=>{_attachCropListeners();_drawCrop();});
   _updateCatPreview();
 };
+
+window.pickCatLibIcon=id=>{
+  const item=S.iconLibrary?.[id];if(!item)return;
+  window.selCatCroppedIcon=item.data;window.selCatCustomIcon=item.data;
+  window.selCatIconMode='upload';window._cropImg=null;
+  renderPage();
+  requestAnimationFrame(()=>_updateCatPreview());
+};
+
+window.toggleCatLibEdit=()=>{window._catLibEdit=!window._catLibEdit;renderPage();};
+
 
 window.pickCatEmoji=i=>{
   window.selCatIcon=i;window.selCatImageIcon=-1;
@@ -7655,13 +7686,10 @@ window.startEditCat=key=>{
         window.selCatIconMode='image';
         window.selCatImageIcon=idx;
       } else {
-        // It's a custom uploaded icon
-        window.selCatIconMode='custom';
+        window.selCatIconMode='upload';
         window.selCatCroppedIcon=existing.icon;
         window.selCatCustomIcon=existing.icon;
-        const img=new Image();
-        img.onload=()=>{window._cropImg=img;requestAnimationFrame(()=>{_attachCropListeners();_drawCrop();});};
-        img.src=existing.icon;
+        window._cropImg=null; // don't auto-load into crop editor
       }
     } else {
       window.selCatIconMode='emoji';
@@ -7681,9 +7709,9 @@ window.saveCat=async()=>{
   const key=editCatKey==='__new__'?name.toLowerCase().replace(/\s+/g,'_')+'_'+Date.now():editCatKey;
   const existing=cats[key]||{};
   let icon;
-  if(window.selCatIconMode==='custom'&&window.selCatCroppedIcon){
+  if((window.selCatIconMode==='custom'||window.selCatIconMode==='upload')&&window.selCatCroppedIcon){
     icon=window.selCatCroppedIcon;
-  } else if(window.selCatIconMode==='custom'&&window.selCatCustomIcon){
+  } else if((window.selCatIconMode==='custom'||window.selCatIconMode==='upload')&&window.selCatCustomIcon){
     // Not yet cropped — auto-confirm crop first
     const off=document.createElement('canvas');off.width=200;off.height=200;
     const ctx=off.getContext('2d');
@@ -7718,7 +7746,7 @@ window.startEditSubcat=(catKey,sk)=>{
   else{
     const imgIdx=CAT_IMAGE_ICONS.findIndex(img=>img.url===ic);
     if(imgIdx>=0){_scIconMode='image';_scIconImage=imgIdx;}
-    else if(ic.startsWith('data:')){_scIconMode='custom';_scCroppedIcon=ic;_scCustomIcon=ic;const img=new Image();img.onload=()=>{_scCropImg=img;};img.src=ic;}
+    else if(ic.startsWith('data:')){_scIconMode='upload';_scCroppedIcon=ic;_scCustomIcon=ic;_scCropImg=null;}
     else{_scIconMode='emoji';const idx=CAT_ICONS.indexOf(ic);_scIconEmoji=idx>=0?idx:0;}
   }
   renderPage();
@@ -7751,9 +7779,9 @@ window.deleteSubcat=async(catKey,subcatKey)=>{
 window.setScIconMode=mode=>{
   _scIconMode=mode;
   document.querySelectorAll('.sc-mode-btn').forEach(b=>{const a=b.dataset.mode===mode;b.style.background=a?'rgba(108,99,255,0.8)':'transparent';b.style.color=a?'#fff':'var(--dim)';});
-  const map={emoji:'flex',image:'grid',custom:'block',none:'none'};
-  ['Emoji','Image','Custom'].forEach(n=>{const el=document.getElementById('sc'+n+'Grid');if(el)el.style.display=map[n.toLowerCase()]&&mode===n.toLowerCase()?map[n.toLowerCase()]:'none';});
-  if(mode==='custom')requestAnimationFrame(()=>{
+  const map={emoji:'flex',image:'grid',custom:'block',upload:'block',none:'none'};
+  ['Emoji','Image','Custom'].forEach(n=>{const el=document.getElementById('sc'+n+'Grid');if(el)el.style.display=(mode==='upload'||mode==='custom')&&n==='Custom'?'block':map[n.toLowerCase()]&&mode===n.toLowerCase()?map[n.toLowerCase()]:'none';});
+  if((mode==='custom'||mode==='upload')&&_scCropImg)requestAnimationFrame(()=>{
     _attachIconCropListeners('sc',
       ()=>({img:_scCropImg,zoom:_scCropZoom,offX:_scCropOffX,offY:_scCropOffY,dragging:_scCropDragging,lastX:_scCropLastX,lastY:_scCropLastY,lastDist:_scCropLastDist}),
       s=>{if(s.img!==undefined)_scCropImg=s.img;if(s.zoom!==undefined)_scCropZoom=s.zoom;if(s.offX!==undefined)_scCropOffX=s.offX;if(s.offY!==undefined)_scCropOffY=s.offY;if(s.dragging!==undefined)_scCropDragging=s.dragging;if(s.lastX!==undefined)_scCropLastX=s.lastX;if(s.lastY!==undefined)_scCropLastY=s.lastY;if(s.lastDist!==undefined)_scCropLastDist=s.lastDist;}
@@ -7761,6 +7789,14 @@ window.setScIconMode=mode=>{
     _drawIconCrop('sc',document.getElementById('scCropCanvas'),_scCropImg,_scCropZoom,_scCropOffX,_scCropOffY);
   });
 };
+
+window.pickScLibIcon=id=>{
+  const item=S.iconLibrary?.[id];if(!item)return;
+  _scCroppedIcon=item.data;_scCustomIcon=item.data;_scCropImg=null;
+  _scIconMode='upload';renderPage();
+};
+
+window.toggleScLibEdit=()=>{window._scLibEdit=!window._scLibEdit;renderPage();};
 window.pickScEmoji=i=>{
   _scIconEmoji=i;_scIconImage=-1;
   document.querySelectorAll('.sc-ic-btn').forEach(b=>b.style.borderColor='transparent');
@@ -7804,7 +7840,9 @@ window.confirmScCrop=()=>{
   const off=document.createElement('canvas');off.width=180;off.height=180;
   const ctx=off.getContext('2d');if(_scCropImg)ctx.drawImage(_scCropImg,_scCropOffX,_scCropOffY,_scCropImg.naturalWidth*_scCropZoom,_scCropImg.naturalHeight*_scCropZoom);
   _scCroppedIcon=off.toDataURL('image/png');
-  const hint=document.querySelector('#scCustomGrid p');if(hint){hint.style.color='var(--green)';hint.textContent='✓ Cropped & ready';}
+  saveToIconLibrary(_scCroppedIcon);
+  _scCropImg=null; // return to grid view
+  renderPage();
 };
 window.clearScCustom=()=>{_scCustomIcon=null;_scCroppedIcon=null;_scCropImg=null;_scCropZoom=1;renderPage();};
 
