@@ -6723,8 +6723,9 @@ function _buildIconPickerHTML(ns,iconMode,iconEmoji,iconImage,customIcon,cropped
   const eMode=iconMode==='emoji',iMode=iconMode==='image',lMode=iconMode==='library'||iconMode==='custom'||iconMode==='upload';
   const libItems=Object.entries(S.iconLibrary||{}).sort((a,b)=>b[1].createdAt-a[1].createdAt);
   const libEditMode=window[`_${ns}LibEdit`]||false;
-  // If a file has been picked and we're in crop mode, show the crop UI inside the library panel
-  const cMode=lMode&&!!customIcon;
+  // Only show crop editor when a new file is actively being cropped (not when a library icon is just selected)
+  const hasCropImg=(ns==='pm'&&window._pmCropImg)||(ns==='asset'&&window._assetCropImg)||(ns==='ledger'&&window._ledgerCropImg)||(ns==='cat'&&window._catCropImg);
+  const cMode=lMode&&!!customIcon&&!!hasCropImg;
 
   return`<div>
     <!-- MODE TABS -->
@@ -6910,7 +6911,8 @@ window.confirmIconCrop_pm=()=>{
   const ctx=off.getContext('2d');if(_pmCropImg)ctx.drawImage(_pmCropImg,_pmCropOffX,_pmCropOffY,_pmCropImg.naturalWidth*_pmCropZoom,_pmCropImg.naturalHeight*_pmCropZoom);
   _pmCroppedIcon=off.toDataURL('image/png');
   saveToIconLibrary(_pmCroppedIcon);
-  const hint=document.querySelector('#pmCustomGrid p');if(hint){hint.style.color='var(--green)';hint.textContent='✓ Cropped & ready';}
+  _pmCropImg=null; // return to grid view
+  renderPage();
 };
 window.clearIconCustom_pm=()=>{_pmCustomIcon=null;_pmCroppedIcon=null;_pmCropImg=null;_pmCropZoom=1;renderPage();};
 // Legacy stub (kept for any remaining refs)
@@ -8376,7 +8378,8 @@ window.confirmIconCrop_asset=()=>{
   const ctx=off.getContext('2d');if(_assetCropImg)ctx.drawImage(_assetCropImg,_assetCropOffX,_assetCropOffY,_assetCropImg.naturalWidth*_assetCropZoom,_assetCropImg.naturalHeight*_assetCropZoom);
   _assetCroppedIcon=off.toDataURL('image/png');
   saveToIconLibrary(_assetCroppedIcon);
-  const hint=document.querySelector('#assetCustomGrid p');if(hint){hint.style.color='var(--green)';hint.textContent='✓ Cropped & ready';}
+  _assetCropImg=null; // return to grid view
+  renderPage();
 };
 window.clearIconCustom_asset=()=>{_assetCustomIcon=null;_assetCroppedIcon=null;_assetCropImg=null;_assetCropZoom=1;renderPage();};
 
@@ -8415,13 +8418,10 @@ window.confirmIconCrop_ledger=()=>{
   const ctx=off.getContext('2d');if(_ledgerCropImg)ctx.drawImage(_ledgerCropImg,_ledgerCropOffX,_ledgerCropOffY,_ledgerCropImg.naturalWidth*_ledgerCropZoom,_ledgerCropImg.naturalHeight*_ledgerCropZoom);
   _ledgerCroppedIcon=off.toDataURL('image/png');
   saveToIconLibrary(_ledgerCroppedIcon);
-  const hint=document.querySelector('#ledgerCustomGrid p');if(hint){hint.style.color='var(--green)';hint.textContent='✓ Cropped & ready';}
+  _ledgerCropImg=null; // return to grid view
+  renderPage();
 };
-window.clearIconCustom_ledger=()=>{_ledgerCustomIcon=null;_ledgerCroppedIcon=null;_ledgerCropImg=null;_ledgerCropZoom=1;
-  // refresh custom grid
-  const grid=document.getElementById('ledgerCustomGrid');
-  if(grid)grid.innerHTML=`<label for="ledgerFileInput" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:32px 16px;border-radius:16px;border:2px dashed rgba(108,99,255,0.4);background:rgba(108,99,255,0.05);cursor:pointer"><span style="font-size:36px">📁</span><p style="font-size:14px;font-weight:600;color:var(--accent)">Tap to upload icon</p><p style="font-size:11px;color:var(--dim)">SVG, PNG or JPG · Any size</p></label><input id="ledgerFileInput" type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp" style="display:none" onchange="handleIconFileUpload_ledger(event)">`;
-};
+window.clearIconCustom_ledger=()=>{_ledgerCustomIcon=null;_ledgerCroppedIcon=null;_ledgerCropImg=null;_ledgerCropZoom=1;renderPage();};
 
 let selAssetType=0;
 function renderAssetForm(){
