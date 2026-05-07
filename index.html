@@ -6720,7 +6720,7 @@ function _buildIconPickerHTML(ns,iconMode,iconEmoji,iconImage,customIcon,cropped
   const libItems=Object.entries(S.iconLibrary||{}).sort((a,b)=>b[1].createdAt-a[1].createdAt);
   const libEditMode=window[`_${ns}LibEdit`]||false;
   // Only show crop editor when a new file is actively being cropped (not when a library icon is just selected)
-  const hasCropImg=(ns==='pm'&&window._pmCropImg)||(ns==='asset'&&window._assetCropImg)||(ns==='ledger'&&window._ledgerCropImg)||(ns==='cat'&&window._catCropImg);
+  const hasCropImg=(ns==='pm'?_pmCropImg:(ns==='asset'?_assetCropImg:(ns==='ledger'?_ledgerCropImg:window._catCropImg)));
   const cMode=lMode&&!!customIcon&&!!hasCropImg;
 
   return`<div>
@@ -6770,7 +6770,7 @@ function _buildIconPickerHTML(ns,iconMode,iconEmoji,iconImage,customIcon,cropped
         <label style="aspect-ratio:1;border-radius:12px;border:2px dashed rgba(108,99,255,0.5);background:rgba(108,99,255,0.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:3px" title="Upload new icon">
           <span style="font-size:20px">⬆️</span>
           <span style="font-size:8px;font-weight:700;color:var(--accent)">Upload</span>
-          <input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp,image/*" style="display:none" onchange="handleIconFileUpload_${ns}(event);setIconMode_${ns}('library')">
+          <input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp,image/*" style="display:none" onchange="handleIconFileUpload_${ns}(event)">
         </label>
         <!-- Saved icons -->
         ${libItems.map(([id,item])=>`<div style="position:relative;aspect-ratio:1">
@@ -6847,22 +6847,34 @@ window.setIconLibSubTab_pm    =t=>{window._pmLibSubTab=t;renderPage();};
 window.setIconLibSubTab_asset =t=>{window._assetLibSubTab=t;renderPage();};
 window.setIconLibSubTab_ledger=t=>{window._ledgerLibSubTab=t;renderPage();};
 window.setIconLibSubTab_cat   =t=>{window._catLibSubTab=t;renderPage();};
-// Re-render just the icon picker portion inside the ledger modal (avoids nuking the whole page)
+// Re-render just the icon picker portion inside the ledger modal
 function _rerenderLedgerIconModal(){
   const modal=document.getElementById('modalContainer');
-  if(!modal||!modal.innerHTML)return; // modal not open — fall back
-  const pickerEl=modal.querySelector('[id$="LibraryGrid"]')?.closest('div > div:last-of-type') || modal.querySelector('.modal-sheet');
-  if(!pickerEl)return;
-  // Rebuild the full modal inner content
-  const lid=S.activeLedgerId;const cur=S.ledgers[lid]||{};
+  if(!modal||!modal.innerHTML)return;
   const sheet=modal.querySelector('.modal-sheet');
   if(!sheet)return;
-  // Only refresh the picker div (3rd child after handle + header)
-  const pickerWrapper=sheet.children[2];
-  if(pickerWrapper){pickerWrapper.outerHTML=buildIconPicker('ledger');}
-  // Re-attach crop listeners if needed
+  const lid=S.activeLedgerId;
+  const cur=S.ledgers[lid]||{};
+  sheet.innerHTML=`
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+      <div id="ledgerIconPreview" style="width:48px;height:48px;border-radius:14px;background:rgba(108,99,255,0.15);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">${renderCatIcon(_ledgerCurrentIcon(),28,true)}</div>
+      <div>
+        <p style="font-size:18px;font-weight:700">Ledger Icon</p>
+        <p style="font-size:12px;color:var(--muted)">Choose an icon for ${cur.name||'this ledger'}</p>
+      </div>
+    </div>
+    ${buildIconPicker('ledger')}
+    <button class="btn-primary" style="padding:14px;margin-top:18px" onclick="saveLedgerIcon()">Save Icon</button>`;
+  // Attach crop listeners if a new image is loaded for cropping
   if(_ledgerCropImg){
-    requestAnimationFrame(()=>{_attachIconCropListeners('ledger',()=>({img:_ledgerCropImg,zoom:_ledgerCropZoom,offX:_ledgerCropOffX,offY:_ledgerCropOffY,dragging:_ledgerCropDragging,lastX:_ledgerCropLastX,lastY:_ledgerCropLastY,lastDist:_ledgerCropLastDist}),s2=>{if(s2.img!==undefined)_ledgerCropImg=s2.img;if(s2.zoom!==undefined)_ledgerCropZoom=s2.zoom;if(s2.offX!==undefined)_ledgerCropOffX=s2.offX;if(s2.offY!==undefined)_ledgerCropOffY=s2.offY;if(s2.dragging!==undefined)_ledgerCropDragging=s2.dragging;if(s2.lastX!==undefined)_ledgerCropLastX=s2.lastX;if(s2.lastY!==undefined)_ledgerCropLastY=s2.lastY;if(s2.lastDist!==undefined)_ledgerCropLastDist=s2.lastDist;});_drawIconCrop('ledger',document.getElementById('ledgerCropCanvas'),_ledgerCropImg,_ledgerCropZoom,_ledgerCropOffX,_ledgerCropOffY);});
+    requestAnimationFrame(()=>{
+      _attachIconCropListeners('ledger',
+        ()=>({img:_ledgerCropImg,zoom:_ledgerCropZoom,offX:_ledgerCropOffX,offY:_ledgerCropOffY,dragging:_ledgerCropDragging,lastX:_ledgerCropLastX,lastY:_ledgerCropLastY,lastDist:_ledgerCropLastDist}),
+        s2=>{if(s2.img!==undefined)_ledgerCropImg=s2.img;if(s2.zoom!==undefined)_ledgerCropZoom=s2.zoom;if(s2.offX!==undefined)_ledgerCropOffX=s2.offX;if(s2.offY!==undefined)_ledgerCropOffY=s2.offY;if(s2.dragging!==undefined)_ledgerCropDragging=s2.dragging;if(s2.lastX!==undefined)_ledgerCropLastX=s2.lastX;if(s2.lastY!==undefined)_ledgerCropLastY=s2.lastY;if(s2.lastDist!==undefined)_ledgerCropLastDist=s2.lastDist;}
+      );
+      _drawIconCrop('ledger',document.getElementById('ledgerCropCanvas'),_ledgerCropImg,_ledgerCropZoom,_ledgerCropOffX,_ledgerCropOffY);
+    });
   }
 }
 window.toggleLibEdit_pm    =()=>{window._pmLibEdit=!window._pmLibEdit;renderPage();};
