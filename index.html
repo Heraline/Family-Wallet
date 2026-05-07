@@ -6355,7 +6355,7 @@ window.openLedgerIconModal=()=>{
   // Initialise state from current icon
   _ledgerIconMode='emoji';_ledgerIconEmoji=0;_ledgerIconImage=-1;_ledgerCustomIcon=null;_ledgerCroppedIcon=null;_ledgerCropImg=null;_ledgerCropZoom=1;_ledgerCropOffX=0;_ledgerCropOffY=0;
   if(cur.customIcon){
-    _ledgerIconMode='custom';_ledgerCroppedIcon=cur.customIcon;_ledgerCustomIcon=cur.customIcon;
+    _ledgerIconMode='library';_ledgerCroppedIcon=cur.customIcon;_ledgerCustomIcon=cur.customIcon;
     const img=new Image();img.onload=()=>{_ledgerCropImg=img;};img.src=cur.customIcon;
   } else {
     const imgIdx=cur.icon?CAT_IMAGE_ICONS.findIndex(x=>x.url===cur.icon):-1;
@@ -6377,8 +6377,8 @@ window.openLedgerIconModal=()=>{
       <button class="btn-primary" style="padding:14px;margin-top:18px" onclick="saveLedgerIcon()">Save Icon</button>
     </div>
   </div>`;
-  // attach crop listeners if in custom mode
-  if(_ledgerIconMode==='custom'){
+  // attach crop listeners if in custom/library mode
+  if(_ledgerIconMode==='custom'||_ledgerIconMode==='library'){
     requestAnimationFrame(()=>{_attachIconCropListeners('ledger',()=>({img:_ledgerCropImg,zoom:_ledgerCropZoom,offX:_ledgerCropOffX,offY:_ledgerCropOffY,dragging:_ledgerCropDragging,lastX:_ledgerCropLastX,lastY:_ledgerCropLastY,lastDist:_ledgerCropLastDist}),s=>{if(s.img!==undefined)_ledgerCropImg=s.img;if(s.zoom!==undefined)_ledgerCropZoom=s.zoom;if(s.offX!==undefined)_ledgerCropOffX=s.offX;if(s.offY!==undefined)_ledgerCropOffY=s.offY;if(s.dragging!==undefined)_ledgerCropDragging=s.dragging;if(s.lastX!==undefined)_ledgerCropLastX=s.lastX;if(s.lastY!==undefined)_ledgerCropLastY=s.lastY;if(s.lastDist!==undefined)_ledgerCropLastDist=s.lastDist;});_drawIconCrop('ledger',document.getElementById('ledgerCropCanvas'),_ledgerCropImg,_ledgerCropZoom,_ledgerCropOffX,_ledgerCropOffY);});
   }
 };
@@ -6392,7 +6392,7 @@ window.pickLedgerIconModal=i=>{
 window.saveLedgerIcon=async()=>{
   const lid=S.activeLedgerId;
   let icon=null,customIcon=null;
-  if(_ledgerIconMode==='custom'&&(_ledgerCroppedIcon||_ledgerCustomIcon)){
+  if((_ledgerIconMode==='custom'||_ledgerIconMode==='library')&&(_ledgerCroppedIcon||_ledgerCustomIcon)){
     customIcon=_ledgerCroppedIcon||_ledgerCustomIcon;
     icon=customIcon;
   } else if(_ledgerIconMode==='image'&&_ledgerIconImage>=0){
@@ -6648,8 +6648,8 @@ let _pmCroppedIcon=null;
 let _pmCropZoom=1,_pmCropOffX=0,_pmCropOffY=0,_pmCropImg=null,_pmCropDragging=false,_pmCropLastX=0,_pmCropLastY=0,_pmCropLastDist=0;
 
 function _pmCurrentIcon(){
-  if(_pmIconMode==='custom'&&_pmCroppedIcon)return _pmCroppedIcon;
-  if(_pmIconMode==='custom'&&_pmCustomIcon)return _pmCustomIcon;
+  if((_pmIconMode==='custom'||_pmIconMode==='library')&&_pmCroppedIcon)return _pmCroppedIcon;
+  if((_pmIconMode==='custom'||_pmIconMode==='library')&&_pmCustomIcon)return _pmCustomIcon;
   if(_pmIconMode==='image'&&_pmIconImage>=0&&_pmIconImage<CAT_IMAGE_ICONS.length)return CAT_IMAGE_ICONS[_pmIconImage].url;
   return CAT_ICONS[Math.max(0,_pmIconEmoji)]||'💳';
 }
@@ -6720,18 +6720,18 @@ function _renderBankPresetIcon(p,size=52){
 }
 
 function _buildIconPickerHTML(ns,iconMode,iconEmoji,iconImage,customIcon,croppedIcon,cropZoom){
-  const eMode=iconMode==='emoji',iMode=iconMode==='image',cMode=iconMode==='custom',lMode=iconMode==='library';
-  const libSubTab=window[`_${ns}LibSubTab`]||'custom';
+  const eMode=iconMode==='emoji',iMode=iconMode==='image',lMode=iconMode==='library'||iconMode==='custom'||iconMode==='upload';
   const libItems=Object.entries(S.iconLibrary||{}).sort((a,b)=>b[1].createdAt-a[1].createdAt);
   const libEditMode=window[`_${ns}LibEdit`]||false;
+  // If a file has been picked and we're in crop mode, show the crop UI inside the library panel
+  const cMode=lMode&&!!customIcon;
 
   return`<div>
     <!-- MODE TABS -->
     <div style="display:flex;background:rgba(255,255,255,0.05);border-radius:12px;padding:3px;margin-bottom:12px">
       <button class="${ns}-mode-btn" data-mode="emoji" onclick="setIconMode_${ns}('emoji')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${eMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Emoji</button>
       <button class="${ns}-mode-btn" data-mode="image" onclick="setIconMode_${ns}('image')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${iMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Image</button>
-      <button class="${ns}-mode-btn" data-mode="custom" onclick="setIconMode_${ns}('custom')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${cMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Upload</button>
-      <button class="${ns}-mode-btn" data-mode="library" onclick="setIconMode_${ns}('library')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${lMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">📚</button>
+      <button class="${ns}-mode-btn" data-mode="library" onclick="setIconMode_${ns}('library')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;transition:all 0.15s;${lMode?'background:rgba(108,99,255,0.8);color:#fff':'background:transparent;color:var(--dim)'}">Upload</button>
     </div>
 
     <!-- EMOJI GRID -->
@@ -6744,9 +6744,10 @@ function _buildIconPickerHTML(ns,iconMode,iconEmoji,iconImage,customIcon,cropped
       ${CAT_IMAGE_ICONS.map((img,i)=>`<button onclick="pickIconImage_${ns}(${i})" class="${ns}-img-btn" style="aspect-ratio:1;border-radius:12px;background:${i===iconImage?'rgba(108,99,255,0.15)':'rgba(255,255,255,0.04)'};border:2px solid ${i===iconImage?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;padding:6px" title="${img.label}"><img src="${img.url}" style="width:100%;height:100%;object-fit:contain;border-radius:4px" loading="lazy"></button>`).join('')}
     </div>
 
-    <!-- UPLOAD / CROP -->
-    <div id="${ns}CustomGrid" style="display:${cMode?'block':'none'}">
-      ${customIcon?`
+    <!-- UPLOAD + LIBRARY (combined) -->
+    <div id="${ns}LibraryGrid" style="display:${lMode?'block':'none'}">
+      ${cMode?`
+      <!-- CROP UI (shown after file picked) -->
       <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
         <div style="position:relative;width:200px;height:200px;border-radius:16px;overflow:hidden;border:2px solid var(--accent);background:rgba(255,255,255,0.06);touch-action:none" id="${ns}CropContainer">
           <canvas id="${ns}CropCanvas" width="200" height="200" style="display:block;width:200px;height:200px;cursor:grab"></canvas>
@@ -6762,34 +6763,26 @@ function _buildIconPickerHTML(ns,iconMode,iconEmoji,iconImage,customIcon,cropped
         </div>
         ${croppedIcon?`<p style="font-size:11px;color:var(--green);font-weight:600">✓ Cropped & ready</p>`:'<p style="font-size:11px;color:var(--dim)">Drag · pinch to zoom · Tap "Use this"</p>'}
       </div>`:`
-      <label for="${ns}FileInput" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:32px 16px;border-radius:16px;border:2px dashed rgba(108,99,255,0.4);background:rgba(108,99,255,0.05);cursor:pointer">
-        <span style="font-size:36px">📁</span>
-        <p style="font-size:14px;font-weight:600;color:var(--accent)">Tap to upload icon</p>
-        <p style="font-size:11px;color:var(--dim)">SVG, PNG or JPG · Any size</p>
-      </label>
-      <input id="${ns}FileInput" type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp" style="display:none" onchange="handleIconFileUpload_${ns}(event)">`}
-    </div>
-
-    <!-- LIBRARY -->
-    <div id="${ns}LibraryGrid" style="display:${lMode?'block':'none'}">
-      <!-- MY CUSTOM LIBRARY -->
+      <!-- GRID: upload cell first, then saved icons -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <p style="font-size:11px;color:var(--dim)">${libItems.length?libItems.length+' saved icons':'No icons saved yet'}</p>
         ${libItems.length?`<button onclick="toggleLibEdit_${ns}()" style="font-size:11px;font-weight:700;color:${libEditMode?'var(--red)':'var(--accent)'};background:none;border:none;cursor:pointer">${libEditMode?'Done':'Edit'}</button>`:''}
       </div>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:240px;overflow-y:auto;padding:2px">
-        <!-- Upload cell -->
-        <label style="aspect-ratio:1;border-radius:12px;border:2px dashed rgba(108,99,255,0.4);background:rgba(108,99,255,0.05);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px" title="Upload new">
-          ⬆️
-          <input type="file" accept="image/*" style="display:none" onchange="handleIconFileUpload_${ns}(event);setIconMode_${ns}('custom')">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:260px;overflow-y:auto;padding:2px">
+        <!-- Upload cell (always first) -->
+        <label style="aspect-ratio:1;border-radius:12px;border:2px dashed rgba(108,99,255,0.5);background:rgba(108,99,255,0.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:3px" title="Upload new icon">
+          <span style="font-size:20px">⬆️</span>
+          <span style="font-size:8px;font-weight:700;color:var(--accent)">Upload</span>
+          <input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp,image/*" style="display:none" onchange="handleIconFileUpload_${ns}(event);setIconMode_${ns}('library')">
         </label>
+        <!-- Saved icons -->
         ${libItems.map(([id,item])=>`<div style="position:relative;aspect-ratio:1">
           <button onclick="${libEditMode?'':`pickLibIcon_${ns}('${id}')`}" style="width:100%;height:100%;border-radius:12px;border:2px solid var(--border);background:rgba(255,255,255,0.04);padding:4px;cursor:pointer;overflow:hidden">
             <img src="${item.data}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
           </button>
           ${libEditMode?`<button onclick="deleteLibIcon('${id}')" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:2px solid var(--bg);font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2">✕</button>`:''}
         </div>`).join('')}
-      </div>
+      </div>`}
     </div>
   </div>`;
 }
@@ -6870,10 +6863,10 @@ window.deleteLibIcon=async id=>{
 function _pickLibIconForNs(ns,id){
   const item=S.iconLibrary[id];if(!item)return;
   const data=item.data;
-  if(ns==='pm'){_pmIconMode='custom';_pmCroppedIcon=data;_pmCustomIcon=data;renderPage();}
-  else if(ns==='asset'){_assetIconMode='custom';_assetCroppedIcon=data;_assetCustomIcon=data;renderPage();}
-  else if(ns==='ledger'){_ledgerIconMode='custom';_ledgerCroppedIcon=data;_ledgerCustomIcon=data;renderPage();}
-  else if(ns==='cat'){window._catCroppedIcon=data;window._catCustomIcon=data;window._catIconMode='custom';renderPage();}
+  if(ns==='pm'){_pmIconMode='library';_pmCroppedIcon=data;_pmCustomIcon=data;renderPage();}
+  else if(ns==='asset'){_assetIconMode='library';_assetCroppedIcon=data;_assetCustomIcon=data;renderPage();}
+  else if(ns==='ledger'){_ledgerIconMode='library';_ledgerCroppedIcon=data;_ledgerCustomIcon=data;renderPage();}
+  else if(ns==='cat'){window._catCroppedIcon=data;window._catCustomIcon=data;window._catIconMode='library';renderPage();}
 }
 window.pickLibIcon_pm    =id=>_pickLibIconForNs('pm',id);
 window.pickLibIcon_asset =id=>_pickLibIconForNs('asset',id);
@@ -6889,10 +6882,10 @@ function _pickBankPresetForNs(ns,idx){
   ctx.font='32px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.emoji,40,42);
   const data=c.toDataURL('image/png');
   _pickLibIconForNs(ns,-1);// clear first
-  if(ns==='pm'){_pmIconMode='custom';_pmCroppedIcon=data;_pmCustomIcon=data;renderPage();}
-  else if(ns==='asset'){_assetIconMode='custom';_assetCroppedIcon=data;_assetCustomIcon=data;renderPage();}
-  else if(ns==='ledger'){_ledgerIconMode='custom';_ledgerCroppedIcon=data;_ledgerCustomIcon=data;renderPage();}
-  else if(ns==='cat'){window._catCroppedIcon=data;window._catCustomIcon=data;window._catIconMode='custom';renderPage();}
+  if(ns==='pm'){_pmIconMode='library';_pmCroppedIcon=data;_pmCustomIcon=data;renderPage();}
+  else if(ns==='asset'){_assetIconMode='library';_assetCroppedIcon=data;_assetCustomIcon=data;renderPage();}
+  else if(ns==='ledger'){_ledgerIconMode='library';_ledgerCroppedIcon=data;_ledgerCustomIcon=data;renderPage();}
+  else if(ns==='cat'){window._catCroppedIcon=data;window._catCustomIcon=data;window._catIconMode='library';renderPage();}
 }
 window.pickBankPreset_pm    =i=>_pickBankPresetForNs('pm',i);
 window.pickBankPreset_asset =i=>_pickBankPresetForNs('asset',i);
@@ -8360,8 +8353,8 @@ let _assetCroppedIcon=null;
 let _assetCropZoom=1,_assetCropOffX=0,_assetCropOffY=0,_assetCropImg=null,_assetCropDragging=false,_assetCropLastX=0,_assetCropLastY=0,_assetCropLastDist=0;
 
 function _assetCurrentIcon(){
-  if(_assetIconMode==='custom'&&_assetCroppedIcon)return _assetCroppedIcon;
-  if(_assetIconMode==='custom'&&_assetCustomIcon)return _assetCustomIcon;
+  if((_assetIconMode==='custom'||_assetIconMode==='library')&&_assetCroppedIcon)return _assetCroppedIcon;
+  if((_assetIconMode==='custom'||_assetIconMode==='library')&&_assetCustomIcon)return _assetCustomIcon;
   if(_assetIconMode==='image'&&_assetIconImage>=0&&_assetIconImage<CAT_IMAGE_ICONS.length)return CAT_IMAGE_ICONS[_assetIconImage].url;
   return CAT_ICONS[Math.max(0,_assetIconEmoji)]||'🏦';
 }
@@ -8396,8 +8389,8 @@ let _ledgerCroppedIcon=null;
 let _ledgerCropZoom=1,_ledgerCropOffX=0,_ledgerCropOffY=0,_ledgerCropImg=null,_ledgerCropDragging=false,_ledgerCropLastX=0,_ledgerCropLastY=0,_ledgerCropLastDist=0;
 
 function _ledgerCurrentIcon(){
-  if(_ledgerIconMode==='custom'&&_ledgerCroppedIcon)return _ledgerCroppedIcon;
-  if(_ledgerIconMode==='custom'&&_ledgerCustomIcon)return _ledgerCustomIcon;
+  if((_ledgerIconMode==='custom'||_ledgerIconMode==='library')&&_ledgerCroppedIcon)return _ledgerCroppedIcon;
+  if((_ledgerIconMode==='custom'||_ledgerIconMode==='library')&&_ledgerCustomIcon)return _ledgerCustomIcon;
   if(_ledgerIconMode==='image'&&_ledgerIconImage>=0&&_ledgerIconImage<CAT_IMAGE_ICONS.length)return CAT_IMAGE_ICONS[_ledgerIconImage].url;
   return CAT_ICONS[Math.max(0,_ledgerIconEmoji)]||'🏠';
 }
@@ -8480,7 +8473,7 @@ window.editAsset=id=>{
   if(a.customIcon){
     const idx=CAT_IMAGE_ICONS.findIndex(img=>img.url===a.customIcon);
     if(idx>=0){_assetIconMode='image';_assetIconImage=idx;}
-    else{_assetIconMode='custom';_assetCroppedIcon=a.customIcon;_assetCustomIcon=a.customIcon;const img=new Image();img.onload=()=>{_assetCropImg=img;};img.src=a.customIcon;}
+    else{_assetIconMode='library';_assetCroppedIcon=a.customIcon;_assetCustomIcon=a.customIcon;const img=new Image();img.onload=()=>{_assetCropImg=img;};img.src=a.customIcon;}
   } else if(a.iconEmoji){
     _assetIconMode='emoji';const idx=CAT_ICONS.indexOf(a.iconEmoji);_assetIconEmoji=idx>=0?idx:0;
   }
@@ -8496,7 +8489,7 @@ window.saveAsset=async()=>{
   const currency=document.getElementById('assetCurrency')?.value||S.ledgerCurrency;
   // Resolve custom icon
   let customIcon=null,iconEmoji=null;
-  if(_assetIconMode==='custom'&&(_assetCroppedIcon||_assetCustomIcon)){
+  if((_assetIconMode==='custom'||_assetIconMode==='library')&&(_assetCroppedIcon||_assetCustomIcon)){
     if(_assetCroppedIcon){customIcon=_assetCroppedIcon;}
     else{const off=document.createElement('canvas');off.width=200;off.height=200;const ctx=off.getContext('2d');if(_assetCropImg)ctx.drawImage(_assetCropImg,_assetCropOffX,_assetCropOffY,_assetCropImg.naturalWidth*_assetCropZoom,_assetCropImg.naturalHeight*_assetCropZoom);customIcon=off.toDataURL('image/png');}
   } else if(_assetIconMode==='image'&&_assetIconImage>=0){
