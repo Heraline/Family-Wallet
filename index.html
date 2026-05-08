@@ -2878,6 +2878,10 @@ function attachStatsListeners(){
 
 // ── CALENDAR VIEW ──
 function renderCalendar(){
+  // Week navigation state — which week offset from today's week
+  if(S.calWeekOffset===undefined)S.calWeekOffset=0;
+  const calExpanded=S.calExpanded||false;
+
   const ym=S.calendarMonth;
   const [yr,mo]=ym.split('-').map(Number);
   const nowYm=localYm();
@@ -2885,7 +2889,7 @@ function renderCalendar(){
   const isCurrentMonth=ym===nowYm;
   const monthLabel=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'short',year:'numeric'});
 
-  // ── TOTAL VIEW: normalise cross-ledger txs to user's personal share in MYR ──
+  // ── TOTAL VIEW ──
   let _calTxArr;
   if(S.totalView){
     const _uid=S.user.uid;
@@ -2907,6 +2911,244 @@ function renderCalendar(){
     _calTxArr=txArr();
   }
   const cur=S.totalView?CURRENCIES['MYR']:getCur();
+
+  const all=_calTxArr;
+  const monthTxs=all.filter(t=>t.date&&t.date.startsWith(ym));
+
+  // Build daily totals map
+  const daily={};
+  all.forEach(t=>{
+    if(!daily[t.date])daily[t.date]={inc:0,exp:0};
+    if(t.type==='income')daily[t.date].inc+=t.amount;
+    else daily[t.date].exp+=t.amount;
+  });
+
+  const totalInc=monthTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const totalExp=monthTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const balance=totalInc-totalExp;
+  const carryOver=all.filter(t=>t.date&&t.date<ym+'-01').reduce((s,t)=>s+(t.type==='income'?t.amount:-t.amount),0);
+
+  const firstDay=new Date(yr,mo-1,1).getDay();
+  const daysInMonth=new Date(yr,mo,0).getDate();
+  const cells=[];
+  for(let i=0;i<firstDay;i++)cells.push(null);
+  for(let d=1;d<=daysInMonth;d++)cells.push(d);
+
+  const DAY_LABELS_SHORT=['S','M','T','W','T','F','S'];
+  const DAY_LABELS_FULL=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  const selDay=S.calendarDay;
+  const selDayTxs=selDay?all.filter(t=>t.date===selDay).sort((a,b)=>(b.ts||0)-(a.ts||0)):[];
+  const cats=getCats();
+
+  const maxDayExp=Math.max(1,...Object.values(daily).map(d=>d.exp));
+
+  // Budget circle
+  const calBudgets=S.budgets||{};
+  const calManualBudget=parseFloat(calBudgets._total)||0;
+  const calCatBudget=Object.entries(calBudgets).filter(([k])=>k!=='_total'&&!k.includes('__')).reduce((s,[,v])=>s+(parseFloat(v)||0),0);
+  const calTotalBudget=calManualBudget>0?calManualBudget:calCatBudget;
+  const calUsedPct=calTotalBudget>0?Math.min(100,(totalExp/calTotalBudget)*100):0;
+  const calRemainingPct=Math.max(0,100-calUsedPct);
+  const circleR=26,circleC=2*Math.PI*circleR;
+  const circleDash=((calRemainingPct/100)*circleC).toFixed(1);
+  const circleColor=calRemainingPct<20?'var(--red)':calRemainingPct<40?'var(--yellow)':'#6C63FF';
+
+  const nowDate=nowInTz(lTz());
+  const topDateLine1=nowDate.toLocaleDateString('en-MY',{weekday:'long'});
+  const topDateLine2=nowDate.toLocaleDateString('en-MY',{day:'numeric',month:'long'});
+
+  // ── WEEK STRIP LOGIC ──
+  // Anchor: Monday of the week containing todayStr, offset by S.calWeekOffset weeks
+  const todayDate=new Date(todayStr+'T00:00:00');
+  const todayDow=todayDate.getDay(); // 0=Sun
+  // Find Monday of this week (or Sunday if week starts Sun — use Mon for cleaner strips)
+  const weekStart=new Date(todayDate);
+  weekStart.setDate(todayDate.getDate()-todayDow+(S.calWeekOffset*7));
+  // Build 7-day strip from weekStart (Sun)
+  const weekDays=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
+    const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    weekDays.push({date:d,ds,dow:d.getDay(),dayNum:d.getDate()});
+  }
+  const weekLabel=`${weekDays[0].date.toLocaleDateString('en-MY',{month:'short',day:'numeric'})} – ${weekDays[6].date.toLocaleDateString('en-MY',{month:'short',day:'numeric'})}`;
+  // Can we go forward? Don't allow beyond current week
+  const canNextWeek=S.calWeekOffset<0;
+
+  return`<div class="fade-in" style="display:flex;flex-direction:column;min-height:100%;background:var(--bg);padding-bottom:calc(90px + env(safe-area-inset-bottom))">
+
+    <!-- TOP BAR -->
+    <div style="padding:52px 20px 0;display:flex;align-items:flex-start;justify-content:space-between">
+      <div>
+        <p style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:2px">${topDateLine1}</p>
+        <p style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--text);line-height:1.05">${topDateLine2}</p>
+        <p style="font-size:12px;color:var(--dim);margin-top:3px">${monthLabel}${S.totalView?' · My Finance':''}</p>
+      </div>
+      <!-- Budget circle -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div style="position:relative;width:64px;height:64px">
+          <svg width="64" height="64" style="transform:rotate(-90deg)">
+            <circle cx="32" cy="32" r="${circleR}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/>
+            ${calTotalBudget>0
+              ?`<circle cx="32" cy="32" r="${circleR}" fill="none" stroke="${circleColor}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${circleDash} ${circleC.toFixed(1)}" stroke-dashoffset="0" style="transition:stroke-dasharray 0.6s ease"/>`
+              :`<circle cx="32" cy="32" r="${circleR}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="5" stroke-dasharray="4 6"/>`}
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            ${calTotalBudget>0
+              ?`<p style="font-size:13px;font-weight:800;color:var(--text);line-height:1">${Math.round(calRemainingPct)}%</p><p style="font-size:8px;color:var(--dim);margin-top:1px">left</p>`
+              :`<p style="font-size:16px">💰</p>`}
+          </div>
+        </div>
+        <p style="font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--muted)">Budget</p>
+      </div>
+    </div>
+
+    <!-- SUMMARY CARD -->
+    <div style="margin:16px 16px 0;background:linear-gradient(135deg,rgba(108,99,255,0.18) 0%,rgba(78,205,196,0.10) 100%);border:1px solid rgba(108,99,255,0.25);border-radius:22px;padding:16px 20px">
+      <p style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">${monthLabel} Summary</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><p style="font-size:10px;color:var(--muted);margin-bottom:2px">Income</p><p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:#4A9EFF">${fmt(totalInc)}</p></div>
+        <div><p style="font-size:10px;color:var(--muted);margin-bottom:2px">Expense</p><p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:var(--red)">${fmt(totalExp)}</p></div>
+        <div><p style="font-size:10px;color:var(--muted);margin-bottom:2px">Carry-over</p><p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:var(--text)">${fmt(Math.abs(carryOver))}</p></div>
+        <div><p style="font-size:10px;color:var(--muted);margin-bottom:2px">Balance</p><p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:${balance+carryOver>=0?'#4A9EFF':'var(--red)'}"> ${fmt(Math.abs(balance+carryOver))}</p></div>
+      </div>
+      ${calTotalBudget>0?`
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <p style="font-size:10px;color:var(--muted)">Budget used</p>
+          <p style="font-size:10px;font-weight:600;color:${circleColor}">${calUsedPct.toFixed(0)}% of ${fmt(calTotalBudget)}</p>
+        </div>
+        <div style="height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${calUsedPct}%;background:${circleColor};border-radius:3px;transition:width 0.5s ease"></div>
+        </div>
+      </div>`:''}
+    </div>
+
+    <!-- WEEK STRIP CARD -->
+    <div style="margin:14px 16px 0;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:22px;overflow:hidden">
+
+      <!-- Week nav header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <p style="font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted)">This week</p>
+          <p style="font-size:11px;color:var(--dim)">${weekLabel}</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button id="calWeekPrev" style="width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,0.07);border:none;color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+          <button id="calWeekNext" style="width:26px;height:26px;border-radius:8px;background:${canNextWeek?'rgba(255,255,255,0.07)':'rgba(255,255,255,0.02)'};border:none;color:${canNextWeek?'var(--text)':'rgba(255,255,255,0.2)'};font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center" ${canNextWeek?'':'disabled'}>›</button>
+        </div>
+      </div>
+
+      <!-- Day labels row -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px 4px">
+        ${weekDays.map(({dow})=>`<div style="text-align:center;font-size:10px;font-weight:700;color:${dow===0?'rgba(255,99,99,0.7)':dow===6?'rgba(74,158,255,0.7)':'var(--muted)'}">
+          ${DAY_LABELS_SHORT[dow]}</div>`).join('')}
+      </div>
+
+      <!-- Day cells -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:0 6px 14px;gap:2px">
+        ${weekDays.map(({ds,dow,dayNum})=>{
+          const dd=daily[ds]||{inc:0,exp:0};
+          const isToday=ds===todayStr;
+          const isSel=ds===selDay;
+          const isFuture=ds>todayStr;
+          const isSun=dow===0,isSat=dow===6;
+          const hasExp=dd.exp>0,hasInc=dd.inc>0;
+          return`<div onclick="selectCalDay('${ds}')" style="display:flex;flex-direction:column;align-items:center;padding:4px 2px 6px;border-radius:14px;cursor:pointer;transition:all 0.15s;background:${isSel?'var(--accent)':isToday?'rgba(108,99,255,0.22)':'transparent'}">
+            <span style="font-size:18px;font-weight:${isToday||isSel?'800':'500'};color:${isSel?'#fff':isToday?'var(--accent)':isFuture?'rgba(255,255,255,0.25)':isSun?'rgba(255,99,99,0.9)':isSat?'rgba(74,158,255,0.9)':'var(--text)'};line-height:1.2;letter-spacing:-0.02em">${dayNum}</span>
+            <div style="display:flex;gap:2px;margin-top:4px;height:6px;align-items:center">
+              ${hasExp?`<div style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,255,255,0.8)':'var(--red)'}"></div>`:''}
+              ${hasInc?`<div style="width:5px;height:5px;border-radius:50%;background:${isSel?'rgba(255,255,255,0.6)':'#4A9EFF'}"></div>`:''}
+              ${!hasExp&&!hasInc?`<div style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.1)"></div>`:''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <!-- Expand / Collapse toggle -->
+      <button id="calExpandBtn" onclick="S.calExpanded=!S.calExpanded;renderPage()" style="width:100%;padding:10px 0;background:rgba(255,255,255,0.03);border:none;border-top:1px solid var(--border);color:var(--dim);font-size:12px;font-weight:600;cursor:pointer;letter-spacing:0.03em;display:flex;align-items:center;justify-content:center;gap:5px">
+        ${calExpanded?'▲ Show less':'▾ Show full month'}
+      </button>
+
+      <!-- FULL MONTH GRID (expandable) -->
+      ${calExpanded?`
+      <div style="padding:0 8px 14px;border-top:1px solid rgba(255,255,255,0.06)">
+        <!-- Month nav -->
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 0 8px">
+          <button id="calPrevBtn" style="width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.07);border:none;color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+          <p style="font-size:13px;font-weight:600;color:var(--muted)">${monthLabel}</p>
+          <button id="calNextBtn" style="width:28px;height:28px;border-radius:8px;background:${isCurrentMonth?'rgba(255,255,255,0.02)':'rgba(255,255,255,0.07)'};border:none;color:${isCurrentMonth?'rgba(255,255,255,0.2)':'var(--text)'};font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center" ${isCurrentMonth?'disabled':''}>›</button>
+        </div>
+        <!-- Day labels -->
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:2px">
+          ${DAY_LABELS_SHORT.map((d,i)=>`<div style="text-align:center;font-size:10px;font-weight:700;color:${i===0?'rgba(255,99,99,0.7)':i===6?'rgba(74,158,255,0.7)':'var(--muted)'};padding:3px 0">${d}</div>`).join('')}
+        </div>
+        <!-- Month cells -->
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">
+          ${cells.map((d,i)=>{
+            if(!d)return`<div></div>`;
+            const ds=`${yr}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const dd=daily[ds]||{inc:0,exp:0};
+            const isToday=ds===todayStr;
+            const isSel=ds===selDay;
+            const col=i%7;
+            const isSun=col===0,isSat=col===6;
+            const isFuture=ds>todayStr;
+            const barW=dd.exp>0?Math.max(2,Math.round((dd.exp/maxDayExp)*18)):0;
+            return`<div onclick="selectCalDay('${ds}')" style="display:flex;flex-direction:column;align-items:center;padding:5px 1px;border-radius:10px;cursor:pointer;transition:all 0.15s;background:${isSel?'var(--accent)':isToday?'rgba(108,99,255,0.22)':'transparent'}">
+              <span style="font-size:12px;font-weight:${isToday||isSel?'800':'500'};color:${isSel?'#fff':isToday?'var(--accent)':isFuture?'rgba(255,255,255,0.22)':isSun?'rgba(255,99,99,0.85)':isSat?'rgba(74,158,255,0.85)':'var(--text)'};line-height:1.2">${d}</span>
+              <div style="height:5px;margin-top:2px;display:flex;align-items:center;justify-content:center">
+                ${dd.exp>0?`<div style="width:${barW}px;min-width:4px;height:3px;border-radius:2px;background:${isSel?'rgba(255,255,255,0.7)':'var(--red)'}"></div>`:dd.inc>0?`<div style="width:5px;height:3px;border-radius:2px;background:${isSel?'rgba(255,255,255,0.5)':'#4A9EFF'}"></div>`:''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`:''}
+    </div>
+
+    <!-- SELECTED DAY PANEL -->
+    ${selDay?`
+    <div style="margin:12px 16px 0;animation:slideUp 0.2s ease">
+      <div style="background:linear-gradient(135deg,rgba(108,99,255,0.15),rgba(78,205,196,0.08));border:1px solid rgba(108,99,255,0.25);border-radius:20px;padding:14px 16px;margin-bottom:10px">
+        <p style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{weekday:'long'})}</p>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <p style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:var(--text)">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{day:'numeric',month:'long'})}</p>
+          ${(daily[selDay]?.exp||0)>0||(daily[selDay]?.inc||0)>0
+            ?`<div style="text-align:right">
+                ${(daily[selDay]?.exp||0)>0?`<p style="font-size:12px;font-weight:700;color:var(--red)">−${fmt(daily[selDay].exp)}</p>`:''}
+                ${(daily[selDay]?.inc||0)>0?`<p style="font-size:12px;font-weight:700;color:#4A9EFF">+${fmt(daily[selDay].inc)}</p>`:''}
+              </div>`:''}
+        </div>
+      </div>
+      ${selDayTxs.length===0
+        ?`<div style="text-align:center;padding:24px 0;color:var(--dim)">
+            <p style="font-size:24px;margin-bottom:6px">🗓</p>
+            <p style="font-size:13px;font-weight:500">No transactions this day</p>
+          </div>`
+        :selDayTxs.map(t=>{
+          const cat=cats[t.category]||DEFAULT_CATS.other;
+          const mem=getMem(t.member);
+          const disp=txDisp(t);
+          return`<div onclick="openTxModal('${t._k}')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background 0.15s" onmouseenter="this.style.background='rgba(255,255,255,0.07)'" onmouseleave="this.style.background='rgba(255,255,255,0.04)'">
+            <div style="width:40px;height:40px;border-radius:13px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">${renderCatIcon(cat.icon,22,true)}</div>
+            <div style="flex:1;min-width:0">
+              <p style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.description||cat.label}</p>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
+                <span style="font-size:10px;font-weight:600;background:${(mem.color||'#999')}22;color:${mem.color||'#999'};padding:2px 6px;border-radius:5px">${mem.avatar} ${mem.displayName}</span>
+                ${disp.time?`<span style="font-size:10px;color:var(--dim)">${disp.time}</span>`:''}
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <p style="font-size:14px;font-weight:700;color:${t.type==='income'?'#4A9EFF':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</p>
+              <p style="font-size:10px;color:var(--dim);margin-top:1px">${cat.label}</p>
+            </div>
+          </div>`;
+        }).join('')}
+    </div>`:''}`+`
+
+    <style>@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}</style>
+  </div>`;
 
   // All txs for this month
   const all=_calTxArr;
@@ -2940,183 +3182,6 @@ function renderCalendar(){
   for(let d=1;d<=daysInMonth;d++)cells.push(d);
 
   const DAY_LABELS=['S','M','T','W','T','F','S'];
-
-  // Selected day transactions
-  const selDay=S.calendarDay;
-  const selDayTxs=selDay?all.filter(t=>t.date===selDay).sort((a,b)=>(b.ts||0)-(a.ts||0)):[];
-  const cats=getCats();
-
-  // Max daily expense for bar scaling
-  const maxDayExp=Math.max(1,...Object.values(daily).map(d=>d.exp));
-
-  // Budget progress for circular indicator
-  const calBudgets=S.budgets||{};
-  const calManualBudget=parseFloat(calBudgets._total)||0;
-  const calCatBudget=Object.entries(calBudgets).filter(([k])=>k!=='_total'&&!k.includes('__')).reduce((s,[,v])=>s+(parseFloat(v)||0),0);
-  const calTotalBudget=calManualBudget>0?calManualBudget:calCatBudget;
-  const calUsedPct=calTotalBudget>0?Math.min(100,(totalExp/calTotalBudget)*100):0;
-  const calRemainingPct=Math.max(0,100-calUsedPct);
-  const circleR=26;
-  const circleC=2*Math.PI*circleR;
-  const circleDash=((calRemainingPct/100)*circleC).toFixed(1);
-  const circleColor=calRemainingPct<20?'var(--red)':calRemainingPct<40?'var(--yellow)':'#6C63FF';
-
-  // Top-left date
-  const nowDate=nowInTz(lTz());
-  const topDateLine1=nowDate.toLocaleDateString('en-MY',{weekday:'long'});
-  const topDateLine2=nowDate.toLocaleDateString('en-MY',{day:'numeric',month:'long'});
-
-  return`<div class="fade-in" style="display:flex;flex-direction:column;min-height:100%;background:var(--bg);padding-bottom:calc(90px + env(safe-area-inset-bottom))">
-
-    <!-- TOP BAR: date left + budget circle right -->
-    <div style="padding:52px 20px 0;display:flex;align-items:flex-start;justify-content:space-between">
-      <div>
-        <p style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:2px">${topDateLine1}</p>
-        <p style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:var(--text);line-height:1.1">${topDateLine2}</p>
-        <p style="font-size:12px;color:var(--dim);margin-top:3px">${monthLabel}${S.totalView?' · My Finance':''}</p>
-      </div>
-      <!-- Circular budget progress -->
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-        <div style="position:relative;width:64px;height:64px">
-          <svg width="64" height="64" style="transform:rotate(-90deg)">
-            <circle cx="32" cy="32" r="${circleR}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/>
-            ${calTotalBudget>0
-              ?`<circle cx="32" cy="32" r="${circleR}" fill="none" stroke="${circleColor}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${circleDash} ${circleC.toFixed(1)}" stroke-dashoffset="0" style="transition:stroke-dasharray 0.6s ease"/>`
-              :`<circle cx="32" cy="32" r="${circleR}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="5" stroke-dasharray="4 6"/>`
-            }
-          </svg>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-            ${calTotalBudget>0
-              ?`<p style="font-size:13px;font-weight:800;color:var(--text);line-height:1">${Math.round(calRemainingPct)}%</p>
-                <p style="font-size:8px;color:var(--dim);margin-top:1px">left</p>`
-              :`<p style="font-size:16px">💰</p>`
-            }
-          </div>
-        </div>
-        <p style="font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--muted)">Budget</p>
-      </div>
-    </div>
-
-    <!-- MONTH NAV -->
-    <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px 0">
-      <button id="calPrevBtn" style="width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,0.07);border:none;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
-      <p style="font-size:13px;font-weight:600;color:var(--muted)">${monthLabel}</p>
-      <button id="calNextBtn" style="width:30px;height:30px;border-radius:9px;background:${isCurrentMonth?'rgba(255,255,255,0.03)':'rgba(255,255,255,0.07)'};border:none;color:${isCurrentMonth?'var(--dim)':'var(--text)'};font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center" ${isCurrentMonth?'disabled':''}>›</button>
-    </div>
-
-    <!-- SUMMARY CARD -->
-    <div style="margin:14px 16px 0;background:linear-gradient(135deg,rgba(108,99,255,0.18) 0%,rgba(78,205,196,0.10) 100%);border:1px solid rgba(108,99,255,0.25);border-radius:22px;padding:18px 20px">
-      <p style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">${monthLabel} Summary</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div>
-          <p style="font-size:10px;color:var(--muted);margin-bottom:3px">Income</p>
-          <p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:#4A9EFF">${fmt(totalInc)}</p>
-        </div>
-        <div>
-          <p style="font-size:10px;color:var(--muted);margin-bottom:3px">Expense</p>
-          <p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:var(--red)">${fmt(totalExp)}</p>
-        </div>
-        <div>
-          <p style="font-size:10px;color:var(--muted);margin-bottom:3px">Carry-over</p>
-          <p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:var(--text)">${fmt(Math.abs(carryOver))}</p>
-        </div>
-        <div>
-          <p style="font-size:10px;color:var(--muted);margin-bottom:3px">Balance</p>
-          <p style="font-family:var(--font-num);font-size:16px;font-weight:700;color:${balance+carryOver>=0?'#4A9EFF':'var(--red)'}"> ${fmt(Math.abs(balance+carryOver))}</p>
-        </div>
-      </div>
-      ${calTotalBudget>0?`
-      <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <p style="font-size:10px;color:var(--muted)">Budget used</p>
-          <p style="font-size:10px;font-weight:600;color:${circleColor}">${calUsedPct.toFixed(0)}% of ${fmt(calTotalBudget)}</p>
-        </div>
-        <div style="height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden">
-          <div style="height:100%;width:${calUsedPct}%;background:${circleColor};border-radius:3px;transition:width 0.5s ease"></div>
-        </div>
-      </div>`:''}
-    </div>
-
-    <!-- CALENDAR SECTION LABEL -->
-    <div style="padding:18px 20px 6px;display:flex;align-items:center;justify-content:space-between">
-      <p style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)">This month</p>
-      ${selDay?`<button onclick="selectCalDay(null)" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600">Clear ×</button>`:''}
-    </div>
-
-    <!-- CALENDAR CARD -->
-    <div style="margin:0 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:22px;overflow:hidden">
-
-      <!-- DAY LABELS -->
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:12px 8px 4px">
-        ${DAY_LABELS.map((d,i)=>`<div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.04em;color:${i===0?'rgba(255,99,99,0.7)':i===6?'rgba(74,158,255,0.7)':'var(--muted)'};">${d}</div>`).join('')}
-      </div>
-
-      <!-- GRID -->
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:0 8px 10px;gap:2px">
-        ${cells.map((d,i)=>{
-          if(!d)return`<div></div>`;
-          const dateStr=`${yr}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-          const dd=daily[dateStr]||{inc:0,exp:0};
-          const isToday=dateStr===todayStr;
-          const isSel=dateStr===selDay;
-          const col=(i%7);
-          const isSun=col===0,isSat=col===6;
-          const future=dateStr>todayStr;
-          const barW=dd.exp>0?Math.max(2,Math.round((dd.exp/maxDayExp)*20)):0;
-          return`<div onclick="selectCalDay('${dateStr}')" style="position:relative;display:flex;flex-direction:column;align-items:center;padding:5px 2px 5px;border-radius:12px;cursor:pointer;transition:all 0.15s;background:${isSel?'var(--accent)':isToday?'rgba(108,99,255,0.2)':'transparent'}">
-            <span style="font-size:13px;font-weight:${isToday||isSel?'800':'500'};color:${isSel?'#fff':isToday?'var(--accent)':future?'rgba(255,255,255,0.22)':isSun?'rgba(255,99,99,0.85)':isSat?'rgba(74,158,255,0.85)':'var(--text)'};line-height:1.3">${d}</span>
-            <div style="height:7px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;margin-top:2px">
-              ${dd.exp>0?`<div style="width:${barW}px;height:3px;border-radius:2px;min-width:4px;background:${isSel?'rgba(255,255,255,0.7)':'var(--red)'}"></div>`:dd.inc>0?`<div style="width:6px;height:3px;border-radius:2px;background:${isSel?'rgba(255,255,255,0.5)':'#4A9EFF'}"></div>`:''}
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>
-
-    <!-- SELECTED DAY PANEL -->
-    ${selDay?`
-    <div style="margin:12px 16px 0;animation:slideUp 0.2s ease">
-      <div style="background:linear-gradient(135deg,rgba(108,99,255,0.15),rgba(78,205,196,0.08));border:1px solid rgba(108,99,255,0.25);border-radius:20px;padding:14px 16px;margin-bottom:10px">
-        <p style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{weekday:'long'})}</p>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <p style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:var(--text)">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{day:'numeric',month:'long'})}</p>
-          ${(daily[selDay]?.exp||0)>0||(daily[selDay]?.inc||0)>0
-            ?`<div style="text-align:right">${(daily[selDay]?.exp||0)>0?`<p style="font-size:12px;font-weight:700;color:var(--red)">−${fmt(daily[selDay].exp)}</p>`:''} ${(daily[selDay]?.inc||0)>0?`<p style="font-size:12px;font-weight:700;color:#4A9EFF">+${fmt(daily[selDay].inc)}</p>`:''}</div>`
-            :''}
-        </div>
-      </div>
-      ${selDayTxs.length===0
-        ?`<div style="text-align:center;padding:24px 0;color:var(--dim)">
-            <p style="font-size:24px;margin-bottom:6px">🗓</p>
-            <p style="font-size:13px;font-weight:500">No transactions this day</p>
-          </div>`
-        :selDayTxs.map(t=>{
-          const cat=cats[t.category]||DEFAULT_CATS.other;
-          const mem=getMem(t.member);
-          const disp=txDisp(t);
-          return`<div onclick="openTxModal('${t._k}')" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background 0.15s" onmouseenter="this.style.background='rgba(255,255,255,0.07)'" onmouseleave="this.style.background='rgba(255,255,255,0.04)'">
-            <div style="width:40px;height:40px;border-radius:13px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">${renderCatIcon(cat.icon,22,true)}</div>
-            <div style="flex:1;min-width:0">
-              <p style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.description||cat.label}</p>
-              <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
-                <span style="font-size:10px;font-weight:600;background:${(mem.color||'#999')}22;color:${mem.color||'#999'};padding:2px 6px;border-radius:5px">${mem.avatar} ${mem.displayName}</span>
-                ${disp.time?`<span style="font-size:10px;color:var(--dim)">${disp.time}</span>`:''}
-              </div>
-            </div>
-            <div style="text-align:right;flex-shrink:0">
-              <p style="font-size:14px;font-weight:700;color:${t.type==='income'?'#4A9EFF':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</p>
-              <p style="font-size:10px;color:var(--dim);margin-top:1px">${cat.label}</p>
-            </div>
-          </div>`;
-        }).join('')}
-    </div>`:``}
-
-    <style>
-      @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    </style>
-  </div>`;
-}
-
 // Short format: show K for thousands to fit in calendar cell
 function shortFmt(n){
   const c=getCur();
@@ -3126,24 +3191,41 @@ function shortFmt(n){
 }
 
 function attachCalendarListeners(){
+  // Week strip navigation
+  document.getElementById('calWeekPrev')?.addEventListener('click',()=>{
+    S.calWeekOffset=(S.calWeekOffset||0)-1;
+    // Sync calendarMonth to match the week being viewed
+    const todayDate=new Date(td()+'T00:00:00');
+    const weekStart=new Date(todayDate);
+    weekStart.setDate(todayDate.getDate()-todayDate.getDay()+(S.calWeekOffset*7));
+    S.calendarMonth=weekStart.getFullYear()+'-'+String(weekStart.getMonth()+1).padStart(2,'0');
+    S.calendarDay=null;renderPage();
+  });
+  document.getElementById('calWeekNext')?.addEventListener('click',()=>{
+    if((S.calWeekOffset||0)>=0)return;
+    S.calWeekOffset=(S.calWeekOffset||0)+1;
+    const todayDate=new Date(td()+'T00:00:00');
+    const weekStart=new Date(todayDate);
+    weekStart.setDate(todayDate.getDate()-todayDate.getDay()+(S.calWeekOffset*7));
+    S.calendarMonth=weekStart.getFullYear()+'-'+String(weekStart.getMonth()+1).padStart(2,'0');
+    S.calendarDay=null;renderPage();
+  });
+  // Full month navigation (only visible when expanded)
   document.getElementById('calPrevBtn')?.addEventListener('click',()=>{
     const[yr,mo]=S.calendarMonth.split('-').map(Number);
     const ny=mo===1?yr-1:yr,nm=mo===1?12:mo-1;
     S.calendarMonth=`${ny}-${String(nm).padStart(2,'0')}`;
-    S.calendarDay=null;
-    renderPage();
+    S.calendarDay=null;renderPage();
   });
   document.getElementById('calNextBtn')?.addEventListener('click',()=>{
     const[yr,mo]=S.calendarMonth.split('-').map(Number);
     const ny=mo===12?yr+1:yr,nm=mo===12?1:mo+1;
     const next=`${ny}-${String(nm).padStart(2,'0')}`;
-    if(next<=localYm()){
-      S.calendarMonth=next;S.calendarDay=null;renderPage();
-    }
+    if(next<=localYm()){S.calendarMonth=next;S.calendarDay=null;renderPage();}
   });
 }
 
-window.goCalendar=()=>{S.view='calendar';S.calendarDay=null;render();};
+window.goCalendar=()=>{S.view='calendar';S.calendarDay=null;S.calWeekOffset=0;S.calExpanded=false;render();};
 window.selectCalDay=day=>{S.calendarDay=(day===S.calendarDay||!day)?null:day;renderPage();};
 
 // ── HISTORY VIEW ──
