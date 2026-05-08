@@ -3149,40 +3149,8 @@ function renderCalendar(){
 
     <style>@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}</style>
   </div>`;
+}
 
-  // All txs for this month
-  const all=_calTxArr;
-  const monthTxs=all.filter(t=>t.date&&t.date.startsWith(ym));
-
-  // Build daily totals map: date -> {inc, exp}
-  const daily={};
-  monthTxs.forEach(t=>{
-    if(!daily[t.date])daily[t.date]={inc:0,exp:0};
-    if(t.type==='income')daily[t.date].inc+=t.amount;
-    else daily[t.date].exp+=t.amount;
-  });
-
-  // Month summary
-  const totalInc=monthTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const totalExp=monthTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const balance=totalInc-totalExp;
-
-  // Carry-over: sum of all transactions before this month
-  const carryOver=all.filter(t=>t.date&&t.date<ym+'-01').reduce((s,t)=>s+(t.type==='income'?t.amount:-t.amount),0);
-
-  // Calendar grid: find first day of month (0=Sun)
-  const firstDay=new Date(yr,mo-1,1).getDay();
-  const daysInMonth=new Date(yr,mo,0).getDate();
-
-  // Build grid cells
-  const cells=[];
-  // Empty cells before first day
-  for(let i=0;i<firstDay;i++)cells.push(null);
-  // Day cells
-  for(let d=1;d<=daysInMonth;d++)cells.push(d);
-
-  const DAY_LABELS=['S','M','T','W','T','F','S'];
-// Short format: show K for thousands to fit in calendar cell
 function shortFmt(n){
   const c=getCur();
   const sym=c?c.symbol:'RM';
