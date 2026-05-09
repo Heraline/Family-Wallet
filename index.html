@@ -1737,7 +1737,7 @@ function renderHome(){
 
     const _greeting=(()=>{const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';})();
     const _firstName=(S.user?.displayName||'').split(' ')[0]||'there';
-    const _avatarUrl=S.user?.photoURL||'';
+    const _avatarUrl=S.profile?.photoBase64||S.user?.photoURL||'';
 
     return`<div class="fade-in" style="padding-bottom:calc(100px + env(safe-area-inset-bottom))">
       <!-- HEADER -->
@@ -2066,7 +2066,7 @@ function renderHome(){
 
   const _greeting=(()=>{const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';})();
   const _firstName=(S.user?.displayName||'').split(' ')[0]||'there';
-  const _avatarUrl=S.user?.photoURL||'';
+  const _avatarUrl=S.profile?.photoBase64||S.user?.photoURL||'';
 
   return`<div class="fade-in" style="padding-bottom:calc(80px + env(safe-area-inset-bottom))">
 
@@ -8876,7 +8876,7 @@ function advanceDate(dateStr,freq){
 // ══════════════════════════════════════════
 //  PROFILE EDIT — two tabs: app account + ledger nickname
 // ══════════════════════════════════════════
-let selProfAv=0,selProfColor=0,profTab='ledger';
+let selProfAv=0,selProfColor=0,profTab='ledger',_profPhotoData=null;
 function renderProfilePage(){
   const mem=S.members?.[S.user.uid]||{};
   const ledgerInfo=S.ledgers[S.activeLedgerId]||{};
@@ -8927,14 +8927,40 @@ function renderProfilePage(){
       <button class="btn-primary" onclick="saveLedgerProfile()">✓ Save Ledger Nickname</button>
     </div>
     `:`
-    <p style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">
-      Your global avatar and name used across all ledgers and on sign-in.
-    </p>
+    ${(()=>{
+      const existingPhoto=S.profile?.photoBase64||'';
+      const currentPhoto=_profPhotoData||existingPhoto;
+      const initials=(S.profile?.displayName||'?').charAt(0).toUpperCase();
+      const accentColor=M_COLORS[selProfColor]||M_COLORS[0];
+      return`
+    <!-- Identity hero card -->
+    <div style="background:linear-gradient(135deg,${accentColor}22,${accentColor}08);border:1px solid ${accentColor}33;border-radius:22px;padding:24px 20px;margin-bottom:18px;text-align:center">
+      <!-- Photo ring -->
+      <div style="position:relative;display:inline-block;margin-bottom:14px">
+        <div id="profPhotoRing" style="width:96px;height:96px;border-radius:50%;border:3px solid ${accentColor};padding:3px;display:inline-block">
+          ${currentPhoto
+            ?`<img id="profPhotoImg" src="${currentPhoto}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block">`
+            :`<div id="profPhotoImg" style="width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,${accentColor},${accentColor}99);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;color:#fff">${initials}</div>`
+          }
+        </div>
+        <!-- Camera button overlay -->
+        <button onclick="document.getElementById('profPhotoInput').click()" style="position:absolute;bottom:2px;right:2px;width:30px;height:30px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3)">📷</button>
+        <input type="file" id="profPhotoInput" accept="image/*" style="display:none" onchange="handleProfPhotoSelect(this)">
+      </div>
+      <p style="font-size:18px;font-weight:700;margin-bottom:2px">${S.profile?.displayName||'Your Name'}</p>
+      <p style="font-size:12px;color:var(--muted)">${S.user?.email||''}</p>
+      ${currentPhoto?`<button onclick="removeProfPhoto()" style="margin-top:10px;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.2);color:var(--red);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:600;cursor:pointer">Remove photo</button>`:''}
+    </div>
+
+    <!-- Upload hint -->
+    ${!currentPhoto?`<button onclick="document.getElementById('profPhotoInput').click()" style="width:100%;padding:13px;border-radius:14px;border:1.5px dashed ${accentColor}55;background:${accentColor}08;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:8px">
+      <span style="font-size:18px">🖼️</span> Upload a profile photo
+    </button>`:'<div style="margin-bottom:18px"></div>'}
+
     <div class="surface" style="padding:18px;border-radius:18px">
       <p class="label" style="margin-bottom:8px">Display Name</p>
       <input id="profAppName" class="fw-input" type="text" placeholder="Your name" value="${S.profile?.displayName||''}" style="margin-bottom:18px">
-      <p style="font-size:11px;color:var(--muted);margin-bottom:16px">Email: <strong style="color:var(--text)">${S.user?.email||''}</strong></p>
-      <p class="label" style="margin-bottom:10px">Avatar</p>
+      <p class="label" style="margin-bottom:10px">Avatar <span style="color:var(--dim);font-size:10px;text-transform:none;letter-spacing:0">(shown when no photo)</span></p>
       <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px">
         ${AVATARS.map((a,i)=>`<button onclick="pickProfAv(${i})" class="av-pick-btn ${i===selProfAv?'sel':''}">${a}</button>`).join('')}
       </div>
@@ -8944,6 +8970,7 @@ function renderProfilePage(){
       </div>
       <button class="btn-primary" onclick="saveAppProfile()">✓ Save App Account</button>
     </div>
+    `})()}
     `}
   </div>`;
 }
@@ -8961,18 +8988,7 @@ window.saveLedgerProfile=async()=>{
   }catch(e){alert('Error: '+e.message);}
 };
 
-window.saveAppProfile=async()=>{
-  const name=document.getElementById('profAppName')?.value.trim();
-  if(!name){alert('Enter a display name.');return;}
-  const avatar=AVATARS[selProfAv]||AVATARS[0];
-  const color=M_COLORS[selProfColor]||M_COLORS[0];
-  try{
-    await update(ref(db,'users/'+S.user.uid),{displayName:name,avatar,color});
-    S.profile={...S.profile,displayName:name,avatar,color};
-    toast('✓ App account updated');
-    S.view='settings';render();
-  }catch(e){alert('Error: '+e.message);}
-};
+window.saveAppProfile=async()=>{\n  const name=document.getElementById('profAppName')?.value.trim();\n  if(!name){alert('Enter a display name.');return;}\n  const avatar=AVATARS[selProfAv]||AVATARS[0];\n  const color=M_COLORS[selProfColor]||M_COLORS[0];\n  // Determine photo: new upload, existing saved, or cleared\n  const photoBase64=_profPhotoData!==null?(_profPhotoData||''):(S.profile?.photoBase64||'');\n  try{\n    await update(ref(db,'users/'+S.user.uid),{displayName:name,avatar,color,photoBase64});\n    S.profile={...S.profile,displayName:name,avatar,color,photoBase64};\n    _profPhotoData=null;\n    toast('✓ App account updated');\n    S.view='settings';render();\n  }catch(e){alert('Error: '+e.message);}\n};\n\nwindow.handleProfPhotoSelect=function(input){\n  const file=input.files[0];\n  if(!file)return;\n  if(file.size>3*1024*1024){alert('Photo must be under 3 MB.');return;}\n  const reader=new FileReader();\n  reader.onload=e=>{\n    // Compress via canvas\n    const img=new Image();\n    img.onload=()=>{\n      const MAX=300;\n      let w=img.width,h=img.height;\n      if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}\n      const canvas=document.createElement('canvas');\n      canvas.width=w;canvas.height=h;\n      canvas.getContext('2d').drawImage(img,0,0,w,h);\n      const compressed=canvas.toDataURL('image/jpeg',0.82);\n      _profPhotoData=compressed;\n      // Update UI live without full re-render\n      const ring=document.getElementById('profPhotoRing');\n      if(ring)ring.style.borderColor=M_COLORS[selProfColor]||M_COLORS[0];\n      const imgEl=document.getElementById('profPhotoImg');\n      if(imgEl){\n        const newImg=document.createElement('img');\n        newImg.id='profPhotoImg';\n        newImg.src=compressed;\n        newImg.style.cssText='width:100%;height:100%;border-radius:50%;object-fit:cover;display:block';\n        imgEl.replaceWith(newImg);\n      }\n      // Show remove button if not present\n      const hero=document.querySelector('[id=\"profPhotoRing\"]')?.closest('div[style*=\"text-align:center\"]');\n      if(hero&&!hero.querySelector('button[onclick*=\"removeProfPhoto\"]')){\n        const removeBtn=document.createElement('button');\n        removeBtn.onclick=window.removeProfPhoto;\n        removeBtn.setAttribute('style','margin-top:10px;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.2);color:var(--red);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:600;cursor:pointer');\n        removeBtn.textContent='Remove photo';\n        hero.appendChild(removeBtn);\n      }\n      // Hide the dashed upload hint if visible\n      const hint=document.querySelector('button[onclick*=\"profPhotoInput\"][style*=\"dashed\"]');\n      if(hint)hint.style.display='none';\n    };\n    img.src=e.target.result;\n  };\n  reader.readAsDataURL(file);\n};\n\nwindow.removeProfPhoto=()=>{\n  _profPhotoData='';\n  // Re-render page in place to refresh the hero card\n  const pg=document.getElementById('mainPage');\n  const scrollY=pg?pg.scrollTop:0;\n  if(pg){pg.innerHTML=renderProfilePage();}\n  requestAnimationFrame(()=>{if(pg)pg.scrollTop=scrollY;});\n};
 
 // Keep saveProfile as alias for ledger profile save (used by old references)
 window.saveProfile=window.saveLedgerProfile;
