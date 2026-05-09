@@ -6333,7 +6333,7 @@ function renderLedgerSettings(){
 window.goLedgerSettings=()=>{S.view='ledgerSettings';render();};
 
 // ── SETTINGS ──
-
+function renderSettings(){
   const linfo=S.ledgers[S.activeLedgerId]||{};
   const myMem=(S.members||{})[S.user.uid]||{};
 
