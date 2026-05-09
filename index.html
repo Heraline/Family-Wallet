@@ -4313,13 +4313,13 @@ function renderAdd(){
   const subcats=cat.subcats&&Object.keys(cat.subcats).length?cat.subcats:null;
 
   const chips=Object.entries(cats).filter(([k])=>k!=='income').map(([key,c])=>`
-    <button class="chip ${f.category===key?'active':''}" style="${f.category===key?'background:'+c.color+';':''}" onclick="setFF('category','${key}');setFF('subcat','');renderPage()">${renderCatIcon(c.icon,16)} ${c.label}</button>`).join('');
+    <button class="chip ${f.category===key?'active':''}" style="${f.category===key?'background:'+c.color+';':''}" onclick="setFF('category','${key}');setFF('subcat','');renderAddInPlace()">${renderCatIcon(c.icon,16)} ${c.label}</button>`).join('');
 
   const subcatChips=subcats?`<div style="margin-top:10px">
     <p class="label" style="margin-bottom:8px">Subcategory <span style="color:var(--dim);font-style:normal;text-transform:none;letter-spacing:0">(optional)</span></p>
     <div class="chip-grid">
-      <button class="subcat-chip ${!f.subcat?'active':''}" style="${!f.subcat?'background:'+cat.color+'99;':''}" onclick="setFF('subcat','');renderPage()">All</button>
-      ${Object.entries(subcats).map(([k,v])=>`<button class="subcat-chip ${f.subcat===k?'active':''}" style="${f.subcat===k?'background:'+cat.color+'99;':''}" onclick="setFF('subcat','${k}');renderPage()">${renderSubcatChipContent(v)}</button>`).join('')}
+      <button class="subcat-chip ${!f.subcat?'active':''}" style="${!f.subcat?'background:'+cat.color+'99;':''}" onclick="setFF('subcat','');renderAddInPlace()">All</button>
+      ${Object.entries(subcats).map(([k,v])=>`<button class="subcat-chip ${f.subcat===k?'active':''}" style="${f.subcat===k?'background:'+cat.color+'99;':''}" onclick="setFF('subcat','${k}');renderAddInPlace()">${renderSubcatChipContent(v)}</button>`).join('')}
     </div>
   </div>`:'';
 
@@ -4491,7 +4491,7 @@ function renderAdd(){
           if(lockedCur){
             return`<span style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);border-radius:10px;color:var(--accent);font-size:12px;font-weight:700;padding:5px 10px">${CURRENCIES[lockedCur]?.flag||''} ${lockedCur}</span>`;
           }
-          return`<select onchange="setFF('currency',this.value);renderPage()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(108,99,255,0.3);border-radius:10px;color:var(--text);font-family:var(--font-ui);font-size:12px;font-weight:600;padding:5px 8px;outline:none">
+          return`<select onchange="setFF('currency',this.value);renderAddInPlace()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(108,99,255,0.3);border-radius:10px;color:var(--text);font-family:var(--font-ui);font-size:12px;font-weight:600;padding:5px 8px;outline:none">
             ${Object.entries(CURRENCIES).map(([k,c])=>`<option value="${k}" ${k===f.currency?'selected':''}>${c.flag} ${k}</option>`).join('')}
           </select>`;
         })()}
@@ -4618,7 +4618,7 @@ function buildAssetPicker(f){
   }).join('');
   const noneBtn=`<button class="member-box ${!f.assetId?'active':''}"
     style="${!f.assetId?'background:rgba(255,255,255,0.1);':''}"
-    onclick="setFF('assetId','');renderPage()">
+    onclick="setFF('assetId','');renderAddInPlace()">
     <div class="m-avatar" style="font-size:18px">💼</div>
     <div style="font-size:11px;font-weight:700">None</div>
     <div style="font-size:10px;color:var(--dim);margin-top:2px">—</div>
@@ -7241,7 +7241,15 @@ window.goRecurForm =()=>{S.editRecurId=null;selRecurFreq=2;S.view='recurForm';re
 window.setFilter   =id=>{S.filterMember=id;render();};
 
 window.setTab      =t=>{if(!S.user)return;S.tab=t;S.analyticsFilter={type:null,key:null};render();};
-window.setType     =type=>{S.addForm.type=type;S.addForm.splitWith=[];S.addForm.coPayors=[];S.addForm.coPayorAmounts={};S.addForm.coPayorMode='equal';S.addForm.payerMode='equal';S.addForm.payerAmounts={};S.addForm.splitMode='equal';S.addForm.customSplits={};S.addForm.subcat='';S.addForm.category=type==='income'?'income':'food';renderPage();};
+// ── renderAddInPlace: re-renders the Add page while preserving scroll position ──
+function renderAddInPlace(){
+  const pg=document.getElementById('mainPage');
+  const scrollY=pg?pg.scrollTop:0;
+  if(pg){pg.innerHTML=renderAdd();}
+  requestAnimationFrame(()=>{if(pg)pg.scrollTop=scrollY;});
+}
+
+window.setType     =type=>{S.addForm.type=type;S.addForm.splitWith=[];S.addForm.coPayors=[];S.addForm.coPayorAmounts={};S.addForm.coPayorMode='equal';S.addForm.payerMode='equal';S.addForm.payerAmounts={};S.addForm.splitMode='equal';S.addForm.customSplits={};S.addForm.subcat='';S.addForm.category=type==='income'?'income':'food';renderAddInPlace();};
 window.setFF       =(k,v)=>{if(S.addForm)S.addForm[k]=v;};
 window.togTag=tag=>{
   if(!S.addForm)return;
@@ -7271,7 +7279,7 @@ window.addCustomTag=()=>{
     S.addForm.tags=[...tags];
   }
   inp.value='';
-  renderPage();
+  renderAddInPlace();
 };
 window.removeCustomTag=async tag=>{
   if(!confirm(`Remove tag "${tag}" from this ledger?`))return;
@@ -7354,21 +7362,22 @@ window.updateConversionDisplay=(val)=>{
   const cur=CURRENCIES[S.ledgerCurrency];
   el.innerHTML=`≈ ${cur?cur.symbol:''}${converted.toFixed(2)} <span style="color:var(--dim);font-size:10px;font-family:var(--font-ui)">in ${S.ledgerCurrency}</span>`;
 };
-window.pickAsset   =(id,cur)=>{if(!S.addForm)return;S.addForm.assetId=id;renderPage();};
+window.pickAsset   =(id,cur)=>{if(!S.addForm)return;S.addForm.assetId=id;renderAddInPlace();};
 // Changing primary payer clears co-payer lists and split
-window.setFM       =id=>{S.addForm.member=id;S.addForm.splitWith=S.addForm.splitWith.filter(s=>s!==id);S.addForm.coPayors=(S.addForm.coPayors||[]).filter(s=>s!==id);S.addForm.coPayorMode='equal';S.addForm.coPayorAmounts={};S.addForm.payerAmounts={};S.addForm.customSplits={};renderPage();};
-window.togSplit    =id=>{const sw=S.addForm.splitWith;S.addForm.splitWith=sw.includes(id)?sw.filter(s=>s!==id):[...sw,id];S.addForm.customSplits={};renderPage();};
+window.setFM       =id=>{S.addForm.member=id;S.addForm.splitWith=S.addForm.splitWith.filter(s=>s!==id);S.addForm.coPayors=(S.addForm.coPayors||[]).filter(s=>s!==id);S.addForm.coPayorMode='equal';S.addForm.coPayorAmounts={};S.addForm.payerAmounts={};S.addForm.customSplits={};renderAddInPlace();};
+window.togSplit    =id=>{const sw=S.addForm.splitWith;S.addForm.splitWith=sw.includes(id)?sw.filter(s=>s!==id):[...sw,id];S.addForm.customSplits={};renderAddInPlace();};
 // Legacy co-payer toggles — kept for backward compat but now aliased to payer logic
 window.togCoPayor  =id=>{window.togPayer(id);};
 window.setCoPayorAmt=(id,val)=>{window.setPayerAmt(id,val);};
 window.setCoPayorMode=mode=>{window.setPayerMode(mode);};
 // New payer functions
-window.togPayer    =id=>{const cp=S.addForm.coPayors||[];const has=cp.includes(id);S.addForm.coPayors=has?cp.filter(s=>s!==id):[...cp,id];if(has){const a={...S.addForm.payerAmounts};delete a[id];S.addForm.payerAmounts=a;}S.addForm.payerAmounts={};renderPage();};
+window.togPayer    =id=>{const cp=S.addForm.coPayors||[];const has=cp.includes(id);S.addForm.coPayors=has?cp.filter(s=>s!==id):[...cp,id];if(has){const a={...S.addForm.payerAmounts};delete a[id];S.addForm.payerAmounts=a;}S.addForm.payerAmounts={};renderAddInPlace();};
 window.setPayerAmt =(id,val)=>{if(S.addForm)S.addForm.payerAmounts={...S.addForm.payerAmounts,[id]:parseFloat(val)||0};};
-window.setPayerMode=mode=>{if(S.addForm){S.addForm.payerMode=mode;if(mode==='equal')S.addForm.payerAmounts={};renderPage();}};
-window.setSplitMode=mode=>{S.addForm.splitMode=mode;renderPage();};
+window.setPayerMode=mode=>{if(S.addForm){S.addForm.payerMode=mode;if(mode==='equal')S.addForm.payerAmounts={};renderAddInPlace();}};
+window.setSplitMode=mode=>{S.addForm.splitMode=mode;renderAddInPlace();};
 window.setCustomSplit=(uid,val)=>{if(S.addForm)S.addForm.customSplits[uid]=parseFloat(val)||0;};
 window.renderPage=renderPage; // expose for inline onclick
+window.renderAddInPlace=renderAddInPlace; // expose for add-form inline onclick
 
 // Edit transaction — open form pre-filled
 window.editTx=key=>{
