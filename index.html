@@ -1867,8 +1867,8 @@ function renderHome(){
             </div><!-- end gradient card -->
           </div><!-- end slide 1 -->
 
-          <!-- SLIDE 2: Asset Accounts (Total View) -->
-          <div class="summary-carousel-slide">
+          <!-- SLIDE 2: Asset Accounts (single-ledger only) -->
+          ${!S.totalView?`<div class="summary-carousel-slide">
             <div style="background:linear-gradient(135deg,#1a6b5a 0%,#4ECDC4 100%);border-radius:24px;padding:22px 22px 20px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(78,205,196,0.35);color:#fff">
               <div style="position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.08);pointer-events:none"></div>
               <div style="position:absolute;bottom:-20px;left:30px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none"></div>
@@ -1910,13 +1910,13 @@ function renderHome(){
                 <button onclick="goAssets()" style="margin-top:14px;width:100%;padding:9px;border-radius:12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:12px;font-weight:600">Manage Accounts →</button>`;
               })()}
             </div><!-- end teal gradient card -->
-          </div><!-- end slide 2 -->
+          </div><!-- end slide 2 -->`:''}
 
         </div><!-- end track -->
         <!-- Carousel dots -->
         <div class="carousel-dots" id="summaryCarouselDots">
           <div class="carousel-dot active" onclick="summaryCarouselGo(0)"></div>
-          <div class="carousel-dot" onclick="summaryCarouselGo(1)"></div>
+          ${!S.totalView?`<div class="carousel-dot" onclick="summaryCarouselGo(1)"></div>`:''}
         </div>
       </div><!-- end carousel wrap -->
 
