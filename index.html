@@ -1358,6 +1358,7 @@ function renderPage(){
     if(_v==='stats'){pg.innerHTML=renderStats();attachStatsListeners();_restoreScroll(_v);return;}
     if(_v==='history'){pg.innerHTML=renderHistory();attachHistoryListeners();_restoreScroll(_v);return;}
     if(_v==='settings'){pg.innerHTML=renderSettings();_restoreScroll(_v);return;}
+    if(_v==='ledgerSettings'){pg.innerHTML=renderLedgerSettings();_restoreScroll(_v);return;}
     if(_v==='invite'){pg.innerHTML=renderInvite();_restoreScroll(_v);return;}
     if(_v==='budget'){pg.innerHTML=renderBudgetPage();attachBudgetListeners();_restoreScroll(_v);return;}
     if(_v==='categories'){pg.innerHTML=renderCategoriesPage();_restoreScroll(_v);return;}
@@ -6186,14 +6187,13 @@ function renderNotificationsPage(){
   </div>`;
 }
 
-// ── SETTINGS ──
-function renderSettings(){
+// ── LEDGER SETTINGS PAGE ──
+function renderLedgerSettings(){
   const mems=S.members||{};const cur=getCur();
   const linfo=S.ledgers[S.activeLedgerId]||{};
   const myMem=mems[S.user.uid]||{};
   const isOwner=myMem.role==='owner';
 
-  // All members (real + guest) except self, sorted: real members first then guests
   const allOtherMems=Object.entries(mems)
     .filter(([id])=>id!==S.user.uid)
     .sort(([,a],[,b])=>(a.guest===b.guest)?0:a.guest?1:-1);
@@ -6215,29 +6215,38 @@ function renderSettings(){
       </div>
     </div>`).join('');
 
-  // Ledger-specific sections
-  const ledgerSections=S.totalView?`
-    <div class="settings-section">
-      <div style="background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);border-radius:16px;padding:18px;text-align:center">
-        <p style="font-size:24px;margin-bottom:8px">🌐</p>
-        <p style="font-size:14px;font-weight:700;margin-bottom:6px">All Ledgers View</p>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6">To edit ledger name, currency or members,<br>select a specific ledger from the picker.</p>
-        <button onclick="openLedgerPicker()" style="margin-top:14px;padding:10px 20px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700;border:none">Switch Ledger</button>
+  // Ledger icon display
+  const ledgerIconHtml=linfo.customIcon?renderCatIcon(linfo.customIcon,32,true):linfo.icon||'🏠';
+
+  return`<div class="settings-page fade-in">
+    <button class="btn-ghost" onclick="goSettings()" style="margin-bottom:22px">← Back</button>
+
+    <!-- Hero banner -->
+    <div style="background:linear-gradient(135deg,rgba(108,99,255,0.18),rgba(78,205,196,0.10));border:1px solid rgba(108,99,255,0.25);border-radius:22px;padding:22px 20px;margin-bottom:26px;display:flex;align-items:center;gap:16px">
+      <button ${isOwner?`onclick="openLedgerIconModal()"`:'disabled'} id="ledgerIconBtn"
+        style="width:56px;height:56px;border-radius:16px;background:rgba(255,255,255,0.08);border:2px solid rgba(108,99,255,0.35);display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;cursor:${isOwner?'pointer':'default'};overflow:hidden">
+        ${ledgerIconHtml}
+      </button>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:11px;color:var(--accent2);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px">Ledger Settings</p>
+        <p style="font-size:20px;font-weight:800;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${linfo.name||'Ledger'}</p>
+        <p style="font-size:11px;color:var(--muted);margin-top:2px">${cur.flag} ${S.ledgerCurrency} · ${Object.keys(mems).length} member${Object.keys(mems).length!==1?'s':''}</p>
       </div>
+      ${isOwner?'<span style="font-size:11px;font-weight:700;color:var(--green);background:rgba(105,210,160,0.15);border:1px solid rgba(105,210,160,0.3);padding:3px 9px;border-radius:20px;flex-shrink:0">Owner</span>':''}
     </div>
-  `:`
-    <!-- LEDGER NAME (editable by owner) -->
+
+    <!-- LEDGER NAME -->
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">Ledger Name</p>
       <div class="surface" style="padding:14px 16px;border-radius:14px">
         <div style="display:flex;align-items:center;gap:10px">
-          <button ${isOwner?`onclick="openLedgerIconModal()"`:'disabled'} id="ledgerIconBtn" style="background:rgba(255,255,255,0.07);border:2px solid rgba(108,99,255,0.3);border-radius:13px;width:46px;height:46px;flex-shrink:0;cursor:${isOwner?'pointer':'default'};transition:all 0.15s;display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden" title="Change icon">${linfo.customIcon?renderCatIcon(linfo.customIcon,32,true):linfo.icon||'🏠'}</button>
           ${isOwner
             ? `<input id="ledgerNameInput" class="fw-input" type="text" value="${(linfo.name||'').replace(/"/g,'&quot;')}" placeholder="Ledger name" style="flex:1;margin:0">`
             : `<p style="font-size:15px;font-weight:700;flex:1">${linfo.name||'Ledger'}</p>`
           }
-          ${isOwner ? `<button onclick="saveLedgerName()" style="padding:7px 13px;border-radius:10px;background:rgba(108,99,255,0.15);color:var(--accent);font-size:12px;font-weight:700;border:none;flex-shrink:0">Save</button>` : ''}
+          ${isOwner?`<button onclick="saveLedgerName()" style="padding:7px 13px;border-radius:10px;background:rgba(108,99,255,0.15);color:var(--accent);font-size:12px;font-weight:700;border:none;flex-shrink:0">Save</button>`:''}
         </div>
+        ${isOwner?`<p style="font-size:11px;color:var(--dim);margin-top:8px">Tap the icon on the left in the header above to change the ledger icon.</p>`:''}
       </div>
     </div>
 
@@ -6252,11 +6261,11 @@ function renderSettings(){
       </div>
     </div>
 
-    <!-- LEDGER TIMEZONE (owner only) -->
+    <!-- LEDGER TIMEZONE -->
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">Ledger Timezone</p>
       <div class="surface" style="padding:14px 16px;border-radius:14px">
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Controls which timezone is used for dates, budgets &amp; month boundaries — shared by all members.</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Controls dates, budgets &amp; month boundaries — shared by all members.</p>
         ${isOwner
           ? `<select onchange="changeLedgerTimezone(this.value)" class="currency-selector">${tzOptions(S.ledgerTimezone)}</select>`
           : `<p style="font-size:13px;font-weight:600">${TIMEZONES.find(t=>t.tz===S.ledgerTimezone)?.label||S.ledgerTimezone||'Device timezone'}</p><p style="font-size:11px;color:var(--dim);margin-top:4px">Only the ledger owner can change this.</p>`
@@ -6264,26 +6273,26 @@ function renderSettings(){
       </div>
     </div>
 
-    <!-- PERSONAL DISPLAY TIMEZONE -->
+    <!-- MY DISPLAY TIMEZONE -->
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">My Display Timezone</p>
       <div class="surface" style="padding:14px 16px;border-radius:14px">
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Dates &amp; times will be shown to <strong>you</strong> in this timezone. Stored data is always in ledger timezone.</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Dates &amp; times shown <strong>to you</strong> in this timezone. Stored data stays in ledger timezone.</p>
         <select onchange="changeDisplayTimezone(this.value)" class="currency-selector">
           <option value="" ${!S.displayTimezone?'selected':''}>Same as ledger (${S.ledgerTimezone||'default'})</option>
           ${tzOptions(S.displayTimezone||'')}
         </select>
-        ${S.displayTimezone&&S.displayTimezone!==S.ledgerTimezone?`<p style="font-size:11px;color:var(--accent);margin-top:8px">⏱ Dates shown to you are shifted from ledger time.</p>`:''}
+        ${S.displayTimezone&&S.displayTimezone!==S.ledgerTimezone?`<p style="font-size:11px;color:var(--accent);margin-top:8px">⏱ Your view is shifted from ledger time.</p>`:''}
       </div>
     </div>
 
-
-    <!-- LEDGER MEMBERS (real app users + guests combined) -->
+    <!-- LEDGER MEMBERS -->
     <div class="settings-section">
       <p class="label" style="margin-bottom:12px">Ledger Members</p>
-      <!-- Self row -->
+      <!-- Self -->
       <div class="settings-row surface" style="margin-bottom:8px">
-        <div class="sr-left"><span style="font-size:22px">${myMem.avatar||S.profile?.avatar||'👤'}</span>
+        <div class="sr-left">
+          ${(()=>{const photo=S.profile?.photoBase64;const col=myMem.color||S.profile?.color||'#6C63FF';const av=myMem.avatar||S.profile?.avatar||'👤';const init=(myMem.displayName||S.profile?.displayName||'?').charAt(0).toUpperCase();return photo?`<img src="${photo}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid ${col};flex-shrink:0">`:`<div style="width:38px;height:38px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${av}</div>`;})()}
           <div>
             <p style="font-size:14px;font-weight:600">${myMem.displayName||S.profile?.displayName||''}</p>
             <p style="font-size:11px;color:var(--dim)">${myMem.role==='owner'?'Owner':'Member'}</p>
@@ -6309,9 +6318,24 @@ function renderSettings(){
           <div id="guestMsg" style="margin-top:10px;font-size:13px;text-align:center"></div>
         </div>
       </div>
-      <button onclick="goInvite()" class="export-btn" style="margin-top:10px">🔗 Invite Code & Collaboration</button>
+      <button onclick="goInvite()" class="export-btn" style="margin-top:10px">🔗 Invite Code &amp; Collaboration</button>
     </div>
-  `;
+
+    <!-- PER-LEDGER TOOLS -->
+    <div class="settings-section">
+      <p class="label" style="margin-bottom:12px">Ledger Tools</p>
+      <button onclick="goAssets()" class="export-btn" style="margin-bottom:8px">🏦 Asset Accounts</button>
+      <button onclick="goRecurring()" class="export-btn">🔄 Recurring Transactions</button>
+    </div>
+  </div>`;
+}
+
+window.goLedgerSettings=()=>{S.view='ledgerSettings';render();};
+
+// ── SETTINGS ──
+
+  const linfo=S.ledgers[S.activeLedgerId]||{};
+  const myMem=(S.members||{})[S.user.uid]||{};
 
   return`<div class="settings-page fade-in">
     <button class="btn-ghost" onclick="goHome()" style="margin-bottom:22px">← Back</button>
@@ -6322,18 +6346,36 @@ function renderSettings(){
       <p class="label" style="margin-bottom:12px">Your Account</p>
       <div class="surface" style="padding:16px;border-radius:14px;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-size:30px">${S.profile?.avatar||'👤'}</span>
-          <div style="flex:1">
-            <p style="font-size:15px;font-weight:700">${S.profile?.displayName||''}</p>
-            <p style="font-size:11px;color:var(--muted)">${S.user?.email||''}</p>
+          ${(()=>{const photo=S.profile?.photoBase64;const col=S.profile?.color||M_COLORS[0];const av=S.profile?.avatar||'👤';return photo?`<img src="${photo}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2.5px solid ${col};flex-shrink:0">`:`<div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,${col},${col}99);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${av}</div>`;})()}
+          <div style="flex:1;min-width:0">
+            <p style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${S.profile?.displayName||''}</p>
+            <p style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${S.user?.email||''}</p>
           </div>
-          <button onclick="goProfile()" style="padding:7px 13px;border-radius:10px;background:rgba(108,99,255,0.15);color:var(--accent);font-size:12px;font-weight:700;border:none">Edit</button>
+          <button onclick="goProfile()" style="padding:7px 13px;border-radius:10px;background:rgba(108,99,255,0.15);color:var(--accent);font-size:12px;font-weight:700;border:none;flex-shrink:0">Edit</button>
         </div>
       </div>
       <button class="clear-btn" onclick="doLogout()">🚪 Sign Out</button>
     </div>
 
-    ${ledgerSections}
+    <!-- LEDGER SETTINGS -->
+    <div class="settings-section">
+      <p class="label" style="margin-bottom:12px">Ledger</p>
+      ${S.totalView?`
+      <div style="background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);border-radius:16px;padding:18px;text-align:center">
+        <p style="font-size:24px;margin-bottom:8px">🌐</p>
+        <p style="font-size:14px;font-weight:700;margin-bottom:6px">All Ledgers View</p>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6">To edit ledger settings,<br>select a specific ledger from the picker.</p>
+        <button onclick="openLedgerPicker()" style="margin-top:14px;padding:10px 20px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700;border:none">Switch Ledger</button>
+      </div>`:`
+      <button onclick="goLedgerSettings()" class="export-btn" style="display:flex;align-items:center;gap:12px;text-align:left;width:100%;padding:14px 16px">
+        <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,rgba(108,99,255,0.25),rgba(78,205,196,0.2));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${linfo.customIcon?renderCatIcon(linfo.customIcon,22,true):linfo.icon||'🏠'}</div>
+        <div style="flex:1;min-width:0">
+          <p style="font-size:14px;font-weight:700;margin-bottom:1px">${linfo.name||'Ledger'} Settings</p>
+          <p style="font-size:11px;color:var(--muted)">Name · Currency · Timezone · Members</p>
+        </div>
+        <span style="color:var(--dim);font-size:20px;flex-shrink:0">›</span>
+      </button>`}
+    </div>
 
     <!-- PREFERENCE -->
     <div class="settings-section">
@@ -6343,12 +6385,6 @@ function renderSettings(){
       <button onclick="goBudget()" class="export-btn" style="margin-bottom:8px">🗂️ Categories & Budget</button>
       <button onclick="goTagManagement()" class="export-btn" style="margin-bottom:8px">🏷️ Tag Management</button>
       <button onclick="goIconLibrary()" class="export-btn" style="margin-bottom:8px">📚 Icon Library</button>
-      ${S.totalView?`<div style="background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);border-radius:14px;padding:14px 16px;margin-top:4px">
-        <p style="font-size:13px;font-weight:600;margin-bottom:4px">🏦 Asset Accounts &amp; 🔄 Recurring Transactions</p>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6">These are per-ledger settings.<br>Select a specific ledger to manage them.</p>
-        <button onclick="openLedgerPicker()" style="margin-top:10px;padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer">Switch Ledger</button>
-      </div>`:`<button onclick="goAssets()" class="export-btn" style="margin-bottom:8px">🏦 Asset Accounts</button>
-      <button onclick="goRecurring()" class="export-btn">🔄 Recurring Transactions</button>`}
     </div>
 
     <!-- DATA -->
