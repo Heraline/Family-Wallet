@@ -8988,7 +8988,62 @@ window.saveLedgerProfile=async()=>{
   }catch(e){alert('Error: '+e.message);}
 };
 
-window.saveAppProfile=async()=>{\n  const name=document.getElementById('profAppName')?.value.trim();\n  if(!name){alert('Enter a display name.');return;}\n  const avatar=AVATARS[selProfAv]||AVATARS[0];\n  const color=M_COLORS[selProfColor]||M_COLORS[0];\n  // Determine photo: new upload, existing saved, or cleared\n  const photoBase64=_profPhotoData!==null?(_profPhotoData||''):(S.profile?.photoBase64||'');\n  try{\n    await update(ref(db,'users/'+S.user.uid),{displayName:name,avatar,color,photoBase64});\n    S.profile={...S.profile,displayName:name,avatar,color,photoBase64};\n    _profPhotoData=null;\n    toast('✓ App account updated');\n    S.view='settings';render();\n  }catch(e){alert('Error: '+e.message);}\n};\n\nwindow.handleProfPhotoSelect=function(input){\n  const file=input.files[0];\n  if(!file)return;\n  if(file.size>3*1024*1024){alert('Photo must be under 3 MB.');return;}\n  const reader=new FileReader();\n  reader.onload=e=>{\n    // Compress via canvas\n    const img=new Image();\n    img.onload=()=>{\n      const MAX=300;\n      let w=img.width,h=img.height;\n      if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}\n      const canvas=document.createElement('canvas');\n      canvas.width=w;canvas.height=h;\n      canvas.getContext('2d').drawImage(img,0,0,w,h);\n      const compressed=canvas.toDataURL('image/jpeg',0.82);\n      _profPhotoData=compressed;\n      // Update UI live without full re-render\n      const ring=document.getElementById('profPhotoRing');\n      if(ring)ring.style.borderColor=M_COLORS[selProfColor]||M_COLORS[0];\n      const imgEl=document.getElementById('profPhotoImg');\n      if(imgEl){\n        const newImg=document.createElement('img');\n        newImg.id='profPhotoImg';\n        newImg.src=compressed;\n        newImg.style.cssText='width:100%;height:100%;border-radius:50%;object-fit:cover;display:block';\n        imgEl.replaceWith(newImg);\n      }\n      // Show remove button if not present\n      const hero=document.querySelector('[id=\"profPhotoRing\"]')?.closest('div[style*=\"text-align:center\"]');\n      if(hero&&!hero.querySelector('button[onclick*=\"removeProfPhoto\"]')){\n        const removeBtn=document.createElement('button');\n        removeBtn.onclick=window.removeProfPhoto;\n        removeBtn.setAttribute('style','margin-top:10px;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.2);color:var(--red);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:600;cursor:pointer');\n        removeBtn.textContent='Remove photo';\n        hero.appendChild(removeBtn);\n      }\n      // Hide the dashed upload hint if visible\n      const hint=document.querySelector('button[onclick*=\"profPhotoInput\"][style*=\"dashed\"]');\n      if(hint)hint.style.display='none';\n    };\n    img.src=e.target.result;\n  };\n  reader.readAsDataURL(file);\n};\n\nwindow.removeProfPhoto=()=>{\n  _profPhotoData='';\n  // Re-render page in place to refresh the hero card\n  const pg=document.getElementById('mainPage');\n  const scrollY=pg?pg.scrollTop:0;\n  if(pg){pg.innerHTML=renderProfilePage();}\n  requestAnimationFrame(()=>{if(pg)pg.scrollTop=scrollY;});\n};
+window.saveAppProfile=async()=>{
+  const name=document.getElementById('profAppName')?.value.trim();
+  if(!name){alert('Enter a display name.');return;}
+  const avatar=AVATARS[selProfAv]||AVATARS[0];
+  const color=M_COLORS[selProfColor]||M_COLORS[0];
+  const photoBase64=_profPhotoData!==null?(_profPhotoData||''):(S.profile?.photoBase64||'');
+  try{
+    await update(ref(db,'users/'+S.user.uid),{displayName:name,avatar,color,photoBase64});
+    S.profile={...S.profile,displayName:name,avatar,color,photoBase64};
+    _profPhotoData=null;
+    toast('✓ App account updated');
+    S.view='settings';render();
+  }catch(e){alert('Error: '+e.message);}
+};
+
+window.handleProfPhotoSelect=function(input){
+  const file=input.files[0];
+  if(!file)return;
+  if(file.size>3*1024*1024){alert('Photo must be under 3 MB.');return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=300;
+      let w=img.width,h=img.height;
+      if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const compressed=canvas.toDataURL('image/jpeg',0.82);
+      _profPhotoData=compressed;
+      const ring=document.getElementById('profPhotoRing');
+      if(ring)ring.style.borderColor=M_COLORS[selProfColor]||M_COLORS[0];
+      const imgEl=document.getElementById('profPhotoImg');
+      if(imgEl){
+        const newImg=document.createElement('img');
+        newImg.id='profPhotoImg';
+        newImg.src=compressed;
+        newImg.style.cssText='width:100%;height:100%;border-radius:50%;object-fit:cover;display:block';
+        imgEl.replaceWith(newImg);
+      }
+      const hint=document.querySelector('button[style*="dashed"]');
+      if(hint)hint.style.display='none';
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+window.removeProfPhoto=()=>{
+  _profPhotoData='';
+  const pg=document.getElementById('mainPage');
+  const scrollY=pg?pg.scrollTop:0;
+  if(pg){pg.innerHTML=renderProfilePage();}
+  requestAnimationFrame(()=>{if(pg)pg.scrollTop=scrollY;});
+};
 
 // Keep saveProfile as alias for ledger profile save (used by old references)
 window.saveProfile=window.saveLedgerProfile;
