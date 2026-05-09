@@ -6292,7 +6292,7 @@ function renderLedgerSettings(){
       <!-- Self -->
       <div class="settings-row surface" style="margin-bottom:8px">
         <div class="sr-left">
-          ${(()=>{const photo=S.profile?.photoBase64;const col=myMem.color||S.profile?.color||'#6C63FF';const av=myMem.avatar||S.profile?.avatar||'👤';const init=(myMem.displayName||S.profile?.displayName||'?').charAt(0).toUpperCase();return photo?`<img src="${photo}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid ${col};flex-shrink:0">`:`<div style="width:38px;height:38px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${av}</div>`;})()}
+          ${(()=>{const col=myMem.color||S.profile?.color||'#6C63FF';const av=myMem.avatar||S.profile?.avatar||'👤';return`<div style="width:38px;height:38px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${av}</div>`;})()}
           <div>
             <p style="font-size:14px;font-weight:600">${myMem.displayName||S.profile?.displayName||''}</p>
             <p style="font-size:11px;color:var(--dim)">${myMem.role==='owner'?'Owner':'Member'}</p>
