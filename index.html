@@ -9003,37 +9003,175 @@ window.saveAppProfile=async()=>{
   }catch(e){alert('Error: '+e.message);}
 };
 
+// ── Profile photo crop state ──
+let _profCropImg=null,_profCropZoom=1,_profCropOffX=0,_profCropOffY=0;
+let _profCropDragging=false,_profCropLastX=0,_profCropLastY=0,_profCropLastDist=0;
+const PROF_CROP_SIZE=280;
+
+function _getProfCropState(){
+  return{img:_profCropImg,zoom:_profCropZoom,offX:_profCropOffX,offY:_profCropOffY,
+    dragging:_profCropDragging,lastX:_profCropLastX,lastY:_profCropLastY,lastDist:_profCropLastDist};
+}
+function _setProfCropState(s){
+  if(s.img!==undefined)_profCropImg=s.img;
+  if(s.zoom!==undefined)_profCropZoom=s.zoom;
+  if(s.offX!==undefined)_profCropOffX=s.offX;
+  if(s.offY!==undefined)_profCropOffY=s.offY;
+  if(s.dragging!==undefined)_profCropDragging=s.dragging;
+  if(s.lastX!==undefined)_profCropLastX=s.lastX;
+  if(s.lastY!==undefined)_profCropLastY=s.lastY;
+  if(s.lastDist!==undefined)_profCropLastDist=s.lastDist;
+}
+
+function _drawProfCrop(){
+  const canvas=document.getElementById('profCropCanvas');
+  if(!canvas||!_profCropImg)return;
+  const S2=PROF_CROP_SIZE;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,S2,S2);
+  // Checkerboard bg
+  for(let r=0;r<S2;r+=10)for(let c=0;c<S2;c+=10){ctx.fillStyle=((r+c)/10)%2===0?'#2a2a3a':'#222230';ctx.fillRect(c,r,10,10);}
+  ctx.drawImage(_profCropImg,_profCropOffX,_profCropOffY,_profCropImg.naturalWidth*_profCropZoom,_profCropImg.naturalHeight*_profCropZoom);
+  // Dim outside circle
+  ctx.save();ctx.beginPath();ctx.rect(0,0,S2,S2);ctx.arc(S2/2,S2/2,S2/2,0,Math.PI*2,true);ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fill();ctx.restore();
+  // Circle border
+  ctx.beginPath();ctx.arc(S2/2,S2/2,S2/2-2,0,Math.PI*2);ctx.strokeStyle='rgba(108,99,255,0.9)';ctx.lineWidth=3;ctx.stroke();
+}
+
+function _clampProfCrop(){
+  if(!_profCropImg)return;
+  const S2=PROF_CROP_SIZE;
+  const iw=_profCropImg.naturalWidth*_profCropZoom,ih=_profCropImg.naturalHeight*_profCropZoom;
+  _profCropOffX=Math.min(0,Math.max(S2-iw,_profCropOffX));
+  _profCropOffY=Math.min(0,Math.max(S2-ih,_profCropOffY));
+}
+
+function _attachProfCropListeners(){
+  const canvas=document.getElementById('profCropCanvas');
+  if(!canvas||canvas._profListenersAttached)return;
+  canvas._profListenersAttached=true;
+  canvas.style.cursor='grab';
+  // Mouse
+  canvas.addEventListener('mousedown',e=>{_profCropDragging=true;_profCropLastX=e.clientX;_profCropLastY=e.clientY;canvas.style.cursor='grabbing';});
+  window.addEventListener('mousemove',e=>{
+    if(!_profCropDragging)return;
+    _profCropOffX+=(e.clientX-_profCropLastX);_profCropOffY+=(e.clientY-_profCropLastY);
+    _profCropLastX=e.clientX;_profCropLastY=e.clientY;_clampProfCrop();_drawProfCrop();
+  });
+  window.addEventListener('mouseup',()=>{_profCropDragging=false;if(canvas)canvas.style.cursor='grab';});
+  canvas.addEventListener('wheel',e=>{
+    e.preventDefault();
+    _profCropZoom=Math.max(0.5,Math.min(5,_profCropZoom+(e.deltaY>0?-0.08:0.08)));
+    _clampProfCrop();_drawProfCrop();
+    const sl=document.getElementById('profCropZoom');if(sl)sl.value=_profCropZoom;
+  },{passive:false});
+  // Touch
+  canvas.addEventListener('touchstart',e=>{
+    if(e.touches.length===1){_profCropDragging=true;_profCropLastX=e.touches[0].clientX;_profCropLastY=e.touches[0].clientY;}
+    else if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;_profCropLastDist=Math.hypot(dx,dy);}
+    e.preventDefault();
+  },{passive:false});
+  canvas.addEventListener('touchmove',e=>{
+    if(e.touches.length===1&&_profCropDragging){
+      _profCropOffX+=(e.touches[0].clientX-_profCropLastX);_profCropOffY+=(e.touches[0].clientY-_profCropLastY);
+      _profCropLastX=e.touches[0].clientX;_profCropLastY=e.touches[0].clientY;_clampProfCrop();_drawProfCrop();
+    }else if(e.touches.length===2){
+      const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
+      const dist=Math.hypot(dx,dy);
+      _profCropZoom=Math.max(0.5,Math.min(5,_profCropZoom*(dist/(_profCropLastDist||dist))));
+      _profCropLastDist=dist;_clampProfCrop();_drawProfCrop();
+      const sl=document.getElementById('profCropZoom');if(sl)sl.value=_profCropZoom;
+    }
+    e.preventDefault();
+  },{passive:false});
+  canvas.addEventListener('touchend',()=>{_profCropDragging=false;});
+}
+
+function _openProfCropModal(src){
+  // Remove existing modal if any
+  const existing=document.getElementById('profCropModal');if(existing)existing.remove();
+  const accentColor=M_COLORS[selProfColor]||M_COLORS[0];
+  const modal=document.createElement('div');
+  modal.id='profCropModal';
+  modal.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML=`
+    <div style="width:100%;max-width:360px">
+      <p style="text-align:center;font-size:18px;font-weight:700;color:#fff;margin-bottom:6px">Crop Photo</p>
+      <p style="text-align:center;font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:20px">Drag · pinch · scroll to adjust</p>
+      <div style="display:flex;justify-content:center;margin-bottom:16px">
+        <canvas id="profCropCanvas" width="${PROF_CROP_SIZE}" height="${PROF_CROP_SIZE}"
+          style="border-radius:50%;cursor:grab;touch-action:none;box-shadow:0 0 0 4px ${accentColor}55,0 8px 40px rgba(0,0,0,0.6);display:block"></canvas>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;padding:0 4px">
+        <span style="font-size:14px">🔍</span>
+        <input type="range" id="profCropZoom" min="0.5" max="5" step="0.02" value="1"
+          style="flex:1;accent-color:${accentColor};height:4px"
+          oninput="window._profCropZoomSlider(this.value)">
+        <span style="font-size:16px">🔍</span>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="window._profCropCancel()" style="flex:1;padding:14px;border-radius:14px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);font-size:14px;font-weight:600;border:none;cursor:pointer">Cancel</button>
+        <button onclick="window._profCropConfirm()" style="flex:2;padding:14px;border-radius:14px;background:linear-gradient(135deg,${accentColor},${accentColor}cc);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer">✓ Use this crop</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  // Load image and init crop
+  const img=new Image();
+  img.onload=()=>{
+    _profCropImg=img;
+    const S2=PROF_CROP_SIZE;
+    const s=S2/Math.min(img.naturalWidth,img.naturalHeight);
+    _profCropZoom=Math.max(1,s);
+    _profCropOffX=(S2-img.naturalWidth*_profCropZoom)/2;
+    _profCropOffY=(S2-img.naturalHeight*_profCropZoom)/2;
+    _clampProfCrop();
+    const sl=document.getElementById('profCropZoom');if(sl)sl.value=_profCropZoom;
+    _drawProfCrop();
+    _attachProfCropListeners();
+  };
+  img.src=src;
+}
+
+window._profCropZoomSlider=val=>{
+  _profCropZoom=parseFloat(val);_clampProfCrop();_drawProfCrop();
+};
+
+window._profCropCancel=()=>{
+  const m=document.getElementById('profCropModal');if(m)m.remove();
+  _profCropImg=null;
+  // Reset file input so same file can be re-selected
+  const inp=document.getElementById('profPhotoInput');if(inp)inp.value='';
+};
+
+window._profCropConfirm=()=>{
+  if(!_profCropImg)return;
+  const S2=PROF_CROP_SIZE;
+  const off=document.createElement('canvas');off.width=S2;off.height=S2;
+  const ctx=off.getContext('2d');
+  ctx.drawImage(_profCropImg,_profCropOffX,_profCropOffY,_profCropImg.naturalWidth*_profCropZoom,_profCropImg.naturalHeight*_profCropZoom);
+  // Circular clip for output
+  const out=document.createElement('canvas');out.width=S2;out.height=S2;
+  const octx=out.getContext('2d');
+  octx.beginPath();octx.arc(S2/2,S2/2,S2/2,0,Math.PI*2);octx.clip();
+  octx.drawImage(off,0,0);
+  const compressed=out.toDataURL('image/jpeg',0.88);
+  _profPhotoData=compressed;
+  _profCropImg=null;
+  // Close modal
+  const m=document.getElementById('profCropModal');if(m)m.remove();
+  // Update the profile preview live
+  const pg=document.getElementById('mainPage');
+  const scrollY=pg?pg.scrollTop:0;
+  if(pg){pg.innerHTML=renderProfilePage();}
+  requestAnimationFrame(()=>{if(pg)pg.scrollTop=scrollY;});
+};
+
 window.handleProfPhotoSelect=function(input){
   const file=input.files[0];
   if(!file)return;
-  if(file.size>3*1024*1024){alert('Photo must be under 3 MB.');return;}
+  if(file.size>8*1024*1024){alert('Photo must be under 8 MB.');return;}
   const reader=new FileReader();
-  reader.onload=e=>{
-    const img=new Image();
-    img.onload=()=>{
-      const MAX=300;
-      let w=img.width,h=img.height;
-      if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}
-      const canvas=document.createElement('canvas');
-      canvas.width=w;canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      const compressed=canvas.toDataURL('image/jpeg',0.82);
-      _profPhotoData=compressed;
-      const ring=document.getElementById('profPhotoRing');
-      if(ring)ring.style.borderColor=M_COLORS[selProfColor]||M_COLORS[0];
-      const imgEl=document.getElementById('profPhotoImg');
-      if(imgEl){
-        const newImg=document.createElement('img');
-        newImg.id='profPhotoImg';
-        newImg.src=compressed;
-        newImg.style.cssText='width:100%;height:100%;border-radius:50%;object-fit:cover;display:block';
-        imgEl.replaceWith(newImg);
-      }
-      const hint=document.querySelector('button[style*="dashed"]');
-      if(hint)hint.style.display='none';
-    };
-    img.src=e.target.result;
-  };
+  reader.onload=e=>_openProfCropModal(e.target.result);
   reader.readAsDataURL(file);
 };
 
