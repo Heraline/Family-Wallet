@@ -6321,16 +6321,10 @@ function renderLedgerSettings(){
       <button onclick="goInvite()" class="export-btn" style="margin-top:10px">🔗 Invite Code &amp; Collaboration</button>
     </div>
 
-    <!-- PER-LEDGER TOOLS -->
-    <div class="settings-section">
-      <p class="label" style="margin-bottom:12px">Ledger Tools</p>
-      <button onclick="goAssets()" class="export-btn" style="margin-bottom:8px">🏦 Asset Accounts</button>
-      <button onclick="goRecurring()" class="export-btn">🔄 Recurring Transactions</button>
-    </div>
   </div>`;
 }
 
-window.goLedgerSettings=()=>{S.view='ledgerSettings';render();};
+window.goLedgerSettings=()=>{S.view='ledgerSettings';render()};
 
 // ── SETTINGS ──
 function renderSettings(){
@@ -6385,6 +6379,8 @@ function renderSettings(){
       <button onclick="goBudget()" class="export-btn" style="margin-bottom:8px">🗂️ Categories & Budget</button>
       <button onclick="goTagManagement()" class="export-btn" style="margin-bottom:8px">🏷️ Tag Management</button>
       <button onclick="goIconLibrary()" class="export-btn" style="margin-bottom:8px">📚 Icon Library</button>
+      <button onclick="goAssets()" class="export-btn" style="margin-bottom:8px">🏦 Asset Accounts</button>
+      <button onclick="goRecurring()" class="export-btn" style="margin-bottom:8px">🔄 Recurring Transactions</button>
     </div>
 
     <!-- DATA -->
