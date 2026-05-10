@@ -4875,7 +4875,7 @@ window._bgtRebuild=()=>{_renderInPlace();};
 function _renderInPlace(){
   const pg=document.getElementById('mainPage');
   const scrollY=pg?pg.scrollTop:0;
-  if(pg){pg.innerHTML=renderPage();}
+  renderPage();
   requestAnimationFrame(()=>{if(pg)pg.scrollTop=scrollY;});
 }
 
