@@ -4869,7 +4869,15 @@ if(!window._bgtDraft)window._bgtDraft={};
 window._bgtDirty=false; // true once any input changes
 
 // Re-render just the validation/summary without full page reload
-window._bgtRebuild=()=>{renderPage();};
+window._bgtRebuild=()=>{_renderInPlace();};
+
+// Helper: in-place re-render current view preserving scroll
+function _renderInPlace(){
+  const pg=document.getElementById('mainPage');
+  const scrollY=pg?pg.scrollTop:0;
+  if(pg){pg.innerHTML=renderPage();}
+  requestAnimationFrame(()=>{if(pg)pg.scrollTop=scrollY;});
+}
 
 // Called by every input oninput
 window.bgtInputChange=(key,val)=>{
@@ -6957,7 +6965,7 @@ window._icmConfirm=()=>{
   else if(ns==='asset'){saveToIconLibrary(cropped);_assetCustomIcon=cropped;_assetCroppedIcon=cropped;_assetCropImg=null;_assetIconMode='library';renderPage();}
   else if(ns==='ledger'){saveToIconLibrary(cropped);_ledgerCustomIcon=cropped;_ledgerCroppedIcon=cropped;_ledgerCropImg=null;_ledgerIconMode='library';_rerenderLedgerIconModal();}
   else if(ns==='sc'){saveToIconLibrary(cropped);_scCustomIcon=cropped;_scCroppedIcon=cropped;_scCropImg=null;_scIconMode='upload';renderPage();}
-  else if(ns==='cat'){saveToIconLibrary(cropped);window.selCatCustomIcon=cropped;window.selCatCroppedIcon=cropped;window._cropImg=null;window.selCatIconMode='upload';renderPage();requestAnimationFrame(()=>_updateCatPreview());}
+  else if(ns==='cat'){saveToIconLibrary(cropped);window.selCatCustomIcon=cropped;window.selCatCroppedIcon=cropped;window._cropImg=null;window.selCatIconMode='upload';_renderInPlace();requestAnimationFrame(()=>_updateCatPreview());}
   else if(ns==='lib'){saveToIconLibrary(cropped);toast('✓ Icon saved to library');renderPage();}
   const m=document.getElementById('iconCropModal');if(m)m.remove();
   _iconCropModalImg=null;_iconCropModalNs=null;
@@ -7780,7 +7788,7 @@ window.handleCatFileUpload=e=>{
 window.clearCustomIcon=()=>{
   window.selCatCustomIcon=null;window.selCatCroppedIcon=null;
   window._cropImg=null;
-  renderPage();
+  _renderInPlace();
 };
 
 function _updateCatPreview(){
@@ -7823,11 +7831,11 @@ window.pickCatLibIcon=id=>{
   const item=S.iconLibrary?.[id];if(!item)return;
   window.selCatCroppedIcon=item.data;window.selCatCustomIcon=item.data;
   window.selCatIconMode='upload';window._cropImg=null;
-  renderPage();
+  _renderInPlace();
   requestAnimationFrame(()=>_updateCatPreview());
 };
 
-window.toggleCatLibEdit=()=>{window._catLibEdit=!window._catLibEdit;renderPage();};
+window.toggleCatLibEdit=()=>{window._catLibEdit=!window._catLibEdit;_renderInPlace();};
 
 
 window.pickCatEmoji=i=>{
@@ -7887,7 +7895,7 @@ window.startEditCat=key=>{
   }
   renderPage();
 };
-window.cancelEditCat=()=>{editCatKey=null;renderPage();};
+window.cancelEditCat=()=>{editCatKey=null;_renderInPlace();};
 window.saveCat=async()=>{
   const name=document.getElementById('catName')?.value.trim();
   if(!name){alert('Enter a name.');return;}
@@ -7911,9 +7919,9 @@ window.saveCat=async()=>{
   const updated={...cats,[key]:{icon,label:name,color:CAT_COLORS[window.selCatColor],subcats:existing.subcats||{}}};
   delete updated.income;updated.income=DEFAULT_CATS.income;
   await set(ref(db,'ledgerCategories/'+S.activeLedgerId),updated);
-  toast('✓ Category saved');editCatKey=null;renderPage();
+  toast('✓ Category saved');editCatKey=null;_renderInPlace();
 };
-window.deleteCat=async key=>{if(!confirm('Delete this category?'))return;const cats={...getCats()};delete cats[key];await set(ref(db,'ledgerCategories/'+S.activeLedgerId),cats);toast('✓ Deleted');renderPage();};
+window.deleteCat=async key=>{if(!confirm('Delete this category?'))return;const cats={...getCats()};delete cats[key];await set(ref(db,'ledgerCategories/'+S.activeLedgerId),cats);toast('✓ Deleted');_renderInPlace();};
 window.resetCats=async()=>{if(!confirm('Reset to default categories?'))return;await remove(ref(db,'ledgerCategories/'+S.activeLedgerId));toast('✓ Reset');renderPage();};
 
 // Subcategory actions
@@ -7937,7 +7945,7 @@ window.startEditSubcat=(catKey,sk)=>{
   }
   renderPage();
 };
-window.cancelSubcat=()=>{editSubcatKey=null;editSubcatCatKey=null;renderPage();};
+window.cancelSubcat=()=>{editSubcatKey=null;editSubcatCatKey=null;_renderInPlace();};
 window.saveSubcat=async catKey=>{
   const name=document.getElementById('subcatName')?.value.trim();
   if(!name){alert('Enter a subcategory name.');return;}
@@ -7951,14 +7959,14 @@ window.saveSubcat=async catKey=>{
   const updated={...cats,[catKey]:cat};
   await set(ref(db,'ledgerCategories/'+S.activeLedgerId),updated);
   toast(editSubcatKey&&editSubcatKey!=='__new__'?'✓ Subcategory updated':'✓ Subcategory added');
-  editSubcatKey=null;editSubcatCatKey=null;renderPage();
+  editSubcatKey=null;editSubcatCatKey=null;_renderInPlace();
 };
 window.deleteSubcat=async(catKey,subcatKey)=>{
   const cats=getCats();const cat={...cats[catKey],subcats:{...(cats[catKey].subcats||{})}};
   delete cat.subcats[subcatKey];
   const updated={...cats,[catKey]:cat};
   await set(ref(db,'ledgerCategories/'+S.activeLedgerId),updated);
-  toast('✓ Subcategory removed');renderPage();
+  toast('✓ Subcategory removed');_renderInPlace();
 };
 
 // ── Subcat icon picker handlers ──
@@ -7979,10 +7987,10 @@ window.setScIconMode=mode=>{
 window.pickScLibIcon=id=>{
   const item=S.iconLibrary?.[id];if(!item)return;
   _scCroppedIcon=item.data;_scCustomIcon=item.data;_scCropImg=null;
-  _scIconMode='upload';renderPage();
+  _scIconMode='upload';_renderInPlace();
 };
 
-window.toggleScLibEdit=()=>{window._scLibEdit=!window._scLibEdit;renderPage();};
+window.toggleScLibEdit=()=>{window._scLibEdit=!window._scLibEdit;_renderInPlace();};
 window.pickScEmoji=i=>{
   _scIconEmoji=i;_scIconImage=-1;
   document.querySelectorAll('.sc-ic-btn').forEach(b=>b.style.borderColor='transparent');
@@ -7999,7 +8007,7 @@ window.pickScImage=i=>{
 };
 window.handleScFileUpload=e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>openIconCropModal('sc',ev.target.result);reader.readAsDataURL(file);};
 window.openIconCropModal_sc=()=>{if(_scCustomIcon)openIconCropModal('sc',_scCustomIcon);};
-window.clearScCustom=()=>{_scCustomIcon=null;_scCroppedIcon=null;_scCropImg=null;_scCropZoom=1;renderPage();};
+window.clearScCustom=()=>{_scCustomIcon=null;_scCroppedIcon=null;_scCropImg=null;_scCropZoom=1;_renderInPlace();};
 
 // ══════════════════════════════════════════
 //  AI RECEIPT SCANNING — Gemini + GPT-4o
