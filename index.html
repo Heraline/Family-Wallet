@@ -5644,21 +5644,16 @@ function renderCategoriesPage(){
           ${CAT_IMAGE_ICONS.map((img,i)=>`<button onclick="pickCatImage(${i})" class="cat-img-btn" style="aspect-ratio:1;border-radius:12px;background:${i===window.selCatImageIcon?'rgba(108,99,255,0.15)':'rgba(255,255,255,0.04)'};border:2px solid ${i===window.selCatImageIcon?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;padding:6px;transition:all 0.15s" title="${img.label}"><img src="${img.url}" style="width:100%;height:100%;object-fit:contain;border-radius:4px" loading="lazy"></button>`).join('')}
         </div>
         <div id="catCustomGrid" style="display:${(window.selCatIconMode==='upload'||window.selCatIconMode==='custom')?'block':'none'}">
-          ${(window.selCatCustomIcon&&window._cropImg)?`
-          <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-            <div style="position:relative;width:200px;height:200px;border-radius:16px;overflow:hidden;border:2px solid var(--accent);background:rgba(255,255,255,0.06);touch-action:none" id="cropContainer">
-              <canvas id="cropCanvas" width="200" height="200" style="display:block;width:200px;height:200px;cursor:grab"></canvas>
+          ${window.selCatCroppedIcon?`
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 0">
+            <div style="width:80px;height:80px;border-radius:16px;overflow:hidden;border:2px solid var(--accent)">
+              <img src="${window.selCatCroppedIcon}" style="width:100%;height:100%;object-fit:cover">
             </div>
-            <div style="display:flex;align-items:center;gap:8px;width:100%">
-              <span style="font-size:11px;color:var(--dim)">🔍</span>
-              <input type="range" id="cropZoom" min="0.5" max="4" step="0.05" value="${window._cropZoom||1}" oninput="updateCropZoom(this.value)" style="flex:1;accent-color:var(--accent)">
-              <span style="font-size:11px;color:var(--dim)">4×</span>
+            <p style="font-size:12px;color:var(--green);font-weight:600">✓ Icon ready</p>
+            <div style="display:flex;gap:8px">
+              <button onclick="openIconCropModal('cat',window.selCatCustomIcon)" style="padding:8px 14px;border-radius:10px;background:rgba(108,99,255,0.15);color:var(--accent);font-size:12px;font-weight:600">Re-crop</button>
+              <button onclick="clearCustomIcon()" style="padding:8px 14px;border-radius:10px;background:rgba(255,107,107,0.1);color:var(--red);font-size:12px;font-weight:600">✕ Remove</button>
             </div>
-            <div style="display:flex;gap:8px;width:100%">
-              <button onclick="confirmCrop()" style="flex:1;padding:10px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700">✓ Use this</button>
-              <button onclick="clearCustomIcon()" style="padding:10px 14px;border-radius:12px;background:rgba(255,107,107,0.15);color:var(--red);font-size:13px;font-weight:600">✕</button>
-            </div>
-            ${window.selCatCroppedIcon?`<p style="font-size:11px;color:var(--green);font-weight:600">✓ Cropped & ready</p>`:'<p style="font-size:11px;color:var(--dim)">Drag to reposition · Scroll/pinch to zoom · Tap "Use this" to confirm</p>'}
           </div>`:`
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <p style="font-size:11px;color:var(--dim)">${(()=>{const items=Object.entries(S.iconLibrary||{});return items.length?items.length+' saved icons':'No icons saved yet';})()}</p>
@@ -6954,6 +6949,7 @@ window._icmConfirm=()=>{
   else if(ns==='asset'){saveToIconLibrary(cropped);_assetCustomIcon=cropped;_assetCroppedIcon=cropped;_assetCropImg=null;_assetIconMode='library';renderPage();}
   else if(ns==='ledger'){saveToIconLibrary(cropped);_ledgerCustomIcon=cropped;_ledgerCroppedIcon=cropped;_ledgerCropImg=null;_ledgerIconMode='library';_rerenderLedgerIconModal();}
   else if(ns==='sc'){saveToIconLibrary(cropped);_scCustomIcon=cropped;_scCroppedIcon=cropped;_scCropImg=null;_scIconMode='upload';renderPage();}
+  else if(ns==='cat'){saveToIconLibrary(cropped);window.selCatCustomIcon=cropped;window.selCatCroppedIcon=cropped;window._cropImg=null;window.selCatIconMode='upload';renderPage();requestAnimationFrame(()=>_updateCatPreview());}
   else if(ns==='lib'){saveToIconLibrary(cropped);toast('✓ Icon saved to library');renderPage();}
   const m=document.getElementById('iconCropModal');if(m)m.remove();
   _iconCropModalImg=null;_iconCropModalNs=null;
@@ -7763,52 +7759,19 @@ function _attachCropListeners(){
 }
 
 window.handleCatFileUpload=e=>{
-  const file=e.target.files?.[0]; if(!file)return;
+  const file=e.target.files?.[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=ev=>{
-    const src=ev.target.result;
-    window.selCatCustomIcon=src;
+    window.selCatCustomIcon=ev.target.result;
     window.selCatCroppedIcon=null;
-    window._cropZoom=1;window._cropOffsetX=0;window._cropOffsetY=0;
-    const img=new Image();
-    img.onload=()=>{
-      window._cropImg=img;
-      // Auto-fit: scale so shortest side fills 200px
-      const s=200/Math.min(img.naturalWidth,img.naturalHeight);
-      window._cropZoom=Math.max(1,s);
-      window._cropOffsetX=(200-img.naturalWidth*window._cropZoom)/2;
-      window._cropOffsetY=(200-img.naturalHeight*window._cropZoom)/2;
-      _clampCrop();
-      renderPage(); // re-render to show crop UI
-      requestAnimationFrame(()=>{ _attachCropListeners(); _drawCrop(); });
-    };
-    img.src=src;
+    openIconCropModal('cat',ev.target.result);
   };
   reader.readAsDataURL(file);
 };
 
-window.updateCropZoom=val=>{
-  window._cropZoom=parseFloat(val);
-  _clampCrop();_drawCrop();
-};
-
-window.confirmCrop=()=>{
-  const off=document.createElement('canvas');off.width=200;off.height=200;
-  const ctx=off.getContext('2d');
-  if(window._cropImg){
-    const z=window._cropZoom,img=window._cropImg;
-    ctx.drawImage(img,window._cropOffsetX,window._cropOffsetY,img.naturalWidth*z,img.naturalHeight*z);
-  }
-  window.selCatCroppedIcon=off.toDataURL('image/png');
-  saveToIconLibrary(window.selCatCroppedIcon);
-  window._cropImg=null; // return to grid view
-  renderPage();
-  requestAnimationFrame(()=>_updateCatPreview());
-};
-
 window.clearCustomIcon=()=>{
   window.selCatCustomIcon=null;window.selCatCroppedIcon=null;
-  window._cropImg=null;window._cropZoom=1;
+  window._cropImg=null;
   renderPage();
 };
 
