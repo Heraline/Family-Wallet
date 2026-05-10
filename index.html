@@ -5810,7 +5810,7 @@ function renderIconLibraryPage(){
 window.handleLibPageUpload=e=>{
   const file=e.target.files?.[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=ev=>{saveToIconLibrary(ev.target.result);};
+  reader.onload=ev=>openIconCropModal('lib',ev.target.result);
   reader.readAsDataURL(file);
 };
 
@@ -6941,17 +6941,20 @@ window._icmCancel=()=>{
 window._icmConfirm=()=>{
   if(!_iconCropModalImg||!_iconCropModalNs)return;
   const ns=_iconCropModalNs;
+  // Extract the crop guide region (inset 20px on each side)
   const pad=20;const size=ICM_SIZE-pad*2;
   const off=document.createElement('canvas');off.width=size;off.height=size;
   const ctx=off.getContext('2d');
-  ctx.drawImage(_iconCropModalImg,_icmOffX-pad,_icmOffY-pad,_iconCropModalImg.naturalWidth*_icmZoom,_iconCropModalImg.naturalHeight*_icmZoom);
+  // Shift draw origin so the crop guide area maps to (0,0)
+  ctx.drawImage(_iconCropModalImg,_icmOffX-pad,_icmOffY-pad,
+    _iconCropModalImg.naturalWidth*_icmZoom,_iconCropModalImg.naturalHeight*_icmZoom);
   const cropped=off.toDataURL('image/png');
-  saveToIconLibrary(cropped);
   // Apply to correct namespace
-  if(ns==='pm'){_pmCustomIcon=cropped;_pmCroppedIcon=cropped;_pmCropImg=null;_pmIconMode='library';renderPage();}
-  else if(ns==='asset'){_assetCustomIcon=cropped;_assetCroppedIcon=cropped;_assetCropImg=null;_assetIconMode='library';renderPage();}
-  else if(ns==='ledger'){_ledgerCustomIcon=cropped;_ledgerCroppedIcon=cropped;_ledgerCropImg=null;_ledgerIconMode='library';_rerenderLedgerIconModal();}
-  else if(ns==='sc'){_scCustomIcon=cropped;_scCroppedIcon=cropped;_scCropImg=null;_scIconMode='upload';renderPage();}
+  if(ns==='pm'){saveToIconLibrary(cropped);_pmCustomIcon=cropped;_pmCroppedIcon=cropped;_pmCropImg=null;_pmIconMode='library';renderPage();}
+  else if(ns==='asset'){saveToIconLibrary(cropped);_assetCustomIcon=cropped;_assetCroppedIcon=cropped;_assetCropImg=null;_assetIconMode='library';renderPage();}
+  else if(ns==='ledger'){saveToIconLibrary(cropped);_ledgerCustomIcon=cropped;_ledgerCroppedIcon=cropped;_ledgerCropImg=null;_ledgerIconMode='library';_rerenderLedgerIconModal();}
+  else if(ns==='sc'){saveToIconLibrary(cropped);_scCustomIcon=cropped;_scCroppedIcon=cropped;_scCropImg=null;_scIconMode='upload';renderPage();}
+  else if(ns==='lib'){saveToIconLibrary(cropped);toast('✓ Icon saved to library');renderPage();}
   const m=document.getElementById('iconCropModal');if(m)m.remove();
   _iconCropModalImg=null;_iconCropModalNs=null;
 };
