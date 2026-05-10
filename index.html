@@ -5586,21 +5586,16 @@ function renderCategoriesPage(){
           ${CAT_IMAGE_ICONS.map((img,i)=>`<button onclick="pickScImage(${i})" class="sc-img-btn" style="aspect-ratio:1;border-radius:12px;background:${i===_scIconImage&&_scIconMode==='image'?'rgba(108,99,255,0.15)':'rgba(255,255,255,0.04)'};border:2px solid ${i===_scIconImage&&_scIconMode==='image'?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;padding:6px" title="${img.label}"><img src="${img.url}" style="width:100%;height:100%;object-fit:contain;border-radius:4px" loading="lazy"></button>`).join('')}
         </div>
         <div id="scCustomGrid" style="display:${(_scIconMode==='upload'||_scIconMode==='custom')?'block':'none'}">
-          ${(_scCustomIcon&&_scCropImg)?`
-          <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-            <div style="position:relative;width:180px;height:180px;border-radius:16px;overflow:hidden;border:2px solid var(--accent);background:rgba(255,255,255,0.06);touch-action:none">
-              <canvas id="scCropCanvas" width="180" height="180" style="display:block;width:180px;height:180px;cursor:grab"></canvas>
+          ${_scCroppedIcon?`
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 0">
+            <div style="width:80px;height:80px;border-radius:16px;overflow:hidden;border:2px solid var(--accent)">
+              <img src="${_scCroppedIcon}" style="width:100%;height:100%;object-fit:cover">
             </div>
-            <div style="display:flex;align-items:center;gap:8px;width:100%">
-              <span style="font-size:11px;color:var(--dim)">🔍</span>
-              <input type="range" id="scCropZoom" min="0.5" max="4" step="0.05" value="${_scCropZoom||1}" oninput="updateScCropZoom(this.value)" style="flex:1;accent-color:var(--accent)">
-              <span style="font-size:11px;color:var(--dim)">4×</span>
+            <p style="font-size:12px;color:var(--green);font-weight:600">✓ Icon ready</p>
+            <div style="display:flex;gap:8px">
+              <button onclick="openIconCropModal_sc()" style="padding:8px 14px;border-radius:10px;background:rgba(108,99,255,0.15);color:var(--accent);font-size:12px;font-weight:600">Re-crop</button>
+              <button onclick="clearScCustom()" style="padding:8px 14px;border-radius:10px;background:rgba(255,107,107,0.1);color:var(--red);font-size:12px;font-weight:600">✕ Remove</button>
             </div>
-            <div style="display:flex;gap:8px;width:100%">
-              <button onclick="confirmScCrop()" style="flex:1;padding:10px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700">✓ Use this</button>
-              <button onclick="clearScCustom()" style="padding:10px 14px;border-radius:12px;background:rgba(255,107,107,0.15);color:var(--red);font-size:13px;font-weight:600">✕</button>
-            </div>
-            ${_scCroppedIcon?`<p style="font-size:11px;color:var(--green);font-weight:600">✓ Cropped & ready</p>`:'<p style="font-size:11px;color:var(--dim)">Drag · pinch to zoom · Tap "Use this"</p>'}
           </div>`:`
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <p style="font-size:11px;color:var(--dim)">${(()=>{const items=Object.entries(S.iconLibrary||{});return items.length?items.length+' saved icons':'No icons saved yet';})()}</p>
@@ -6853,6 +6848,114 @@ const BANK_PRESETS=[
   {emoji:'⭐',label:'Mercedes',bg:'#222222',color:'#fff'},
 ];
 
+// ── Shared Instagram-style icon crop modal ──────────────────────────────────
+// Works for all namespaces: pm, asset, ledger, sc
+let _iconCropModalNs=null,_iconCropModalImg=null;
+let _icmZoom=1,_icmOffX=0,_icmOffY=0,_icmDragging=false,_icmLastX=0,_icmLastY=0,_icmLastDist=0;
+const ICM_SIZE=280;
+
+function _icmDraw(){
+  const canvas=document.getElementById('iconCropModalCanvas');
+  if(!canvas||!_iconCropModalImg)return;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,ICM_SIZE,ICM_SIZE);
+  // Checkerboard bg for transparency
+  for(let r=0;r<ICM_SIZE;r+=10)for(let c=0;c<ICM_SIZE;c+=10){ctx.fillStyle=((r+c)/10)%2===0?'#2a2a3a':'#222230';ctx.fillRect(c,r,10,10);}
+  ctx.drawImage(_iconCropModalImg,_icmOffX,_icmOffY,_iconCropModalImg.naturalWidth*_icmZoom,_iconCropModalImg.naturalHeight*_icmZoom);
+  // Rounded-square crop guide
+  const pad=20;const rr=24;
+  ctx.save();ctx.beginPath();
+  ctx.rect(0,0,ICM_SIZE,ICM_SIZE);
+  // Subtract rounded rect from dimming
+  ctx.roundRect(pad,pad,ICM_SIZE-pad*2,ICM_SIZE-pad*2,rr);
+  ctx.fillStyle='rgba(0,0,0,0.52)';ctx.fill('evenodd');ctx.restore();
+  // Border
+  ctx.beginPath();ctx.roundRect(pad,pad,ICM_SIZE-pad*2,ICM_SIZE-pad*2,rr);
+  ctx.strokeStyle='rgba(108,99,255,0.9)';ctx.lineWidth=2.5;ctx.stroke();
+}
+function _icmClamp(){
+  if(!_iconCropModalImg)return;
+  _icmOffX=Math.min(0,Math.max(ICM_SIZE-_iconCropModalImg.naturalWidth*_icmZoom,_icmOffX));
+  _icmOffY=Math.min(0,Math.max(ICM_SIZE-_iconCropModalImg.naturalHeight*_icmZoom,_icmOffY));
+}
+function _icmAttach(){
+  const canvas=document.getElementById('iconCropModalCanvas');
+  if(!canvas||canvas._icmAttached)return;
+  canvas._icmAttached=true;
+  canvas.style.cursor='grab';
+  canvas.addEventListener('mousedown',e=>{_icmDragging=true;_icmLastX=e.clientX;_icmLastY=e.clientY;canvas.style.cursor='grabbing';});
+  window.addEventListener('mousemove',e=>{if(!_icmDragging)return;_icmOffX+=e.clientX-_icmLastX;_icmOffY+=e.clientY-_icmLastY;_icmLastX=e.clientX;_icmLastY=e.clientY;_icmClamp();_icmDraw();});
+  window.addEventListener('mouseup',()=>{_icmDragging=false;if(canvas)canvas.style.cursor='grab';});
+  canvas.addEventListener('wheel',e=>{e.preventDefault();_icmZoom=Math.max(0.3,Math.min(6,_icmZoom+(e.deltaY>0?-0.08:0.08)));_icmClamp();_icmDraw();const sl=document.getElementById('iconCropModalZoom');if(sl)sl.value=_icmZoom;},{passive:false});
+  canvas.addEventListener('touchstart',e=>{if(e.touches.length===1){_icmDragging=true;_icmLastX=e.touches[0].clientX;_icmLastY=e.touches[0].clientY;}else if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;_icmLastDist=Math.hypot(dx,dy);}e.preventDefault();},{passive:false});
+  canvas.addEventListener('touchmove',e=>{if(e.touches.length===1&&_icmDragging){_icmOffX+=e.touches[0].clientX-_icmLastX;_icmOffY+=e.touches[0].clientY-_icmLastY;_icmLastX=e.touches[0].clientX;_icmLastY=e.touches[0].clientY;_icmClamp();_icmDraw();}else if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;const dist=Math.hypot(dx,dy);_icmZoom=Math.max(0.3,Math.min(6,_icmZoom*(dist/(_icmLastDist||dist))));_icmLastDist=dist;_icmClamp();_icmDraw();const sl=document.getElementById('iconCropModalZoom');if(sl)sl.value=_icmZoom;}e.preventDefault();},{passive:false});
+  canvas.addEventListener('touchend',()=>{_icmDragging=false;});
+}
+
+function openIconCropModal(ns,src){
+  _iconCropModalNs=ns;
+  const existing=document.getElementById('iconCropModal');if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='iconCropModal';
+  modal.style.cssText='position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,0.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML=`
+    <div style="width:100%;max-width:360px">
+      <p style="text-align:center;font-size:18px;font-weight:700;color:#fff;margin-bottom:5px">Crop Icon</p>
+      <p style="text-align:center;font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:18px">Drag · pinch · scroll to adjust</p>
+      <div style="display:flex;justify-content:center;margin-bottom:14px">
+        <canvas id="iconCropModalCanvas" width="${ICM_SIZE}" height="${ICM_SIZE}"
+          style="border-radius:20px;touch-action:none;box-shadow:0 0 0 3px rgba(108,99,255,0.5),0 8px 40px rgba(0,0,0,0.6);display:block;cursor:grab"></canvas>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding:0 4px">
+        <span style="font-size:14px">🔍</span>
+        <input type="range" id="iconCropModalZoom" min="0.3" max="6" step="0.02" value="1"
+          style="flex:1;accent-color:var(--accent)" oninput="window._icmZoomSlider(this.value)">
+        <span style="font-size:16px">🔍</span>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="window._icmCancel()" style="flex:1;padding:13px;border-radius:14px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);font-size:14px;font-weight:600;border:none;cursor:pointer">Cancel</button>
+        <button onclick="window._icmConfirm()" style="flex:2;padding:13px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer">✓ Use this crop</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const img=new Image();
+  img.onload=()=>{
+    _iconCropModalImg=img;
+    const s=ICM_SIZE/Math.min(img.naturalWidth,img.naturalHeight);
+    _icmZoom=Math.max(1,s);
+    _icmOffX=(ICM_SIZE-img.naturalWidth*_icmZoom)/2;
+    _icmOffY=(ICM_SIZE-img.naturalHeight*_icmZoom)/2;
+    _icmClamp();
+    const sl=document.getElementById('iconCropModalZoom');if(sl)sl.value=_icmZoom;
+    _icmDraw();
+    _icmAttach();
+  };
+  img.src=src;
+}
+
+window._icmZoomSlider=val=>{_icmZoom=parseFloat(val);_icmClamp();_icmDraw();};
+window._icmCancel=()=>{
+  const m=document.getElementById('iconCropModal');if(m)m.remove();
+  _iconCropModalImg=null;_iconCropModalNs=null;
+};
+window._icmConfirm=()=>{
+  if(!_iconCropModalImg||!_iconCropModalNs)return;
+  const ns=_iconCropModalNs;
+  const pad=20;const size=ICM_SIZE-pad*2;
+  const off=document.createElement('canvas');off.width=size;off.height=size;
+  const ctx=off.getContext('2d');
+  ctx.drawImage(_iconCropModalImg,_icmOffX-pad,_icmOffY-pad,_iconCropModalImg.naturalWidth*_icmZoom,_iconCropModalImg.naturalHeight*_icmZoom);
+  const cropped=off.toDataURL('image/png');
+  saveToIconLibrary(cropped);
+  // Apply to correct namespace
+  if(ns==='pm'){_pmCustomIcon=cropped;_pmCroppedIcon=cropped;_pmCropImg=null;_pmIconMode='library';renderPage();}
+  else if(ns==='asset'){_assetCustomIcon=cropped;_assetCroppedIcon=cropped;_assetCropImg=null;_assetIconMode='library';renderPage();}
+  else if(ns==='ledger'){_ledgerCustomIcon=cropped;_ledgerCroppedIcon=cropped;_ledgerCropImg=null;_ledgerIconMode='library';_rerenderLedgerIconModal();}
+  else if(ns==='sc'){_scCustomIcon=cropped;_scCroppedIcon=cropped;_scCropImg=null;_scIconMode='upload';renderPage();}
+  const m=document.getElementById('iconCropModal');if(m)m.remove();
+  _iconCropModalImg=null;_iconCropModalNs=null;
+};
+
 function _renderBankPresetIcon(p,size=52){
   return`<div style="width:${size}px;height:${size}px;border-radius:50%;background:${p.bg};display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.42)}px;flex-shrink:0" title="${p.label}">${p.emoji}</div>`;
 }
@@ -6885,22 +6988,17 @@ function _buildIconPickerHTML(ns,iconMode,iconEmoji,iconImage,customIcon,cropped
 
     <!-- UPLOAD + LIBRARY (combined) -->
     <div id="${ns}LibraryGrid" style="display:${lMode?'block':'none'}">
-      ${cMode?`
-      <!-- CROP UI (shown after file picked) -->
-      <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-        <div style="position:relative;width:200px;height:200px;border-radius:16px;overflow:hidden;border:2px solid var(--accent);background:rgba(255,255,255,0.06);touch-action:none" id="${ns}CropContainer">
-          <canvas id="${ns}CropCanvas" width="200" height="200" style="display:block;width:200px;height:200px;cursor:grab"></canvas>
+      ${croppedIcon?`
+      <!-- Cropped ready badge -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 0">
+        <div style="width:80px;height:80px;border-radius:16px;overflow:hidden;border:2px solid var(--accent)">
+          <img src="${croppedIcon}" style="width:100%;height:100%;object-fit:cover">
         </div>
-        <div style="display:flex;align-items:center;gap:8px;width:100%">
-          <span style="font-size:11px;color:var(--dim)">🔍</span>
-          <input type="range" id="${ns}CropZoom" min="0.5" max="4" step="0.05" value="${cropZoom||1}" oninput="updateIconCropZoom_${ns}(this.value)" style="flex:1;accent-color:var(--accent)">
-          <span style="font-size:11px;color:var(--dim)">4×</span>
+        <p style="font-size:12px;color:var(--green);font-weight:600">✓ Icon ready</p>
+        <div style="display:flex;gap:8px">
+          <button onclick="openIconCropModal_${ns}()" style="padding:8px 14px;border-radius:10px;background:rgba(108,99,255,0.15);color:var(--accent);font-size:12px;font-weight:600">Re-crop</button>
+          <button onclick="clearIconCustom_${ns}()" style="padding:8px 14px;border-radius:10px;background:rgba(255,107,107,0.1);color:var(--red);font-size:12px;font-weight:600">✕ Remove</button>
         </div>
-        <div style="display:flex;gap:8px;width:100%">
-          <button onclick="confirmIconCrop_${ns}()" style="flex:1;padding:10px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700">✓ Use this</button>
-          <button onclick="clearIconCustom_${ns}()" style="padding:10px 14px;border-radius:12px;background:rgba(255,107,107,0.15);color:var(--red);font-size:13px;font-weight:600">✕</button>
-        </div>
-        ${croppedIcon?`<p style="font-size:11px;color:var(--green);font-weight:600">✓ Cropped & ready</p>`:'<p style="font-size:11px;color:var(--dim)">Drag · pinch to zoom · Tap "Use this"</p>'}
       </div>`:`
       <!-- GRID: upload cell first, then saved icons -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -7065,23 +7163,8 @@ window.pickBankPreset_cat   =i=>_pickBankPresetForNs('cat',i);
 window.setIconMode_pm=mode=>{_pmIconMode=mode;_setIconModeGeneric('pm',mode);};
 window.pickIconEmoji_pm=i=>{_pmIconEmoji=i;_pmIconImage=-1;document.querySelectorAll('.pm-ic-btn').forEach(b=>b.style.borderColor='transparent');const btn=document.querySelectorAll('.pm-ic-btn')[i];if(btn)btn.style.borderColor='var(--accent)';};
 window.pickIconImage_pm=i=>{_pmIconImage=i;_pmIconEmoji=-1;document.querySelectorAll('.pm-img-btn').forEach(b=>{b.style.borderColor='transparent';b.style.background='rgba(255,255,255,0.04)';});const btn=document.querySelectorAll('.pm-img-btn')[i];if(btn){btn.style.borderColor='var(--accent)';btn.style.background='rgba(108,99,255,0.15)';}};
-window.handleIconFileUpload_pm=e=>{
-  const file=e.target.files?.[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    _pmCustomIcon=ev.target.result;_pmCroppedIcon=null;_pmCropZoom=1;_pmCropOffX=0;_pmCropOffY=0;
-    const img=new Image();img.onload=()=>{_pmCropImg=img;const s=200/Math.min(img.naturalWidth,img.naturalHeight);_pmCropZoom=Math.max(1,s);_pmCropOffX=(200-img.naturalWidth*_pmCropZoom)/2;_pmCropOffY=(200-img.naturalHeight*_pmCropZoom)/2;const r=_clampIconCrop(img,_pmCropZoom,_pmCropOffX,_pmCropOffY);_pmCropOffX=r.offX;_pmCropOffY=r.offY;renderPage();requestAnimationFrame(()=>{_attachIconCropListeners('pm',()=>({img:_pmCropImg,zoom:_pmCropZoom,offX:_pmCropOffX,offY:_pmCropOffY,dragging:_pmCropDragging,lastX:_pmCropLastX,lastY:_pmCropLastY,lastDist:_pmCropLastDist}),s2=>{if(s2.img!==undefined)_pmCropImg=s2.img;if(s2.zoom!==undefined)_pmCropZoom=s2.zoom;if(s2.offX!==undefined)_pmCropOffX=s2.offX;if(s2.offY!==undefined)_pmCropOffY=s2.offY;if(s2.dragging!==undefined)_pmCropDragging=s2.dragging;if(s2.lastX!==undefined)_pmCropLastX=s2.lastX;if(s2.lastY!==undefined)_pmCropLastY=s2.lastY;if(s2.lastDist!==undefined)_pmCropLastDist=s2.lastDist;});_drawIconCrop('pm',document.getElementById('pmCropCanvas'),_pmCropImg,_pmCropZoom,_pmCropOffX,_pmCropOffY);});};img.src=ev.target.result;
-  };reader.readAsDataURL(file);
-};
-window.updateIconCropZoom_pm=val=>{_pmCropZoom=parseFloat(val);const r=_clampIconCrop(_pmCropImg,_pmCropZoom,_pmCropOffX,_pmCropOffY);_pmCropOffX=r.offX;_pmCropOffY=r.offY;_drawIconCrop('pm',document.getElementById('pmCropCanvas'),_pmCropImg,_pmCropZoom,_pmCropOffX,_pmCropOffY);};
-window.confirmIconCrop_pm=()=>{
-  const off=document.createElement('canvas');off.width=200;off.height=200;
-  const ctx=off.getContext('2d');if(_pmCropImg)ctx.drawImage(_pmCropImg,_pmCropOffX,_pmCropOffY,_pmCropImg.naturalWidth*_pmCropZoom,_pmCropImg.naturalHeight*_pmCropZoom);
-  _pmCroppedIcon=off.toDataURL('image/png');
-  saveToIconLibrary(_pmCroppedIcon);
-  _pmCropImg=null; // return to grid view
-  renderPage();
-};
+window.handleIconFileUpload_pm=e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>openIconCropModal('pm',ev.target.result);reader.readAsDataURL(file);};
+window.openIconCropModal_pm=()=>{if(_pmCustomIcon)openIconCropModal('pm',_pmCustomIcon);};
 window.clearIconCustom_pm=()=>{_pmCustomIcon=null;_pmCroppedIcon=null;_pmCropImg=null;_pmCropZoom=1;renderPage();};
 // Legacy stub (kept for any remaining refs)
 window.pickPmIcon=ic=>{_pmIconMode='emoji';const idx=CAT_ICONS.indexOf(ic);_pmIconEmoji=idx>=0?idx:0;};
@@ -7940,39 +8023,8 @@ window.pickScImage=i=>{
   const btn=document.querySelectorAll('.sc-img-btn')[i];if(btn){btn.style.borderColor='var(--accent)';btn.style.background='rgba(108,99,255,0.15)';}
   renderPage();
 };
-window.handleScFileUpload=e=>{
-  const file=e.target.files?.[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    _scCustomIcon=ev.target.result;_scCroppedIcon=null;_scCropZoom=1;_scCropOffX=0;_scCropOffY=0;
-    const img=new Image();img.onload=()=>{
-      _scCropImg=img;const s=180/Math.min(img.naturalWidth,img.naturalHeight);_scCropZoom=Math.max(1,s);
-      _scCropOffX=(180-img.naturalWidth*_scCropZoom)/2;_scCropOffY=(180-img.naturalHeight*_scCropZoom)/2;
-      const r=_clampIconCrop(img,_scCropZoom,_scCropOffX,_scCropOffY,180);_scCropOffX=r.offX;_scCropOffY=r.offY;
-      renderPage();
-      requestAnimationFrame(()=>{
-        _attachIconCropListeners('sc',
-          ()=>({img:_scCropImg,zoom:_scCropZoom,offX:_scCropOffX,offY:_scCropOffY,dragging:_scCropDragging,lastX:_scCropLastX,lastY:_scCropLastY,lastDist:_scCropLastDist}),
-          s2=>{if(s2.img!==undefined)_scCropImg=s2.img;if(s2.zoom!==undefined)_scCropZoom=s2.zoom;if(s2.offX!==undefined)_scCropOffX=s2.offX;if(s2.offY!==undefined)_scCropOffY=s2.offY;if(s2.dragging!==undefined)_scCropDragging=s2.dragging;if(s2.lastX!==undefined)_scCropLastX=s2.lastX;if(s2.lastY!==undefined)_scCropLastY=s2.lastY;if(s2.lastDist!==undefined)_scCropLastDist=s2.lastDist;}
-        );
-        _drawIconCrop('sc',document.getElementById('scCropCanvas'),_scCropImg,_scCropZoom,_scCropOffX,_scCropOffY);
-      });
-    };img.src=ev.target.result;
-  };reader.readAsDataURL(file);
-};
-window.updateScCropZoom=val=>{
-  _scCropZoom=parseFloat(val);const r=_clampIconCrop(_scCropImg,_scCropZoom,_scCropOffX,_scCropOffY,180);
-  _scCropOffX=r.offX;_scCropOffY=r.offY;
-  _drawIconCrop('sc',document.getElementById('scCropCanvas'),_scCropImg,_scCropZoom,_scCropOffX,_scCropOffY);
-};
-window.confirmScCrop=()=>{
-  const off=document.createElement('canvas');off.width=180;off.height=180;
-  const ctx=off.getContext('2d');if(_scCropImg)ctx.drawImage(_scCropImg,_scCropOffX,_scCropOffY,_scCropImg.naturalWidth*_scCropZoom,_scCropImg.naturalHeight*_scCropZoom);
-  _scCroppedIcon=off.toDataURL('image/png');
-  saveToIconLibrary(_scCroppedIcon);
-  _scCropImg=null; // return to grid view
-  renderPage();
-};
+window.handleScFileUpload=e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>openIconCropModal('sc',ev.target.result);reader.readAsDataURL(file);};
+window.openIconCropModal_sc=()=>{if(_scCustomIcon)openIconCropModal('sc',_scCustomIcon);};
 window.clearScCustom=()=>{_scCustomIcon=null;_scCroppedIcon=null;_scCropImg=null;_scCropZoom=1;renderPage();};
 
 // ══════════════════════════════════════════
@@ -8557,23 +8609,8 @@ function _assetCurrentIcon(){
 window.setIconMode_asset=mode=>{_assetIconMode=mode;_setIconModeGeneric('asset',mode);};
 window.pickIconEmoji_asset=i=>{_assetIconEmoji=i;_assetIconImage=-1;document.querySelectorAll('.asset-ic-btn').forEach(b=>b.style.borderColor='transparent');const btn=document.querySelectorAll('.asset-ic-btn')[i];if(btn)btn.style.borderColor='var(--accent)';};
 window.pickIconImage_asset=i=>{_assetIconImage=i;_assetIconEmoji=-1;document.querySelectorAll('.asset-img-btn').forEach(b=>{b.style.borderColor='transparent';b.style.background='rgba(255,255,255,0.04)';});const btn=document.querySelectorAll('.asset-img-btn')[i];if(btn){btn.style.borderColor='var(--accent)';btn.style.background='rgba(108,99,255,0.15)';}};
-window.handleIconFileUpload_asset=e=>{
-  const file=e.target.files?.[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    _assetCustomIcon=ev.target.result;_assetCroppedIcon=null;_assetCropZoom=1;_assetCropOffX=0;_assetCropOffY=0;
-    const img=new Image();img.onload=()=>{_assetCropImg=img;const s=200/Math.min(img.naturalWidth,img.naturalHeight);_assetCropZoom=Math.max(1,s);_assetCropOffX=(200-img.naturalWidth*_assetCropZoom)/2;_assetCropOffY=(200-img.naturalHeight*_assetCropZoom)/2;const r=_clampIconCrop(img,_assetCropZoom,_assetCropOffX,_assetCropOffY);_assetCropOffX=r.offX;_assetCropOffY=r.offY;renderPage();requestAnimationFrame(()=>{_attachIconCropListeners('asset',()=>({img:_assetCropImg,zoom:_assetCropZoom,offX:_assetCropOffX,offY:_assetCropOffY,dragging:_assetCropDragging,lastX:_assetCropLastX,lastY:_assetCropLastY,lastDist:_assetCropLastDist}),s2=>{if(s2.img!==undefined)_assetCropImg=s2.img;if(s2.zoom!==undefined)_assetCropZoom=s2.zoom;if(s2.offX!==undefined)_assetCropOffX=s2.offX;if(s2.offY!==undefined)_assetCropOffY=s2.offY;if(s2.dragging!==undefined)_assetCropDragging=s2.dragging;if(s2.lastX!==undefined)_assetCropLastX=s2.lastX;if(s2.lastY!==undefined)_assetCropLastY=s2.lastY;if(s2.lastDist!==undefined)_assetCropLastDist=s2.lastDist;});_drawIconCrop('asset',document.getElementById('assetCropCanvas'),_assetCropImg,_assetCropZoom,_assetCropOffX,_assetCropOffY);});};img.src=ev.target.result;
-  };reader.readAsDataURL(file);
-};
-window.updateIconCropZoom_asset=val=>{_assetCropZoom=parseFloat(val);const r=_clampIconCrop(_assetCropImg,_assetCropZoom,_assetCropOffX,_assetCropOffY);_assetCropOffX=r.offX;_assetCropOffY=r.offY;_drawIconCrop('asset',document.getElementById('assetCropCanvas'),_assetCropImg,_assetCropZoom,_assetCropOffX,_assetCropOffY);};
-window.confirmIconCrop_asset=()=>{
-  const off=document.createElement('canvas');off.width=200;off.height=200;
-  const ctx=off.getContext('2d');if(_assetCropImg)ctx.drawImage(_assetCropImg,_assetCropOffX,_assetCropOffY,_assetCropImg.naturalWidth*_assetCropZoom,_assetCropImg.naturalHeight*_assetCropZoom);
-  _assetCroppedIcon=off.toDataURL('image/png');
-  saveToIconLibrary(_assetCroppedIcon);
-  _assetCropImg=null; // return to grid view
-  renderPage();
-};
+window.handleIconFileUpload_asset=e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>openIconCropModal('asset',ev.target.result);reader.readAsDataURL(file);};
+window.openIconCropModal_asset=()=>{if(_assetCustomIcon)openIconCropModal('asset',_assetCustomIcon);};
 window.clearIconCustom_asset=()=>{_assetCustomIcon=null;_assetCroppedIcon=null;_assetCropImg=null;_assetCropZoom=1;renderPage();};
 
 // ── Ledger icon picker state ──
@@ -8594,30 +8631,8 @@ function _ledgerCurrentIcon(){
 window.setIconMode_ledger=mode=>{_ledgerIconMode=mode;_setIconModeGeneric('ledger',mode);};
 window.pickIconEmoji_ledger=i=>{_ledgerIconEmoji=i;_ledgerIconImage=-1;document.querySelectorAll('.ledger-ic-btn').forEach(b=>b.style.borderColor='transparent');const btn=document.querySelectorAll('.ledger-ic-btn')[i];if(btn)btn.style.borderColor='var(--accent)';};
 window.pickIconImage_ledger=i=>{_ledgerIconImage=i;_ledgerIconEmoji=-1;document.querySelectorAll('.ledger-img-btn').forEach(b=>{b.style.borderColor='transparent';b.style.background='rgba(255,255,255,0.04)';});const btn=document.querySelectorAll('.ledger-img-btn')[i];if(btn){btn.style.borderColor='var(--accent)';btn.style.background='rgba(108,99,255,0.15)';}};
-window.handleIconFileUpload_ledger=e=>{
-  const file=e.target.files?.[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    _ledgerCustomIcon=ev.target.result;_ledgerCroppedIcon=null;_ledgerCropZoom=1;_ledgerCropOffX=0;_ledgerCropOffY=0;
-    _ledgerIconMode='library';
-    const img=new Image();img.onload=()=>{
-      _ledgerCropImg=img;
-      const s=200/Math.min(img.naturalWidth,img.naturalHeight);_ledgerCropZoom=Math.max(1,s);
-      _ledgerCropOffX=(200-img.naturalWidth*_ledgerCropZoom)/2;_ledgerCropOffY=(200-img.naturalHeight*_ledgerCropZoom)/2;
-      const r=_clampIconCrop(img,_ledgerCropZoom,_ledgerCropOffX,_ledgerCropOffY);_ledgerCropOffX=r.offX;_ledgerCropOffY=r.offY;
-      _rerenderLedgerIconModal();
-    };img.src=ev.target.result;
-  };reader.readAsDataURL(file);
-};
-window.updateIconCropZoom_ledger=val=>{_ledgerCropZoom=parseFloat(val);const r=_clampIconCrop(_ledgerCropImg,_ledgerCropZoom,_ledgerCropOffX,_ledgerCropOffY);_ledgerCropOffX=r.offX;_ledgerCropOffY=r.offY;_drawIconCrop('ledger',document.getElementById('ledgerCropCanvas'),_ledgerCropImg,_ledgerCropZoom,_ledgerCropOffX,_ledgerCropOffY);};
-window.confirmIconCrop_ledger=()=>{
-  const off=document.createElement('canvas');off.width=200;off.height=200;
-  const ctx=off.getContext('2d');if(_ledgerCropImg)ctx.drawImage(_ledgerCropImg,_ledgerCropOffX,_ledgerCropOffY,_ledgerCropImg.naturalWidth*_ledgerCropZoom,_ledgerCropImg.naturalHeight*_ledgerCropZoom);
-  _ledgerCroppedIcon=off.toDataURL('image/png');
-  saveToIconLibrary(_ledgerCroppedIcon);
-  _ledgerCropImg=null; // return to grid view
-  _rerenderLedgerIconModal();
-};
+window.handleIconFileUpload_ledger=e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{_ledgerIconMode='library';openIconCropModal('ledger',ev.target.result);};reader.readAsDataURL(file);};
+window.openIconCropModal_ledger=()=>{if(_ledgerCustomIcon)openIconCropModal('ledger',_ledgerCustomIcon);};
 window.clearIconCustom_ledger=()=>{_ledgerCustomIcon=null;_ledgerCroppedIcon=null;_ledgerCropImg=null;_ledgerCropZoom=1;_rerenderLedgerIconModal();};
 
 let selAssetType=0;
