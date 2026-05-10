@@ -6870,8 +6870,14 @@ function _icmDraw(){
 }
 function _icmClamp(){
   if(!_iconCropModalImg)return;
-  _icmOffX=Math.min(0,Math.max(ICM_SIZE-_iconCropModalImg.naturalWidth*_icmZoom,_icmOffX));
-  _icmOffY=Math.min(0,Math.max(ICM_SIZE-_iconCropModalImg.naturalHeight*_icmZoom,_icmOffY));
+  // Allow image to be smaller than canvas — just keep at least the crop guide (inner area) reachable
+  const pad=20;const inner=ICM_SIZE-pad*2;
+  const iw=_iconCropModalImg.naturalWidth*_icmZoom;
+  const ih=_iconCropModalImg.naturalHeight*_icmZoom;
+  // Horizontal: image can move freely as long as it overlaps the crop guide
+  _icmOffX=Math.min(pad+inner-4,Math.max(pad-iw+4,_icmOffX));
+  // Vertical: same
+  _icmOffY=Math.min(pad+inner-4,Math.max(pad-ih+4,_icmOffY));
 }
 function _icmAttach(){
   const canvas=document.getElementById('iconCropModalCanvas');
@@ -6881,9 +6887,9 @@ function _icmAttach(){
   canvas.addEventListener('mousedown',e=>{_icmDragging=true;_icmLastX=e.clientX;_icmLastY=e.clientY;canvas.style.cursor='grabbing';});
   window.addEventListener('mousemove',e=>{if(!_icmDragging)return;_icmOffX+=e.clientX-_icmLastX;_icmOffY+=e.clientY-_icmLastY;_icmLastX=e.clientX;_icmLastY=e.clientY;_icmClamp();_icmDraw();});
   window.addEventListener('mouseup',()=>{_icmDragging=false;if(canvas)canvas.style.cursor='grab';});
-  canvas.addEventListener('wheel',e=>{e.preventDefault();_icmZoom=Math.max(0.3,Math.min(6,_icmZoom+(e.deltaY>0?-0.08:0.08)));_icmClamp();_icmDraw();const sl=document.getElementById('iconCropModalZoom');if(sl)sl.value=_icmZoom;},{passive:false});
+  canvas.addEventListener('wheel',e=>{e.preventDefault();_icmZoom=Math.max(0.05,Math.min(6,_icmZoom+(e.deltaY>0?-0.08:0.08)));_icmClamp();_icmDraw();const sl=document.getElementById('iconCropModalZoom');if(sl)sl.value=_icmZoom;},{passive:false});
   canvas.addEventListener('touchstart',e=>{if(e.touches.length===1){_icmDragging=true;_icmLastX=e.touches[0].clientX;_icmLastY=e.touches[0].clientY;}else if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;_icmLastDist=Math.hypot(dx,dy);}e.preventDefault();},{passive:false});
-  canvas.addEventListener('touchmove',e=>{if(e.touches.length===1&&_icmDragging){_icmOffX+=e.touches[0].clientX-_icmLastX;_icmOffY+=e.touches[0].clientY-_icmLastY;_icmLastX=e.touches[0].clientX;_icmLastY=e.touches[0].clientY;_icmClamp();_icmDraw();}else if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;const dist=Math.hypot(dx,dy);_icmZoom=Math.max(0.3,Math.min(6,_icmZoom*(dist/(_icmLastDist||dist))));_icmLastDist=dist;_icmClamp();_icmDraw();const sl=document.getElementById('iconCropModalZoom');if(sl)sl.value=_icmZoom;}e.preventDefault();},{passive:false});
+  canvas.addEventListener('touchmove',e=>{if(e.touches.length===1&&_icmDragging){_icmOffX+=e.touches[0].clientX-_icmLastX;_icmOffY+=e.touches[0].clientY-_icmLastY;_icmLastX=e.touches[0].clientX;_icmLastY=e.touches[0].clientY;_icmClamp();_icmDraw();}else if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;const dist=Math.hypot(dx,dy);_icmZoom=Math.max(0.05,Math.min(6,_icmZoom*(dist/(_icmLastDist||dist))));_icmLastDist=dist;_icmClamp();_icmDraw();const sl=document.getElementById('iconCropModalZoom');if(sl)sl.value=_icmZoom;}e.preventDefault();},{passive:false});
   canvas.addEventListener('touchend',()=>{_icmDragging=false;});
 }
 
@@ -6903,7 +6909,7 @@ function openIconCropModal(ns,src){
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding:0 4px">
         <span style="font-size:14px">🔍</span>
-        <input type="range" id="iconCropModalZoom" min="0.3" max="6" step="0.02" value="1"
+        <input type="range" id="iconCropModalZoom" min="0.05" max="6" step="0.02" value="1"
           style="flex:1;accent-color:var(--accent)" oninput="window._icmZoomSlider(this.value)">
         <span style="font-size:16px">🔍</span>
       </div>
@@ -6916,8 +6922,10 @@ function openIconCropModal(ns,src){
   const img=new Image();
   img.onload=()=>{
     _iconCropModalImg=img;
-    const s=ICM_SIZE/Math.min(img.naturalWidth,img.naturalHeight);
-    _icmZoom=Math.max(1,s);
+    // Fit whole image inside the crop guide area (pad=20 each side → inner=240)
+    const inner=ICM_SIZE-40;
+    const s=Math.min(inner/img.naturalWidth,inner/img.naturalHeight);
+    _icmZoom=s; // start showing the full image, user zooms in to crop
     _icmOffX=(ICM_SIZE-img.naturalWidth*_icmZoom)/2;
     _icmOffY=(ICM_SIZE-img.naturalHeight*_icmZoom)/2;
     _icmClamp();
