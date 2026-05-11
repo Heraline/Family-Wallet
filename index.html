@@ -2968,14 +2968,45 @@ function renderCalendar(){
   const topDateLine1=nowDate.toLocaleDateString('en-MY',{weekday:'long'});
   const topDateLine2=nowDate.toLocaleDateString('en-MY',{day:'numeric',month:'long'});
 
-  return`<div class="fade-in" style="min-height:100%;background:var(--bg);padding-bottom:calc(100px + env(safe-area-inset-bottom))">
+  // ── Sky gradient by time of day ──────────────────────────────────────────
+  const _hr=nowDate.getHours();
+  // dawn 5-7, morning 7-11, midday 11-14, afternoon 14-17, dusk 17-20, night 20-5
+  const _skyBg=
+    _hr>=5&&_hr<7   // dawn — warm coral + violet blush
+      ?'linear-gradient(175deg,#1a0a2e 0%,#6b3fa0 25%,#e8734a 55%,#f4c87a 80%,#fdeec2 100%)'
+    :_hr>=7&&_hr<11  // morning — fresh sky blue like the Dribbble left variant
+      ?'linear-gradient(175deg,#e8f4fd 0%,#b8d9f5 20%,#7ec0f0 50%,#a8d5f5 75%,#d4edfb 100%)'
+    :_hr>=11&&_hr<14 // midday — bright open sky
+      ?'linear-gradient(175deg,#d0ecff 0%,#87ceeb 30%,#5bb8f5 60%,#a0d8f5 100%)'
+    :_hr>=14&&_hr<17 // afternoon — slightly warmer haze
+      ?'linear-gradient(175deg,#e0f0ff 0%,#aad4f5 25%,#6db8ee 55%,#b8d8f0 85%,#e8f4ff 100%)'
+    :_hr>=17&&_hr<19 // golden hour — amber + pink
+      ?'linear-gradient(175deg,#0d0820 0%,#3d1c6e 20%,#c0445a 45%,#e87c3e 65%,#f4b86a 82%,#fde5a0 100%)'
+    :_hr>=19&&_hr<21 // dusk — deep blue-purple twilight
+      ?'linear-gradient(175deg,#050816 0%,#0f172a 30%,#1e3a6e 55%,#2a5298 75%,#1a3a6e 100%)'
+    // night — deep dark like Dribbble right variant
+      :'linear-gradient(175deg,#020510 0%,#0a0f1e 25%,#0f172a 55%,#071030 80%,#020510 100%)';
+
+  // Text colors that contrast against the sky bg
+  const _isDayTime=_hr>=7&&_hr<17;
+  const _skyText=_isDayTime?'rgba(10,30,60,0.92)':'rgba(225,235,255,0.95)';
+  const _skyMuted=_isDayTime?'rgba(10,30,60,0.52)':'rgba(180,200,240,0.65)';
+  const _skyDim=_isDayTime?'rgba(10,30,60,0.32)':'rgba(140,165,210,0.45)';
+  const _skyAccent=_isDayTime?'#2563eb':'#7c9ef0';
+  const _skyCard=_isDayTime
+    ?'linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,255,255,0.62))'
+    :'linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.04))';
+  const _skyCardBorder=_isDayTime?'rgba(255,255,255,0.70)':'rgba(255,255,255,0.12)';
+  const _skyCardShadow=_isDayTime?'0 20px 50px rgba(15,30,80,0.10),0 8px 20px rgba(15,30,80,0.06)':'0 20px 50px rgba(0,0,0,0.28),0 8px 20px rgba(0,0,0,0.18)';
+
+  return`<div class="fade-in" style="min-height:100%;background:${_skyBg};padding-bottom:calc(100px + env(safe-area-inset-bottom))">
 
     <!-- ── HERO: date left + budget ring right ── -->
     <div style="padding:52px 22px 0;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
       <div>
-        <p style="font-size:13px;color:var(--muted);font-weight:500;margin-bottom:4px">${topDateLine1}</p>
-        <p style="font-size:32px;font-weight:800;letter-spacing:-0.03em;color:var(--text);line-height:1">${topDateLine2}</p>
-        <p style="font-size:12px;color:var(--dim);margin-top:4px">${monthLabel}${S.totalView?' · My Finance':''}</p>
+        <p style="font-size:13px;color:${_skyMuted};font-weight:500;margin-bottom:4px">${topDateLine1}</p>
+        <p style="font-size:32px;font-weight:800;letter-spacing:-0.03em;color:${_skyText};line-height:1">${topDateLine2}</p>
+        <p style="font-size:12px;color:${_skyDim};margin-top:4px">${monthLabel}${S.totalView?' · My Finance':''}</p>
       </div>
       <!-- Circular budget progress — matches reference "35% Overall progress" -->
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
@@ -3000,42 +3031,42 @@ function renderCalendar(){
             }
           </div>
         </div>
-        <p style="font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)">Budget</p>
+        <p style="font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${_skyMuted}">Budget</p>
       </div>
     </div>
 
     <!-- ── GLASS SUMMARY CARD — white frosted, like reference task card ── -->
     <div style="margin:0 16px 18px;position:relative;overflow:hidden;border-radius:28px;
-      background:linear-gradient(180deg,rgba(255,255,255,0.13) 0%,rgba(255,255,255,0.06) 100%);
-      border:1px solid rgba(255,255,255,0.18);
+      background:${_skyCard};
+      border:1px solid ${_skyCardBorder};
       backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-      box-shadow:0 20px 50px rgba(0,0,0,0.18),0 8px 20px rgba(0,0,0,0.10),inset 0 1px 1px rgba(255,255,255,0.25)">
+      box-shadow:${_skyCardShadow},inset 0 1px 1px ${_skyCardBorder}">
       <!-- top reflection -->
       <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0.12),transparent 40%);pointer-events:none;border-radius:28px"></div>
       <div style="padding:20px 22px;position:relative;z-index:1">
-        <p style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:14px">${monthLabel} Summary</p>
+        <p style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${_skyAccent};margin-bottom:14px">${monthLabel} Summary</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:${calTotalBudget>0?'14':'0'}px">
           <div>
-            <p style="font-size:10px;color:var(--muted);margin-bottom:4px">Income</p>
+            <p style="font-size:10px;color:${_skyMuted};margin-bottom:4px">Income</p>
             <p style="font-family:var(--font-num);font-size:17px;font-weight:800;color:#4A9EFF;letter-spacing:-0.02em">${fmt(totalInc)}</p>
           </div>
           <div>
-            <p style="font-size:10px;color:var(--muted);margin-bottom:4px">Expense</p>
+            <p style="font-size:10px;color:${_skyMuted};margin-bottom:4px">Expense</p>
             <p style="font-family:var(--font-num);font-size:17px;font-weight:800;color:var(--red);letter-spacing:-0.02em">${fmt(totalExp)}</p>
           </div>
           <div>
-            <p style="font-size:10px;color:var(--muted);margin-bottom:4px">Carry-over</p>
-            <p style="font-family:var(--font-num);font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em">${fmt(Math.abs(carryOver))}</p>
+            <p style="font-size:10px;color:${_skyMuted};margin-bottom:4px">Carry-over</p>
+            <p style="font-family:var(--font-num);font-size:17px;font-weight:800;color:${_skyText};letter-spacing:-0.02em">${fmt(Math.abs(carryOver))}</p>
           </div>
           <div>
-            <p style="font-size:10px;color:var(--muted);margin-bottom:4px">Balance</p>
+            <p style="font-size:10px;color:${_skyMuted};margin-bottom:4px">Balance</p>
             <p style="font-family:var(--font-num);font-size:17px;font-weight:800;letter-spacing:-0.02em;color:${balance+carryOver>=0?'#4A9EFF':'var(--red)'}"> ${fmt(Math.abs(balance+carryOver))}</p>
           </div>
         </div>
         ${calTotalBudget>0?`
         <div style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.10)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-            <p style="font-size:10px;color:var(--muted)">Budget used</p>
+            <p style="font-size:10px;color:${_skyMuted}">Budget used</p>
             <p style="font-size:10px;font-weight:700;color:${circleColor}">${calUsedPct.toFixed(0)}% of ${fmt(calTotalBudget)}</p>
           </div>
           <div style="height:5px;background:rgba(255,255,255,0.10);border-radius:3px;overflow:hidden">
@@ -3047,10 +3078,10 @@ function renderCalendar(){
 
     <!-- ── GLASS CALENDAR CARD — direct from reference .glass-calendar ── -->
     <div style="margin:0 16px;position:relative;overflow:hidden;border-radius:32px;
-      background:linear-gradient(135deg,rgba(255,255,255,0.16) 0%,rgba(255,255,255,0.06) 100%);
-      border:1px solid rgba(255,255,255,0.20);
+      background:${_skyCard};
+      border:1px solid ${_skyCardBorder};
       backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
-      box-shadow:0 20px 50px rgba(0,0,0,0.15),0 8px 20px rgba(0,0,0,0.08),inset 0 1px 1px rgba(255,255,255,0.30),inset 0 -1px 1px rgba(255,255,255,0.06)">
+      box-shadow:${_skyCardShadow},inset 0 1px 1px ${_skyCardBorder}">
       <!-- top light sweep -->
       <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0.18),transparent 32%);pointer-events:none;border-radius:32px;z-index:0"></div>
       <!-- bottom ambient glow -->
@@ -3061,8 +3092,8 @@ function renderCalendar(){
         <!-- Month nav inside glass card -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
           <div>
-            <p style="font-size:12px;color:var(--muted);font-weight:500">This month</p>
-            <p style="font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.02em">${monthLabel}</p>
+            <p style="font-size:12px;color:${_skyMuted};font-weight:500">This month</p>
+            <p style="font-size:17px;font-weight:700;color:${_skyText};letter-spacing:-0.02em">${monthLabel}</p>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             ${selDay?`<button onclick="selectCalDay(null)" style="font-size:11px;color:var(--accent);background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);border-radius:20px;padding:4px 10px;cursor:pointer;font-weight:600">Clear ×</button>`:''}
@@ -3073,7 +3104,7 @@ function renderCalendar(){
 
         <!-- Day labels -->
         <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:8px">
-          ${DAY_LABELS.map((d,i)=>`<div style="text-align:center;font-size:12px;font-weight:600;color:${i===0?'rgba(220,60,60,0.8)':i===6?'rgba(60,120,220,0.8)':'var(--muted)'}">${d}</div>`).join('')}
+          ${DAY_LABELS.map((d,i)=>`<div style="text-align:center;font-size:12px;font-weight:600;color:${i===0?'rgba(220,60,60,0.8)':i===6?(_isDayTime?'rgba(37,99,235,0.8)':'rgba(100,160,255,0.8)'):_skyMuted}">${d}</div>`).join('')}
         </div>
 
         <!-- Calendar grid — active day gets pill treatment like reference .day.active -->
@@ -3101,7 +3132,7 @@ function renderCalendar(){
                   :'border:1px solid transparent'}
             ">
               <span style="font-size:14px;font-weight:${activePill?'700':'500'};line-height:1.3;
-                color:${isSel?'rgba(15,23,42,0.9)':isToday?'#fff':future?'var(--dim)':isSun?'rgba(220,60,60,0.85)':isSat?'rgba(60,120,220,0.85)':'var(--text)'}">${d}</span>
+                color:${isSel?'rgba(15,23,42,0.9)':isToday?'#fff':future?_skyDim:isSun?'rgba(220,60,60,0.85)':isSat?(_isDayTime?'rgba(37,99,235,0.85)':'rgba(120,170,255,0.85)'):_skyText}">${d}</span>
               <div style="height:5px;display:flex;align-items:center;justify-content:center;margin-top:3px">
                 ${hasExp?`<div style="width:4px;height:4px;border-radius:50%;background:${isSel?'rgba(15,23,42,0.5)':'var(--red)'}"></div>`
                   :hasInc?`<div style="width:4px;height:4px;border-radius:50%;background:${isSel?'rgba(15,23,42,0.4)':'#4A9EFF'}"></div>`:''}
@@ -3125,8 +3156,8 @@ function renderCalendar(){
         <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0.10),transparent 40%);pointer-events:none"></div>
         <div style="padding:16px 18px;position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between">
           <div>
-            <p style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);margin-bottom:3px">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{weekday:'long'})}</p>
-            <p style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:var(--text)">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{day:'numeric',month:'long'})}</p>
+            <p style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${_skyAccent};margin-bottom:3px">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{weekday:'long'})}</p>
+            <p style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:${_skyText}">${new Date(selDay+'T00:00:00').toLocaleDateString('en-MY',{day:'numeric',month:'long'})}</p>
           </div>
           ${(daily[selDay]?.exp||0)>0||(daily[selDay]?.inc||0)>0
             ?`<div style="text-align:right">
@@ -3139,7 +3170,7 @@ function renderCalendar(){
       ${selDayTxs.length===0
         ?`<div style="text-align:center;padding:28px 0;color:var(--dim)">
             <p style="font-size:28px;margin-bottom:8px">🗓</p>
-            <p style="font-size:13px;font-weight:500">No transactions this day</p>
+            <p style="font-size:13px;font-weight:500;color:${_skyMuted}">No transactions this day</p>
           </div>`
         :selDayTxs.map(t=>{
           const cat=cats[t.category]||DEFAULT_CATS.other;
@@ -3147,20 +3178,20 @@ function renderCalendar(){
           const disp=txDisp(t);
           return`<div onclick="openTxModal('${t._k}')" style="display:flex;align-items:center;gap:12px;
             position:relative;overflow:hidden;border-radius:18px;padding:13px 15px;margin-bottom:8px;cursor:pointer;
-            background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);
+            background:${_isDayTime?'rgba(255,255,255,0.55)':'rgba(255,255,255,0.05)'};border:1px solid ${_isDayTime?'rgba(255,255,255,0.75)':'rgba(255,255,255,0.10)'};
             backdrop-filter:blur(12px);transition:all 0.2s ease"
-            onmouseenter="this.style.background='rgba(255,255,255,0.09)'" onmouseleave="this.style.background='rgba(255,255,255,0.05)'">
+            onmouseenter="this.style.background='rgba(255,255,255,0.70)'" onmouseleave="this.style.background='rgba(255,255,255,0.55)'">
             <div style="width:42px;height:42px;border-radius:14px;background:${cat.color}22;border:1px solid ${cat.color}33;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">${renderCatIcon(cat.icon,22,true)}</div>
             <div style="flex:1;min-width:0">
-              <p style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.description||cat.label}</p>
+              <p style="font-size:13px;font-weight:600;color:${_skyText};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.description||cat.label}</p>
               <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
                 <span style="font-size:10px;font-weight:600;background:${(mem.color||'#999')}22;color:${mem.color||'#999'};padding:2px 7px;border-radius:6px">${mem.avatar} ${mem.displayName}</span>
-                ${disp.time?`<span style="font-size:10px;color:var(--dim)">${disp.time}</span>`:''}
+                ${disp.time?`<span style="font-size:10px;color:${_skyDim}">${disp.time}</span>`:''}
               </div>
             </div>
             <div style="text-align:right;flex-shrink:0">
               <p style="font-size:14px;font-weight:700;color:${t.type==='income'?'#4A9EFF':'var(--text)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</p>
-              <p style="font-size:10px;color:var(--dim);margin-top:2px">${cat.label}</p>
+              <p style="font-size:10px;color:${_skyDim};margin-top:2px">${cat.label}</p>
             </div>
           </div>`;
         }).join('')}
