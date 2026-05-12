@@ -2970,36 +2970,34 @@ function renderCalendar(){
   const topDateLine1=nowDate.toLocaleDateString('en-MY',{weekday:'long'});
   const topDateLine2=nowDate.toLocaleDateString('en-MY',{day:'numeric',month:'long'});
 
-  // ── Sky gradient by time of day ──────────────────────────────────────────
+  // ── Sky gradient by time of day — colour at top, washes to white at bottom ──
   const _hr=nowDate.getHours();
-  // dawn 5-7, morning 7-11, midday 11-14, afternoon 14-17, dusk 17-20, night 20-5
   const _skyBg=
-    _hr>=5&&_hr<7   // dawn
-      ?'linear-gradient(180deg,#130826 0%,#3d1d6b 18%,#7b3f6e 34%,#c96b4a 52%,#e8a06a 68%,#f5d090 84%,#fef0c8 100%)'
-    :_hr>=7&&_hr<11  // morning — soft sky, bright at top, hazy white below
-      ?'linear-gradient(180deg,#c5e8fb 0%,#a8d8f8 15%,#85c8f5 32%,#9dd2f7 50%,#bde0fa 68%,#d8eefc 82%,#eef7ff 100%)'
-    :_hr>=11&&_hr<14 // midday — deeper blue zenith fading to pale horizon
-      ?'linear-gradient(180deg,#b0dcff 0%,#82c8f0 20%,#5db5ea 40%,#82c8f0 60%,#b8dff8 80%,#e0f3ff 100%)'
-    :_hr>=14&&_hr<17 // afternoon — warm light haze
-      ?'linear-gradient(180deg,#c8e8ff 0%,#a4d4f8 18%,#78bcee 36%,#9acef5 55%,#c0def8 72%,#ddf0ff 88%,#eef8ff 100%)'
-    :_hr>=17&&_hr<19 // golden hour
-      ?'linear-gradient(180deg,#0c0720 0%,#2a1255 14%,#7a2a58 28%,#c24a44 42%,#e07838 56%,#f0b054 70%,#f8d880 84%,#fef2b0 100%)'
-    :_hr>=19&&_hr<21 // dusk
-      ?'linear-gradient(180deg,#040712 0%,#0b1228 20%,#122448 38%,#1a3868 54%,#1e4880 68%,#163870 84%,#0e2456 100%)'
-    // night
-      :'linear-gradient(180deg,#010308 0%,#060b18 18%,#0c1428 36%,#0f1a34 54%,#0a1228 72%,#060c1e 88%,#020510 100%)';
+    _hr>=5&&_hr<7   // dawn — deep violet top → white
+      ?'linear-gradient(180deg,#3b1a6e 0%,#a0447a 22%,#e8845a 44%,#f5c87a 62%,#fef0d0 80%,#ffffff 100%)'
+    :_hr>=7&&_hr<11  // morning — sky blue top → white
+      ?'linear-gradient(180deg,#6bbcf0 0%,#9dd4f8 22%,#c2e5fb 44%,#ddf0fd 64%,#f0f8ff 82%,#ffffff 100%)'
+    :_hr>=11&&_hr<14 // midday — bright blue top → white
+      ?'linear-gradient(180deg,#4db0ee 0%,#80c8f4 20%,#b4defa 42%,#d8eefb 62%,#eef7ff 82%,#ffffff 100%)'
+    :_hr>=14&&_hr<17 // afternoon — warm blue top → white
+      ?'linear-gradient(180deg,#5ab8ee 0%,#8acef5 20%,#b8e0fa 42%,#d8eefb 62%,#eef6ff 82%,#ffffff 100%)'
+    :_hr>=17&&_hr<19 // golden hour — deep violet top → warm cream → white
+      ?'linear-gradient(180deg,#1a0838 0%,#6a2050 18%,#c04840 36%,#e8823a 54%,#f5c860 70%,#fde8a0 84%,#ffffff 100%)'
+    :_hr>=19&&_hr<21 // dusk — deep navy top → white
+      ?'linear-gradient(180deg,#080e28 0%,#102040 20%,#1a3868 38%,#3060a0 56%,#8ab0d8 74%,#d0e4f4 88%,#ffffff 100%)'
+    // night — near black top → white
+      :'linear-gradient(180deg,#050a1a 0%,#0a1428 18%,#102040 36%,#2a4878 54%,#8098c0 72%,#c8d8ee 86%,#ffffff 100%)';
 
-  // Text colors that contrast against the sky bg
+  // Text always dark — bottom washes to white so dark text always readable
   const _isDayTime=_hr>=7&&_hr<17;
-  const _skyText=_isDayTime?'rgba(10,30,60,0.92)':'rgba(225,235,255,0.95)';
-  const _skyMuted=_isDayTime?'rgba(10,30,60,0.52)':'rgba(180,200,240,0.65)';
-  const _skyDim=_isDayTime?'rgba(10,30,60,0.32)':'rgba(140,165,210,0.45)';
-  const _skyAccent=_isDayTime?'#2563eb':'#7c9ef0';
-  const _skyCard=_isDayTime
-    ?'linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,255,255,0.62))'
-    :'linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.04))';
-  const _skyCardBorder=_isDayTime?'rgba(255,255,255,0.70)':'rgba(255,255,255,0.12)';
-  const _skyCardShadow=_isDayTime?'0 20px 50px rgba(15,30,80,0.10),0 8px 20px rgba(15,30,80,0.06)':'0 20px 50px rgba(0,0,0,0.28),0 8px 20px rgba(0,0,0,0.18)';
+  const _isLight=_hr>=7&&_hr<19; // broader light period for text
+  const _skyText='rgba(10,30,60,0.90)';
+  const _skyMuted='rgba(10,30,60,0.50)';
+  const _skyDim='rgba(10,30,60,0.30)';
+  const _skyAccent=_isDayTime?'#1a6bc4':'#4a7fd4';
+  const _skyCard='linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.58))';
+  const _skyCardBorder='rgba(255,255,255,0.72)';
+  const _skyCardShadow='0 20px 50px rgba(15,30,80,0.08),0 8px 20px rgba(15,30,80,0.05)';
 
   return`<div class="fade-in" style="min-height:100%;padding-bottom:calc(100px + env(safe-area-inset-bottom));position:relative">
     <style>
@@ -3007,18 +3005,16 @@ function renderCalendar(){
       .glow1,.glow2 { opacity:0!important; }
       /* Base sky — fixed full-screen, sits behind everything like home bg */
       #calSkyBg { position:fixed;inset:0;z-index:-2;pointer-events:none;background:${_skyBg}; }
-      /* Glow 1 — top right, large soft radial — mirrors home .glow1 position */
-      #calGlow1 { position:fixed;top:-100px;right:-80px;width:340px;height:340px;border-radius:50%;pointer-events:none;z-index:-1;
+      /* Subtle top glow — softens the colour at top right */
+      #calGlow1 { position:fixed;top:-80px;right:-60px;width:300px;height:300px;border-radius:50%;pointer-events:none;z-index:-1;
         background:${_isDayTime
-          ?'radial-gradient(circle,rgba(255,255,255,0.60) 0%,rgba(190,225,255,0.35) 35%,transparent 70%)'
-          :'radial-gradient(circle,rgba(108,99,255,0.32) 0%,rgba(70,90,210,0.18) 40%,transparent 70%)'};
-        filter:blur(35px); }
-      /* Glow 2 — bottom left, softer — mirrors home .glow2 position */
-      #calGlow2 { position:fixed;bottom:60px;left:-60px;width:260px;height:260px;border-radius:50%;pointer-events:none;z-index:-1;
-        background:${_isDayTime
-          ?'radial-gradient(circle,rgba(180,225,255,0.45) 0%,rgba(140,205,255,0.20) 45%,transparent 70%)'
-          :'radial-gradient(circle,rgba(78,205,196,0.20) 0%,rgba(40,160,150,0.10) 45%,transparent 70%)'};
+          ?'radial-gradient(circle,rgba(255,255,255,0.50) 0%,rgba(200,230,255,0.25) 40%,transparent 70%)'
+          :'radial-gradient(circle,rgba(120,100,255,0.28) 0%,rgba(80,60,200,0.14) 40%,transparent 70%)'};
         filter:blur(28px); }
+      /* Bottom glow already handled by white fade — keep very faint */
+      #calGlow2 { position:fixed;bottom:40px;left:-40px;width:200px;height:200px;border-radius:50%;pointer-events:none;z-index:-1;
+        background:radial-gradient(circle,rgba(255,255,255,0.30) 0%,transparent 70%);
+        filter:blur(20px); }
     </style>
     <div id="calSkyBg"></div>
     <div id="calGlow1"></div>
