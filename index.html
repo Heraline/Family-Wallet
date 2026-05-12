@@ -2999,7 +2999,8 @@ function renderCalendar(){
   const _skyCardBorder=_isDayTime?'rgba(255,255,255,0.70)':'rgba(255,255,255,0.12)';
   const _skyCardShadow=_isDayTime?'0 20px 50px rgba(15,30,80,0.10),0 8px 20px rgba(15,30,80,0.06)':'0 20px 50px rgba(0,0,0,0.28),0 8px 20px rgba(0,0,0,0.18)';
 
-  return`<div class="fade-in" style="min-height:100%;background:${_skyBg};padding-bottom:calc(100px + env(safe-area-inset-bottom))">
+  return`<div class="fade-in" style="min-height:100%;background:${_skyBg};margin:-0px;padding-bottom:calc(100px + env(safe-area-inset-bottom));position:relative">
+    <style>#mainPage{background:${_skyBg}!important;transition:background 1.2s ease}</style>
 
     <!-- ── HERO: date left + budget ring right ── -->
     <div style="padding:52px 22px 0;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
