@@ -1355,8 +1355,11 @@ function renderPage(){
   try{
     if(_v==='add'){pg.innerHTML=renderAdd();_restoreScroll(_v);return;}
     if(_v==='calendar'){pg.innerHTML=renderCalendar();attachCalendarListeners();_restoreScroll(_v);return;}
-    // Restore home glows when leaving calendar
-    document.querySelectorAll('.glow1,.glow2').forEach(el=>el.style.opacity='');
+    // Restore backgrounds and glows when leaving calendar
+    document.querySelectorAll('.glow1,.glow2').forEach(el=>el.style.removeProperty('opacity'));
+    ['html','body'].forEach(tag=>document.querySelector(tag)?.style.removeProperty('background'));
+    document.getElementById('app')?.style.removeProperty('background');
+    pg.style.removeProperty('background');
     if(_v==='stats'){pg.innerHTML=renderStats();attachStatsListeners();_restoreScroll(_v);return;}
     if(_v==='history'){pg.innerHTML=renderHistory();attachHistoryListeners();_restoreScroll(_v);return;}
     if(_v==='settings'){pg.innerHTML=renderSettings();_restoreScroll(_v);return;}
@@ -3001,26 +3004,9 @@ function renderCalendar(){
 
   return`<div class="fade-in" style="min-height:100%;padding-bottom:calc(100px + env(safe-area-inset-bottom));position:relative">
     <style>
-      #mainPage { background:transparent!important; }
-      .glow1,.glow2 { opacity:0!important; }
-      /* Base sky — fixed full-screen, sits behind everything like home bg */
-      #calSkyBg { position:fixed;inset:0;z-index:-2;pointer-events:none;background:${_skyBg}; }
-      /* Subtle top glow — softens the colour at top right */
-      #calGlow1 { position:fixed;top:-80px;right:-60px;width:300px;height:300px;border-radius:50%;pointer-events:none;z-index:-1;
-        background:${_isDayTime
-          ?'radial-gradient(circle,rgba(255,255,255,0.50) 0%,rgba(200,230,255,0.25) 40%,transparent 70%)'
-          :'radial-gradient(circle,rgba(120,100,255,0.28) 0%,rgba(80,60,200,0.14) 40%,transparent 70%)'};
-        filter:blur(28px); }
-      /* Bottom glow already handled by white fade — keep very faint */
-      #calGlow2 { position:fixed;bottom:40px;left:-40px;width:200px;height:200px;border-radius:50%;pointer-events:none;z-index:-1;
-        background:radial-gradient(circle,rgba(255,255,255,0.30) 0%,transparent 70%);
-        filter:blur(20px); }
-    </style>
-    <div id="calSkyBg"></div>
-    <div id="calGlow1"></div>
-    <div id="calGlow2"></div>
-
-    <!-- content layer above glows -->
+      html,body,#app,#mainPage{background:${_skyBg}!important;}
+      .glow1,.glow2{opacity:0!important;}
+    </style>    <!-- content layer above glows -->
     <div style="position:relative;z-index:1">
 
     <!-- ── HERO: date left + budget ring right ── -->
