@@ -1357,9 +1357,6 @@ function renderPage(){
     if(_v==='calendar'){pg.innerHTML=renderCalendar();attachCalendarListeners();_restoreScroll(_v);return;}
     // Restore home glows when leaving calendar
     document.querySelectorAll('.glow1,.glow2').forEach(el=>el.style.opacity='');
-    document.documentElement.style.background='';
-    document.body.style.background='';
-    const appEl=document.getElementById('app');if(appEl)appEl.style.background='';
     if(_v==='stats'){pg.innerHTML=renderStats();attachStatsListeners();_restoreScroll(_v);return;}
     if(_v==='history'){pg.innerHTML=renderHistory();attachHistoryListeners();_restoreScroll(_v);return;}
     if(_v==='settings'){pg.innerHTML=renderSettings();_restoreScroll(_v);return;}
@@ -3006,17 +3003,26 @@ function renderCalendar(){
 
   return`<div class="fade-in" style="min-height:100%;padding-bottom:calc(100px + env(safe-area-inset-bottom));position:relative">
     <style>
-      html, body, #app { background:${_skyBg}!important; }
-      #mainPage{background:transparent!important}
-      .glow1,.glow2{opacity:0!important;transition:opacity 0.4s}
-      #calSkyBg{position:fixed;top:calc(-1 * env(safe-area-inset-top));left:0;right:0;bottom:0;z-index:-1;background:${_skyBg};transition:background 1.5s ease;pointer-events:none}
-      #calAtmos{position:fixed;top:calc(-1 * env(safe-area-inset-top));left:0;right:0;bottom:0;z-index:-1;pointer-events:none;
+      #mainPage { background:transparent!important; }
+      .glow1,.glow2 { opacity:0!important; }
+      /* Base sky — fixed full-screen, sits behind everything like home bg */
+      #calSkyBg { position:fixed;inset:0;z-index:-2;pointer-events:none;background:${_skyBg}; }
+      /* Glow 1 — top right, large soft radial — mirrors home .glow1 position */
+      #calGlow1 { position:fixed;top:-100px;right:-80px;width:340px;height:340px;border-radius:50%;pointer-events:none;z-index:-1;
         background:${_isDayTime
-          ?'radial-gradient(ellipse 90% 50% at 55% 0%,rgba(255,255,255,0.45) 0%,transparent 65%),radial-gradient(ellipse 55% 35% at 10% 95%,rgba(180,220,255,0.22) 0%,transparent 65%)'
-          :'radial-gradient(ellipse 75% 45% at 72% 2%,rgba(80,100,200,0.22) 0%,transparent 65%),radial-gradient(ellipse 55% 30% at 12% 90%,rgba(40,60,140,0.22) 0%,transparent 65%)'}}
+          ?'radial-gradient(circle,rgba(255,255,255,0.60) 0%,rgba(190,225,255,0.35) 35%,transparent 70%)'
+          :'radial-gradient(circle,rgba(108,99,255,0.32) 0%,rgba(70,90,210,0.18) 40%,transparent 70%)'};
+        filter:blur(35px); }
+      /* Glow 2 — bottom left, softer — mirrors home .glow2 position */
+      #calGlow2 { position:fixed;bottom:60px;left:-60px;width:260px;height:260px;border-radius:50%;pointer-events:none;z-index:-1;
+        background:${_isDayTime
+          ?'radial-gradient(circle,rgba(180,225,255,0.45) 0%,rgba(140,205,255,0.20) 45%,transparent 70%)'
+          :'radial-gradient(circle,rgba(78,205,196,0.20) 0%,rgba(40,160,150,0.10) 45%,transparent 70%)'};
+        filter:blur(28px); }
     </style>
     <div id="calSkyBg"></div>
-    <div id="calAtmos"></div>
+    <div id="calGlow1"></div>
+    <div id="calGlow2"></div>
 
     <!-- content layer above glows -->
     <div style="position:relative;z-index:1">
