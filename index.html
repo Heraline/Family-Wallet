@@ -2972,20 +2972,20 @@ function renderCalendar(){
   const _hr=nowDate.getHours();
   // dawn 5-7, morning 7-11, midday 11-14, afternoon 14-17, dusk 17-20, night 20-5
   const _skyBg=
-    _hr>=5&&_hr<7   // dawn — warm coral + violet blush
-      ?'linear-gradient(175deg,#1a0a2e 0%,#6b3fa0 25%,#e8734a 55%,#f4c87a 80%,#fdeec2 100%)'
-    :_hr>=7&&_hr<11  // morning — fresh sky blue like the Dribbble left variant
-      ?'linear-gradient(175deg,#e8f4fd 0%,#b8d9f5 20%,#7ec0f0 50%,#a8d5f5 75%,#d4edfb 100%)'
-    :_hr>=11&&_hr<14 // midday — bright open sky
-      ?'linear-gradient(175deg,#d0ecff 0%,#87ceeb 30%,#5bb8f5 60%,#a0d8f5 100%)'
-    :_hr>=14&&_hr<17 // afternoon — slightly warmer haze
-      ?'linear-gradient(175deg,#e0f0ff 0%,#aad4f5 25%,#6db8ee 55%,#b8d8f0 85%,#e8f4ff 100%)'
-    :_hr>=17&&_hr<19 // golden hour — amber + pink
-      ?'linear-gradient(175deg,#0d0820 0%,#3d1c6e 20%,#c0445a 45%,#e87c3e 65%,#f4b86a 82%,#fde5a0 100%)'
-    :_hr>=19&&_hr<21 // dusk — deep blue-purple twilight
-      ?'linear-gradient(175deg,#050816 0%,#0f172a 30%,#1e3a6e 55%,#2a5298 75%,#1a3a6e 100%)'
-    // night — deep dark like Dribbble right variant
-      :'linear-gradient(175deg,#020510 0%,#0a0f1e 25%,#0f172a 55%,#071030 80%,#020510 100%)';
+    _hr>=5&&_hr<7   // dawn
+      ?'linear-gradient(180deg,#130826 0%,#3d1d6b 18%,#7b3f6e 34%,#c96b4a 52%,#e8a06a 68%,#f5d090 84%,#fef0c8 100%)'
+    :_hr>=7&&_hr<11  // morning — soft sky, bright at top, hazy white below
+      ?'linear-gradient(180deg,#c5e8fb 0%,#a8d8f8 15%,#85c8f5 32%,#9dd2f7 50%,#bde0fa 68%,#d8eefc 82%,#eef7ff 100%)'
+    :_hr>=11&&_hr<14 // midday — deeper blue zenith fading to pale horizon
+      ?'linear-gradient(180deg,#b0dcff 0%,#82c8f0 20%,#5db5ea 40%,#82c8f0 60%,#b8dff8 80%,#e0f3ff 100%)'
+    :_hr>=14&&_hr<17 // afternoon — warm light haze
+      ?'linear-gradient(180deg,#c8e8ff 0%,#a4d4f8 18%,#78bcee 36%,#9acef5 55%,#c0def8 72%,#ddf0ff 88%,#eef8ff 100%)'
+    :_hr>=17&&_hr<19 // golden hour
+      ?'linear-gradient(180deg,#0c0720 0%,#2a1255 14%,#7a2a58 28%,#c24a44 42%,#e07838 56%,#f0b054 70%,#f8d880 84%,#fef2b0 100%)'
+    :_hr>=19&&_hr<21 // dusk
+      ?'linear-gradient(180deg,#040712 0%,#0b1228 20%,#122448 38%,#1a3868 54%,#1e4880 68%,#163870 84%,#0e2456 100%)'
+    // night
+      :'linear-gradient(180deg,#010308 0%,#060b18 18%,#0c1428 36%,#0f1a34 54%,#0a1228 72%,#060c1e 88%,#020510 100%)';
 
   // Text colors that contrast against the sky bg
   const _isDayTime=_hr>=7&&_hr<17;
@@ -2999,8 +2999,16 @@ function renderCalendar(){
   const _skyCardBorder=_isDayTime?'rgba(255,255,255,0.70)':'rgba(255,255,255,0.12)';
   const _skyCardShadow=_isDayTime?'0 20px 50px rgba(15,30,80,0.10),0 8px 20px rgba(15,30,80,0.06)':'0 20px 50px rgba(0,0,0,0.28),0 8px 20px rgba(0,0,0,0.18)';
 
-  return`<div class="fade-in" style="min-height:100%;background:${_skyBg};margin:-0px;padding-bottom:calc(100px + env(safe-area-inset-bottom));position:relative">
-    <style>#mainPage{background:${_skyBg}!important;transition:background 1.2s ease}</style>
+  return`<div class="fade-in" style="min-height:100%;background:${_skyBg};padding-bottom:calc(100px + env(safe-area-inset-bottom));position:relative">
+    <style>#mainPage{background:${_skyBg}!important;transition:background 1.5s ease}</style>
+    <!-- atmospheric glow overlays for depth -->
+    <div style="position:fixed;inset:0;pointer-events:none;z-index:0;
+      background:${_isDayTime
+        ?'radial-gradient(ellipse 80% 45% at 60% 0%,rgba(255,255,255,0.38) 0%,transparent 70%),radial-gradient(ellipse 60% 30% at 20% 100%,rgba(180,220,255,0.18) 0%,transparent 70%)'
+        :'radial-gradient(ellipse 70% 40% at 70% 5%,rgba(80,100,200,0.18) 0%,transparent 70%),radial-gradient(ellipse 50% 25% at 15% 90%,rgba(40,60,140,0.20) 0%,transparent 70%)'}"></div>
+
+    <!-- content layer above glows -->
+    <div style="position:relative;z-index:1">
 
     <!-- ── HERO: date left + budget ring right ── -->
     <div style="padding:52px 22px 0;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
@@ -3198,6 +3206,7 @@ function renderCalendar(){
         }).join('')}
     </div>`:''}
 
+    </div><!-- end content layer -->
     <style>
       @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
     </style>
