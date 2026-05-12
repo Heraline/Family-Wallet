@@ -1357,6 +1357,9 @@ function renderPage(){
     if(_v==='calendar'){pg.innerHTML=renderCalendar();attachCalendarListeners();_restoreScroll(_v);return;}
     // Restore home glows when leaving calendar
     document.querySelectorAll('.glow1,.glow2').forEach(el=>el.style.opacity='');
+    document.documentElement.style.background='';
+    document.body.style.background='';
+    const appEl=document.getElementById('app');if(appEl)appEl.style.background='';
     if(_v==='stats'){pg.innerHTML=renderStats();attachStatsListeners();_restoreScroll(_v);return;}
     if(_v==='history'){pg.innerHTML=renderHistory();attachHistoryListeners();_restoreScroll(_v);return;}
     if(_v==='settings'){pg.innerHTML=renderSettings();_restoreScroll(_v);return;}
@@ -3003,10 +3006,11 @@ function renderCalendar(){
 
   return`<div class="fade-in" style="min-height:100%;padding-bottom:calc(100px + env(safe-area-inset-bottom));position:relative">
     <style>
+      html, body, #app { background:${_skyBg}!important; }
       #mainPage{background:transparent!important}
       .glow1,.glow2{opacity:0!important;transition:opacity 0.4s}
-      #calSkyBg{position:fixed;inset:0;z-index:-1;background:${_skyBg};transition:background 1.5s ease;pointer-events:none}
-      #calAtmos{position:fixed;inset:0;z-index:-1;pointer-events:none;
+      #calSkyBg{position:fixed;top:calc(-1 * env(safe-area-inset-top));left:0;right:0;bottom:0;z-index:-1;background:${_skyBg};transition:background 1.5s ease;pointer-events:none}
+      #calAtmos{position:fixed;top:calc(-1 * env(safe-area-inset-top));left:0;right:0;bottom:0;z-index:-1;pointer-events:none;
         background:${_isDayTime
           ?'radial-gradient(ellipse 90% 50% at 55% 0%,rgba(255,255,255,0.45) 0%,transparent 65%),radial-gradient(ellipse 55% 35% at 10% 95%,rgba(180,220,255,0.22) 0%,transparent 65%)'
           :'radial-gradient(ellipse 75% 45% at 72% 2%,rgba(80,100,200,0.22) 0%,transparent 65%),radial-gradient(ellipse 55% 30% at 12% 90%,rgba(40,60,140,0.22) 0%,transparent 65%)'}}
