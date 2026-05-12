@@ -1355,6 +1355,8 @@ function renderPage(){
   try{
     if(_v==='add'){pg.innerHTML=renderAdd();_restoreScroll(_v);return;}
     if(_v==='calendar'){pg.innerHTML=renderCalendar();attachCalendarListeners();_restoreScroll(_v);return;}
+    // Restore home glows when leaving calendar
+    document.querySelectorAll('.glow1,.glow2').forEach(el=>el.style.opacity='');
     if(_v==='stats'){pg.innerHTML=renderStats();attachStatsListeners();_restoreScroll(_v);return;}
     if(_v==='history'){pg.innerHTML=renderHistory();attachHistoryListeners();_restoreScroll(_v);return;}
     if(_v==='settings'){pg.innerHTML=renderSettings();_restoreScroll(_v);return;}
@@ -2999,19 +3001,24 @@ function renderCalendar(){
   const _skyCardBorder=_isDayTime?'rgba(255,255,255,0.70)':'rgba(255,255,255,0.12)';
   const _skyCardShadow=_isDayTime?'0 20px 50px rgba(15,30,80,0.10),0 8px 20px rgba(15,30,80,0.06)':'0 20px 50px rgba(0,0,0,0.28),0 8px 20px rgba(0,0,0,0.18)';
 
-  return`<div class="fade-in" style="min-height:100%;background:${_skyBg};padding-bottom:calc(100px + env(safe-area-inset-bottom));position:relative">
-    <style>#mainPage{background:${_skyBg}!important;transition:background 1.5s ease}</style>
-    <!-- atmospheric glow overlays for depth -->
-    <div style="position:fixed;inset:0;pointer-events:none;z-index:0;
-      background:${_isDayTime
-        ?'radial-gradient(ellipse 80% 45% at 60% 0%,rgba(255,255,255,0.38) 0%,transparent 70%),radial-gradient(ellipse 60% 30% at 20% 100%,rgba(180,220,255,0.18) 0%,transparent 70%)'
-        :'radial-gradient(ellipse 70% 40% at 70% 5%,rgba(80,100,200,0.18) 0%,transparent 70%),radial-gradient(ellipse 50% 25% at 15% 90%,rgba(40,60,140,0.20) 0%,transparent 70%)'}"></div>
+  return`<div class="fade-in" style="min-height:100%;padding-bottom:calc(100px + env(safe-area-inset-bottom));position:relative">
+    <style>
+      #mainPage{background:transparent!important}
+      .glow1,.glow2{opacity:0!important;transition:opacity 0.4s}
+      #calSkyBg{position:fixed;inset:0;z-index:-1;background:${_skyBg};transition:background 1.5s ease;pointer-events:none}
+      #calAtmos{position:fixed;inset:0;z-index:-1;pointer-events:none;
+        background:${_isDayTime
+          ?'radial-gradient(ellipse 90% 50% at 55% 0%,rgba(255,255,255,0.45) 0%,transparent 65%),radial-gradient(ellipse 55% 35% at 10% 95%,rgba(180,220,255,0.22) 0%,transparent 65%)'
+          :'radial-gradient(ellipse 75% 45% at 72% 2%,rgba(80,100,200,0.22) 0%,transparent 65%),radial-gradient(ellipse 55% 30% at 12% 90%,rgba(40,60,140,0.22) 0%,transparent 65%)'}}
+    </style>
+    <div id="calSkyBg"></div>
+    <div id="calAtmos"></div>
 
     <!-- content layer above glows -->
     <div style="position:relative;z-index:1">
 
     <!-- ── HERO: date left + budget ring right ── -->
-    <div style="padding:52px 22px 0;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+    <div style="padding:calc(52px + env(safe-area-inset-top)) 22px 0;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
       <div>
         <p style="font-size:13px;color:${_skyMuted};font-weight:500;margin-bottom:4px">${topDateLine1}</p>
         <p style="font-size:32px;font-weight:800;letter-spacing:-0.03em;color:${_skyText};line-height:1">${topDateLine2}</p>
