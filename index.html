@@ -1355,10 +1355,8 @@ function renderPage(){
   try{
     if(_v==='add'){pg.innerHTML=renderAdd();_restoreScroll(_v);return;}
     if(_v==='calendar'){pg.innerHTML=renderCalendar();attachCalendarListeners();_restoreScroll(_v);return;}
-    // Restore backgrounds and glows when leaving calendar
-    document.querySelectorAll('.glow1,.glow2').forEach(el=>el.style.removeProperty('opacity'));
-    ['html','body'].forEach(tag=>document.querySelector(tag)?.style.removeProperty('background'));
-    document.getElementById('app')?.style.removeProperty('background');
+    // Remove calendar glow overrides — glows restore to original CSS
+    document.querySelectorAll('.glow1,.glow2').forEach(el=>el.style.removeProperty('background'));
     pg.style.removeProperty('background');
     if(_v==='stats'){pg.innerHTML=renderStats();attachStatsListeners();_restoreScroll(_v);return;}
     if(_v==='history'){pg.innerHTML=renderHistory();attachHistoryListeners();_restoreScroll(_v);return;}
@@ -3002,10 +3000,38 @@ function renderCalendar(){
   const _skyCardBorder='rgba(255,255,255,0.72)';
   const _skyCardShadow='0 20px 50px rgba(15,30,80,0.08),0 8px 20px rgba(15,30,80,0.05)';
 
+  // Sky glow colours by time of day — replaces purple/teal with sky tones
+  const _g1Color=
+    _hr>=5&&_hr<7  ?'rgba(160,80,200,0.22)'   // dawn — violet
+    :_hr>=7&&_hr<11?'rgba(80,160,240,0.20)'   // morning — sky blue
+    :_hr>=11&&_hr<14?'rgba(60,150,230,0.22)'  // midday — bright blue
+    :_hr>=14&&_hr<17?'rgba(80,170,240,0.20)'  // afternoon — blue
+    :_hr>=17&&_hr<19?'rgba(220,100,60,0.22)'  // golden hour — amber
+    :_hr>=19&&_hr<21?'rgba(60,80,200,0.22)'   // dusk — indigo
+    :'rgba(40,60,160,0.18)';                   // night — deep blue
+
+  const _g2Color=
+    _hr>=5&&_hr<7  ?'rgba(230,120,80,0.16)'   // dawn — coral
+    :_hr>=7&&_hr<11?'rgba(120,200,255,0.14)'  // morning — pale blue
+    :_hr>=11&&_hr<14?'rgba(100,190,255,0.16)' // midday
+    :_hr>=14&&_hr<17?'rgba(120,200,255,0.14)' // afternoon
+    :_hr>=17&&_hr<19?'rgba(240,160,60,0.18)'  // golden hour — gold
+    :_hr>=19&&_hr<21?'rgba(78,130,205,0.16)'  // dusk — blue
+    :'rgba(78,205,196,0.12)';                  // night — teal
+
   return`<div class="fade-in" style="min-height:100%;padding-bottom:calc(100px + env(safe-area-inset-bottom));position:relative">
     <style>
-      html,body,#app,#mainPage{background:${_skyBg}!important;}
-      .glow1,.glow2{opacity:0!important;}
+      /* Keep default bg — just recolour the existing glows to sky tones, larger for sky feel */
+      .glow1{
+        width:420px!important;height:420px!important;
+        top:-120px!important;right:-100px!important;
+        background:radial-gradient(circle,${_g1Color},transparent 70%)!important;
+      }
+      .glow2{
+        width:320px!important;height:320px!important;
+        bottom:100px!important;left:-80px!important;
+        background:radial-gradient(circle,${_g2Color},transparent 70%)!important;
+      }
     </style>    <!-- content layer above glows -->
     <div style="position:relative;z-index:1">
 
