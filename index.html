@@ -6536,7 +6536,7 @@ function renderSettings(){
       <p class="label" style="margin-bottom:12px">Preference</p>
       <button onclick="goAppearance()" class="export-btn" style="margin-bottom:8px">🎨 Appearance</button>
       <button onclick="goIconLibrary()" class="export-btn" style="margin-bottom:8px">📚 Icon Library</button>
-      <button onclick="goBudget()" class="export-btn" style="margin-bottom:8px">🗂️ Categories & Budget</button>
+      <button onclick="goCatBudget()" class="export-btn" style="margin-bottom:8px">🗂️ Categories & Budget</button>
       <button onclick="goTagManagement()" class="export-btn" style="margin-bottom:8px">🏷️ Tag Management</button>
       <button onclick="goRecurring()" class="export-btn" style="margin-bottom:8px">🔄 Recurring Transactions</button>
       <button onclick="goAssets()" class="export-btn" style="margin-bottom:8px">🏦 Asset Accounts</button>
@@ -7521,9 +7521,9 @@ window.tapNotif=async(id,type,txKey,settleKey,lid)=>{
 window.goAdd       =()=>{S.addForm=blankForm();S.editTxKey=null;S.view='add';render();};
 window.goSettings  =()=>{S.view='settings';render();};
 window.goInvite    =()=>{_code=null;S.view='invite';render();};
-window.goBudget    =()=>{window._catReorder=false;const nowYm=localYm();if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;S.view='budget';render();};
+window.goBudget    =()=>{const nowYm=localYm();if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;S.view='budget';render();};
 window.goCategories=()=>{editCatKey=null;editSubcatKey=null;S.view='categories';render();};
-window.goCatBudget=()=>{editCatKey=null;editSubcatKey=null;const nowYm=localYm();if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;window._bgtDraft={};S.view='catBudget';render();};
+window.goCatBudget=()=>{editCatKey=null;editSubcatKey=null;window._catReorder=false;const nowYm=localYm();if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;window._bgtDraft={};S.view='catBudget';render();};
 window.goGuests    =()=>{S.view='guests';render();};
 window.toggleAssetReorder=()=>{
   window._assetReorder=!window._assetReorder;
