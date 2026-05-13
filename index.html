@@ -3000,43 +3000,66 @@ function renderCalendar(){
   const _skyCardBorder='rgba(255,255,255,0.72)';
   const _skyCardShadow='0 20px 50px rgba(15,30,80,0.08),0 8px 20px rgba(15,30,80,0.05)';
 
-  // Sky glow colours by time of day — replaces purple/teal with sky tones
-  const _g1Color=
-    _hr>=5&&_hr<7  ?'rgba(160,80,200,0.22)'   // dawn — violet
-    :_hr>=7&&_hr<11?'rgba(80,160,240,0.20)'   // morning — sky blue
-    :_hr>=11&&_hr<14?'rgba(60,150,230,0.22)'  // midday — bright blue
-    :_hr>=14&&_hr<17?'rgba(80,170,240,0.20)'  // afternoon — blue
-    :_hr>=17&&_hr<19?'rgba(220,100,60,0.22)'  // golden hour — amber
-    :_hr>=19&&_hr<21?'rgba(60,80,200,0.22)'   // dusk — indigo
-    :'rgba(40,60,160,0.18)';                   // night — deep blue
+  // Sky glow colours by time of day
+  const _g1Color=  // top-right — dominant sky tone
+    _hr>=5&&_hr<7  ?'rgba(140,60,210,0.55)'   // dawn — violet
+    :_hr>=7&&_hr<11?'rgba(60,150,240,0.50)'   // morning — sky blue
+    :_hr>=11&&_hr<14?'rgba(40,140,230,0.52)'  // midday — bright blue
+    :_hr>=14&&_hr<17?'rgba(60,160,240,0.50)'  // afternoon — blue
+    :_hr>=17&&_hr<19?'rgba(220,90,50,0.52)'   // golden hour — amber
+    :_hr>=19&&_hr<21?'rgba(50,70,210,0.50)'   // dusk — indigo
+    :'rgba(30,50,160,0.45)';                   // night — deep blue
 
-  const _g2Color=
-    _hr>=5&&_hr<7  ?'rgba(230,120,80,0.16)'   // dawn — coral
-    :_hr>=7&&_hr<11?'rgba(120,200,255,0.14)'  // morning — pale blue
-    :_hr>=11&&_hr<14?'rgba(100,190,255,0.16)' // midday
-    :_hr>=14&&_hr<17?'rgba(120,200,255,0.14)' // afternoon
-    :_hr>=17&&_hr<19?'rgba(240,160,60,0.18)'  // golden hour — gold
-    :_hr>=19&&_hr<21?'rgba(78,130,205,0.16)'  // dusk — blue
-    :'rgba(78,205,196,0.12)';                  // night — teal
+  const _g2Color=  // bottom-left — complementary accent
+    _hr>=5&&_hr<7  ?'rgba(230,110,70,0.42)'   // dawn — coral
+    :_hr>=7&&_hr<11?'rgba(100,190,255,0.38)'  // morning — pale blue
+    :_hr>=11&&_hr<14?'rgba(80,180,255,0.40)'  // midday — cyan blue
+    :_hr>=14&&_hr<17?'rgba(100,190,255,0.38)' // afternoon — blue
+    :_hr>=17&&_hr<19?'rgba(240,150,40,0.44)'  // golden hour — gold
+    :_hr>=19&&_hr<21?'rgba(60,120,210,0.40)'  // dusk — blue
+    :'rgba(60,180,180,0.32)';                  // night — teal
+
+  const _g3Color=  // centre — soft mid-tone to tie it together
+    _hr>=5&&_hr<7  ?'rgba(200,100,140,0.28)'  // dawn — rose
+    :_hr>=7&&_hr<11?'rgba(140,210,255,0.26)'  // morning — light blue
+    :_hr>=11&&_hr<14?'rgba(120,200,255,0.28)' // midday
+    :_hr>=14&&_hr<17?'rgba(140,210,255,0.26)' // afternoon
+    :_hr>=17&&_hr<19?'rgba(255,180,80,0.30)'  // golden hour — warm
+    :_hr>=19&&_hr<21?'rgba(100,140,230,0.28)' // dusk
+    :'rgba(80,120,200,0.24)';                  // night
 
   return`<div class="fade-in" style="min-height:100%;padding-bottom:calc(100px + env(safe-area-inset-bottom));position:relative">
     <style>
-      /* Keep default bg — just recolour the existing glows to sky tones, larger for sky feel */
       .glow1{
-        width:420px!important;height:420px!important;
-        top:-120px!important;right:-100px!important;
-        background:radial-gradient(circle,${_g1Color},transparent 70%)!important;
+        width:500px!important;height:500px!important;
+        top:-150px!important;right:-120px!important;
+        background:radial-gradient(circle,${_g1Color},transparent 68%)!important;
+        filter:blur(0px)!important;
       }
       .glow2{
-        width:320px!important;height:320px!important;
-        bottom:100px!important;left:-80px!important;
-        background:radial-gradient(circle,${_g2Color},transparent 70%)!important;
+        width:400px!important;height:400px!important;
+        bottom:80px!important;left:-100px!important;
+        background:radial-gradient(circle,${_g2Color},transparent 68%)!important;
+        filter:blur(0px)!important;
+      }
+      /* Third glow — centre screen, ties the sky together */
+      .glow1::after{
+        content:'';position:fixed;
+        top:30%;left:50%;transform:translate(-50%,-50%);
+        width:360px;height:360px;border-radius:50%;
+        background:radial-gradient(circle,${_g3Color},transparent 70%);
+        pointer-events:none;
       }
     </style>    <!-- content layer above glows -->
     <div style="position:relative;z-index:1">
 
+    <!-- ── BACK BUTTON ── -->
+    <div style="padding:calc(14px + env(safe-area-inset-top)) 22px 0">
+      <button class="btn-ghost" onclick="goHome()" style="margin-bottom:0">← Back</button>
+    </div>
+
     <!-- ── HERO: date left + budget ring right ── -->
-    <div style="padding:calc(52px + env(safe-area-inset-top)) 22px 0;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+    <div style="padding:10px 22px 0;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
       <div>
         <p style="font-size:13px;color:${_skyMuted};font-weight:500;margin-bottom:4px">${topDateLine1}</p>
         <p style="font-size:32px;font-weight:800;letter-spacing:-0.03em;color:${_skyText};line-height:1">${topDateLine2}</p>
