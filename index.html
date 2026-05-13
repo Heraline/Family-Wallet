@@ -970,6 +970,7 @@ async function switchLedger(lid){
   const fnDtz=s=>{S.displayTimezone=s.exists()?s.val():null;safeRender();};
   onValue(rDtz,fnDtz);S.listeners.push({r:rDtz,fn:fnDtz,tag:'displayTz'});
   listen('ledgers/'+lid+'/assets',s=>{S.assets=s.exists()?s.val():{};safeRender();});
+  listen('ledgerMeta/'+lid,s=>{S.assetOrder=s.exists()&&s.val().assetOrder?s.val().assetOrder:[];safeRender();});
   listen('ledgers/'+lid+'/tags',s=>{S.ledgerTags=s.exists()?s.val():[]; safeRender();});
   listen('ledgers/'+lid+'/assetTransfers',s=>{S.assetTransfers=s.exists()?s.val():{};safeRender();});
   listen('ledgers/'+lid+'/recurring',s=>{S.recurring=s.exists()?s.val():{};safeRender();});
@@ -5522,6 +5523,7 @@ function _scCurrentIcon(){
 function renderCatBudgetPage(){
   const cats=getCats();const cur=getCur();
   const ym=S.budgetMonth||localYm();
+  const isReorderCat=window._catReorder===true;
   const catKeys=Object.keys(cats).filter(k=>k!=='income');
 
   // Init draft budgets
@@ -5559,6 +5561,18 @@ function renderCatBudgetPage(){
     const spent=catSpent[key]||0;
     const pct=bgt>0?Math.min(100,(spent/bgt)*100):0;
     const barColor=spent>bgt&&bgt>0?'var(--red)':pct>80?'var(--yellow)':'var(--accent)';
+
+    if(isReorderCat)return`<div class="reorder-item" data-id="${key}" draggable="true"
+      style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;
+      background:var(--surface);border:1px solid var(--border);margin-bottom:10px;cursor:grab;user-select:none">
+      <span style="font-size:20px;color:var(--dim);flex-shrink:0">☰</span>
+      <span style="font-size:22px;flex-shrink:0">${renderCatIcon(c.icon,22,true)}</span>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:14px;font-weight:700">${c.label}</p>
+        ${subcatEntries.length>0?`<p style="font-size:11px;color:var(--dim)">${subcatEntries.length} subcategor${subcatEntries.length===1?'y':'ies'}</p>`:''}
+      </div>
+      ${bgt>0?`<p style="font-size:11px;color:var(--muted)">${cur.symbol} ${bgt.toFixed(0)}</p>`:''}
+    </div>`;
 
     return`<div class="surface" style="padding:14px 16px;border-radius:14px;margin-bottom:10px">
       <!-- Category header -->
@@ -5639,12 +5653,17 @@ function renderCatBudgetPage(){
     <div style="position:sticky;top:0;z-index:20;background:var(--bg);padding:52px 22px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)">
       <button class="btn-ghost" onclick="goSettings()" style="font-size:20px;padding:0;color:var(--muted)">←</button>
       <p style="font-size:17px;font-weight:700;flex:1">Categories & Budget</p>
-      <button onclick="saveCatBudgets()" style="padding:8px 16px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">Save</button>
+      ${!isReorderCat
+        ?`<button onclick="window._catReorder=true;_renderInPlace();requestAnimationFrame(()=>_attachReorderListeners('catReorderList'))" style="padding:7px 13px;border-radius:12px;font-size:12px;font-weight:700;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--muted);cursor:pointer">⇅ Reorder</button>
+           <button onclick="saveCatBudgets()" style="padding:8px 16px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">Save</button>`
+        :`<button onclick="toggleCatReorder()" style="padding:7px 14px;border-radius:12px;font-size:12px;font-weight:700;border:1px solid rgba(108,99,255,0.5);background:rgba(108,99,255,0.12);color:var(--accent);cursor:pointer">✓ Done</button>`
+      }
     </div>
     <div style="padding:16px 22px 0">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Manage your spending categories and set monthly budgets for each one.</p>
-      ${catRows}
-      ${addCatForm}
+      ${!isReorderCat?`<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Manage your spending categories and set monthly budgets for each one.</p>`
+        :`<p style="font-size:12px;color:var(--accent);margin-bottom:16px;line-height:1.6">☰ Drag rows to reorder · tap Done to save</p>`}
+      <div id="catReorderList">${catRows}</div>
+      ${!isReorderCat?addCatForm:''}
     </div>
   </div>`;
 }
@@ -7502,11 +7521,96 @@ window.tapNotif=async(id,type,txKey,settleKey,lid)=>{
 window.goAdd       =()=>{S.addForm=blankForm();S.editTxKey=null;S.view='add';render();};
 window.goSettings  =()=>{S.view='settings';render();};
 window.goInvite    =()=>{_code=null;S.view='invite';render();};
-window.goBudget    =()=>{const nowYm=localYm();if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;S.view='budget';render();};
+window.goBudget    =()=>{window._catReorder=false;const nowYm=localYm();if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;S.view='budget';render();};
 window.goCategories=()=>{editCatKey=null;editSubcatKey=null;S.view='categories';render();};
 window.goCatBudget=()=>{editCatKey=null;editSubcatKey=null;const nowYm=localYm();if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;window._bgtDraft={};S.view='catBudget';render();};
 window.goGuests    =()=>{S.view='guests';render();};
-window.goAssets    =()=>{if(S.totalView){openLedgerPicker();return;}S.view='assets';render();};
+window.toggleAssetReorder=()=>{
+  window._assetReorder=!window._assetReorder;
+  if(!window._assetReorder){
+    // Save order from DOM
+    const ids=[...document.querySelectorAll('#assetReorderList .reorder-item')].map(el=>el.dataset.id);
+    S.assetOrder=ids;
+    update(ref(db,'ledgerMeta/'+S.activeLedgerId),{assetOrder:ids});
+    toast('✓ Order saved');
+  }
+  _renderInPlace();
+  if(window._assetReorder)requestAnimationFrame(()=>_attachReorderListeners('assetReorderList',()=>{},true));
+};
+
+window.toggleCatReorder=()=>{
+  window._catReorder=!window._catReorder;
+  if(!window._catReorder){
+    const ids=[...document.querySelectorAll('#catReorderList .reorder-item')].map(el=>el.dataset.id);
+    // Rebuild cats object with new order preserved via ordered key insertion
+    const cats=getCats();
+    const newCats={};
+    ids.forEach(k=>{if(cats[k])newCats[k]=cats[k];});
+    // Append any missing (income etc)
+    Object.keys(cats).forEach(k=>{if(!newCats[k])newCats[k]=cats[k];});
+    S.ledgerCategories=newCats;
+    set(ref(db,'ledgerCategories/'+S.activeLedgerId),newCats);
+    toast('✓ Order saved');
+  }
+  _renderInPlace();
+  if(window._catReorder)requestAnimationFrame(()=>_attachReorderListeners('catReorderList',()=>{},true));
+};
+
+// ── Shared drag-and-drop reorder listeners ──────────────────────────────────
+function _attachReorderListeners(listId){
+  const list=document.getElementById(listId);
+  if(!list)return;
+  let dragEl=null,overEl=null;
+  list.querySelectorAll('.reorder-item').forEach(item=>{
+    // Touch (mobile)
+    item.addEventListener('touchstart',e=>{
+      dragEl=item;
+      item.style.opacity='0.5';
+      item.style.transform='scale(1.02)';
+      item.style.boxShadow='0 8px 24px rgba(0,0,0,0.18)';
+      e.stopPropagation();
+    },{passive:true});
+    item.addEventListener('touchmove',e=>{
+      if(!dragEl)return;
+      const touch=e.touches[0];
+      const els=list.querySelectorAll('.reorder-item');
+      let target=null;
+      els.forEach(el=>{
+        if(el===dragEl)return;
+        const r=el.getBoundingClientRect();
+        if(touch.clientY>r.top&&touch.clientY<r.bottom)target=el;
+      });
+      if(target&&target!==overEl){
+        overEl=target;
+        const rect=target.getBoundingClientRect();
+        const after=touch.clientY>rect.top+rect.height/2;
+        list.insertBefore(dragEl,after?target.nextSibling:target);
+      }
+      e.preventDefault();
+    },{passive:false});
+    item.addEventListener('touchend',()=>{
+      if(dragEl){dragEl.style.opacity='';dragEl.style.transform='';dragEl.style.boxShadow='';dragEl=null;overEl=null;}
+    });
+    // Mouse (desktop)
+    item.addEventListener('dragstart',e=>{
+      dragEl=item;item.style.opacity='0.5';
+      e.dataTransfer.effectAllowed='move';
+    });
+    item.addEventListener('dragend',()=>{
+      if(dragEl){dragEl.style.opacity='';dragEl=null;overEl=null;}
+      list.querySelectorAll('.reorder-item').forEach(el=>el.style.background='');
+    });
+    item.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(!dragEl||item===dragEl)return;
+      const r=item.getBoundingClientRect();
+      const after=e.clientY>r.top+r.height/2;
+      list.insertBefore(dragEl,after?item.nextSibling:item);
+    });
+  });
+}
+
+window.goAssets=()=>{window._assetReorder=false;if(S.totalView){openLedgerPicker();return;}S.view='assets';render();};
 window.goRecurring =()=>{if(S.totalView){openLedgerPicker();return;}S.view='recurring';render();processRecurring();};
 window.goProfile   =()=>{S.view='profile';render();};
 window.goAssetForm =()=>{S.editAssetId=null;selAssetType=0;_assetIconMode='emoji';_assetIconEmoji=0;_assetIconImage=-1;_assetCustomIcon=null;_assetCroppedIcon=null;_assetCropImg=null;_assetCropZoom=1;S.view='assetForm';render();};
@@ -8544,12 +8648,30 @@ function totalAssets(){return Object.values(S.assets||{}).reduce((s,a)=>s+conver
 function renderAssetsPage(){
   if(S.totalView){S.view='settings';setTimeout(render,0);return'';}
   const cur=getCur();
-  const assetArr=Object.entries(S.assets||{}).map(([id,a])=>({id,...a}));
-  const cards=assetArr.length?assetArr.map(a=>{
+  const savedOrder=S.assetOrder||[];
+  const assetMap=S.assets||{};
+  // Sort by saved order, then append any new ones not in order
+  const allIds=Object.keys(assetMap);
+  const orderedIds=[...savedOrder.filter(id=>allIds.includes(id)),...allIds.filter(id=>!savedOrder.includes(id))];
+  const assetArr=orderedIds.map(id=>({id,...assetMap[id]}));
+  const isReorder=window._assetReorder===true;
+
+  const cards=assetArr.length?assetArr.map((a,idx)=>{
     const t=getAssetType(a.type);
     const bal=parseFloat(a.balance)||0;
     const isCredit=a.type==='credit';
     const dispIcon=a.customIcon?renderCatIcon(a.customIcon,22,true):(a.iconEmoji?`<span style="font-size:22px">${a.iconEmoji}</span>`:`<span style="font-size:22px">${t.icon}</span>`);
+    if(isReorder)return`<div class="reorder-item" data-id="${a.id}" draggable="true"
+      style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;
+      background:var(--surface);border:1px solid var(--border);margin-bottom:10px;cursor:grab;user-select:none">
+      <span style="font-size:22px;color:var(--dim);flex-shrink:0">☰</span>
+      <div style="font-size:22px;flex-shrink:0">${dispIcon}</div>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:14px;font-weight:700">${a.name}</p>
+        <p style="font-size:11px;color:var(--muted)">${t.label}</p>
+      </div>
+      <p style="font-family:var(--font-num);font-size:14px;font-weight:700;color:${isCredit&&bal>0?'var(--red)':bal<0?'var(--red)':'var(--text)'}">${isCredit&&bal>0?'-':''}${fmt(Math.abs(bal),a.currency||S.ledgerCurrency)}</p>
+    </div>`;
     return`<div class="asset-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <span class="asset-type-pill" style="background:${t.color}22;color:${t.color}">${dispIcon} ${t.label}</span>
@@ -8592,7 +8714,10 @@ function renderAssetsPage(){
 
   return`<div class="settings-page fade-in">
     <button class="btn-ghost" onclick="goSettings()" style="margin-bottom:22px">← Back</button>
-    <h2 style="font-size:24px;font-weight:700;margin-bottom:4px">Asset Accounts</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <h2 style="font-size:24px;font-weight:700">Asset Accounts</h2>
+      ${assetArr.length>1?`<button onclick="toggleAssetReorder()" style="padding:7px 14px;border-radius:12px;font-size:12px;font-weight:700;border:1px solid ${isReorder?'rgba(108,99,255,0.5)':'var(--border)'};background:${isReorder?'rgba(108,99,255,0.12)':'rgba(255,255,255,0.04)'};color:${isReorder?'var(--accent)':'var(--muted)'};cursor:pointer">${isReorder?'✓ Done':'⇅ Reorder'}</button>`:''}
+    </div>
     <p style="font-size:13px;color:var(--muted);margin-bottom:6px">Track your balances across accounts</p>
     ${ledgerContextBadge()}
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
@@ -8600,14 +8725,13 @@ function renderAssetsPage(){
         <span style="font-size:12px;color:var(--muted)">Total</span>
         <span style="font-family:var(--font-num);font-size:16px;font-weight:700;color:var(--accent)">${fmt(totalAssets())}</span>
       </div>
-      ${assetArr.length>=2?`<button onclick="goAssetTransfer()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.25);border-radius:12px;padding:8px 14px;color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer">
+      ${assetArr.length>=2&&!isReorder?`<button onclick="goAssetTransfer()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.25);border-radius:12px;padding:8px 14px;color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer">
         <span style="font-size:16px">⇄</span> Transfer
       </button>`:''}
     </div>
-    ${cards}
-    <button onclick="goAssetForm()" style="width:100%;padding:14px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:15px;font-weight:700;margin-top:8px;border:none;cursor:pointer">＋ Add Asset Account</button>
-
-    ${assetArr.length>=2?`
+    <div id="assetReorderList">${cards}</div>
+    ${!isReorder?`<button onclick="goAssetForm()" style="width:100%;padding:14px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:15px;font-weight:700;margin-top:8px;border:none;cursor:pointer">＋ Add Asset Account</button>`:''}
+    ${assetArr.length>=2&&!isReorder?`
     <div style="margin-top:28px">
       <p style="font-size:12px;color:var(--muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px">Transfer History</p>
       ${transferRows}
