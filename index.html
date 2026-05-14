@@ -5562,6 +5562,7 @@ function renderCatBudgetPage(){
     const pct=bgt>0?Math.min(100,(spent/bgt)*100):0;
     const barColor=spent>bgt&&bgt>0?'var(--red)':pct>80?'var(--yellow)':'var(--accent)';
 
+    // Reorder mode — compact drag row
     if(isReorderCat)return`<div class="reorder-item" data-id="${key}" draggable="true"
       style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;
       background:var(--surface);border:1px solid var(--border);margin-bottom:10px;cursor:grab;user-select:none">
@@ -5656,38 +5657,20 @@ function renderCatBudgetPage(){
       ${isReorderCat
         ?`<button onclick="toggleCatReorder()" style="padding:7px 14px;border-radius:12px;font-size:12px;font-weight:700;border:1px solid rgba(108,99,255,0.5);background:rgba(108,99,255,0.12);color:var(--accent);cursor:pointer">✓ Done</button>`
         :`<button onclick="toggleCatReorder()" style="padding:7px 13px;border-radius:12px;font-size:12px;font-weight:700;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--muted);cursor:pointer">⇅ Reorder</button>
-           <button onclick="saveCatBudgets()" style="padding:8px 16px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">Save</button>`
+          <button onclick="saveCatBudgets()" style="padding:8px 16px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">Save</button>`
       }
     </div>
     <div style="padding:16px 22px 0">
-      ${!isReorderCat?`<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Manage your spending categories and set monthly budgets for each one.</p>`
-        :`<p style="font-size:12px;color:var(--accent);margin-bottom:16px;line-height:1.6">☰ Drag rows to reorder · tap Done to save</p>`}
-      ${(()=>{
-        const totalSpent=Object.values(catSpent).reduce((s,v)=>s+v,0);
-        const totalBgt=catKeys.reduce((s,k)=>s+(parseFloat(window._bgtDraft[k])||0),0);
-        const pct=totalBgt>0?Math.min(100,(totalSpent/totalBgt)*100):0;
-        const over=totalBgt>0&&totalSpent>totalBgt;
-        const barCol=over?'var(--red)':pct>80?'var(--yellow)':'var(--green)';
-        return totalBgt>0?`
-        <div class="surface" style="padding:14px 16px;border-radius:14px;margin-bottom:16px;border:1px solid ${over?'rgba(255,107,107,0.3)':'var(--border)'}">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <p style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase">Total Budget</p>
-            <p style="font-size:12px;font-weight:700;color:${barCol}">${pct.toFixed(0)}%${over?' ⚠️ Over':''}</p>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-            <p style="font-family:var(--font-num);font-size:18px;font-weight:800;color:var(--red)">−${cur.symbol} ${totalSpent.toFixed(2)}</p>
-            <p style="font-family:var(--font-num);font-size:13px;color:var(--muted);align-self:flex-end">/ ${cur.symbol} ${totalBgt.toFixed(2)}</p>
-          </div>
-          <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.08);overflow:hidden">
-            <div style="height:100%;width:${pct}%;background:${barCol};border-radius:3px;transition:width 0.4s"></div>
-          </div>
-        </div>`:'';
-      })()}
+      ${isReorderCat
+        ?`<p style="font-size:12px;color:var(--accent);margin-bottom:16px;line-height:1.6">☰ Drag rows to reorder · tap Done to save</p>`
+        :`<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Manage your spending categories and set monthly budgets for each one.</p>`
+      }
       <div id="catReorderList">${catRows}</div>
       ${!isReorderCat?addCatForm:''}
     </div>
   </div>`;
 }
+
 
 function attachCatBudgetListeners(){
   // listeners attached inline via oninput/onclick
