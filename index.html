@@ -5653,15 +5653,36 @@ function renderCatBudgetPage(){
     <div style="position:sticky;top:0;z-index:20;background:var(--bg);padding:52px 22px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)">
       <button class="btn-ghost" onclick="goSettings()" style="font-size:20px;padding:0;color:var(--muted)">←</button>
       <p style="font-size:17px;font-weight:700;flex:1">Categories & Budget</p>
-      ${!isReorderCat
-        ?`<button onclick="window._catReorder=true;_renderInPlace();requestAnimationFrame(()=>_attachReorderListeners('catReorderList'))" style="padding:7px 13px;border-radius:12px;font-size:12px;font-weight:700;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--muted);cursor:pointer">⇅ Reorder</button>
+      ${isReorderCat
+        ?`<button onclick="toggleCatReorder()" style="padding:7px 14px;border-radius:12px;font-size:12px;font-weight:700;border:1px solid rgba(108,99,255,0.5);background:rgba(108,99,255,0.12);color:var(--accent);cursor:pointer">✓ Done</button>`
+        :`<button onclick="toggleCatReorder()" style="padding:7px 13px;border-radius:12px;font-size:12px;font-weight:700;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--muted);cursor:pointer">⇅ Reorder</button>
            <button onclick="saveCatBudgets()" style="padding:8px 16px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">Save</button>`
-        :`<button onclick="toggleCatReorder()" style="padding:7px 14px;border-radius:12px;font-size:12px;font-weight:700;border:1px solid rgba(108,99,255,0.5);background:rgba(108,99,255,0.12);color:var(--accent);cursor:pointer">✓ Done</button>`
       }
     </div>
     <div style="padding:16px 22px 0">
       ${!isReorderCat?`<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Manage your spending categories and set monthly budgets for each one.</p>`
         :`<p style="font-size:12px;color:var(--accent);margin-bottom:16px;line-height:1.6">☰ Drag rows to reorder · tap Done to save</p>`}
+      ${(()=>{
+        const totalSpent=Object.values(catSpent).reduce((s,v)=>s+v,0);
+        const totalBgt=catKeys.reduce((s,k)=>s+(parseFloat(window._bgtDraft[k])||0),0);
+        const pct=totalBgt>0?Math.min(100,(totalSpent/totalBgt)*100):0;
+        const over=totalBgt>0&&totalSpent>totalBgt;
+        const barCol=over?'var(--red)':pct>80?'var(--yellow)':'var(--green)';
+        return totalBgt>0?`
+        <div class="surface" style="padding:14px 16px;border-radius:14px;margin-bottom:16px;border:1px solid ${over?'rgba(255,107,107,0.3)':'var(--border)'}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <p style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase">Total Budget</p>
+            <p style="font-size:12px;font-weight:700;color:${barCol}">${pct.toFixed(0)}%${over?' ⚠️ Over':''}</p>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <p style="font-family:var(--font-num);font-size:18px;font-weight:800;color:var(--red)">−${cur.symbol} ${totalSpent.toFixed(2)}</p>
+            <p style="font-family:var(--font-num);font-size:13px;color:var(--muted);align-self:flex-end">/ ${cur.symbol} ${totalBgt.toFixed(2)}</p>
+          </div>
+          <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.08);overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${barCol};border-radius:3px;transition:width 0.4s"></div>
+          </div>
+        </div>`:'';
+      })()}
       <div id="catReorderList">${catRows}</div>
       ${!isReorderCat?addCatForm:''}
     </div>
@@ -7526,34 +7547,36 @@ window.goCategories=()=>{editCatKey=null;editSubcatKey=null;S.view='categories';
 window.goCatBudget=()=>{editCatKey=null;editSubcatKey=null;window._catReorder=false;const nowYm=localYm();if(S.budgetMonth!==nowYm)switchBudgetMonth(nowYm);window._bgtDirty=false;window._bgtDraft={};S.view='catBudget';render();};
 window.goGuests    =()=>{S.view='guests';render();};
 window.toggleAssetReorder=()=>{
-  window._assetReorder=!window._assetReorder;
-  if(!window._assetReorder){
-    // Save order from DOM
+  if(window._assetReorder){
     const ids=[...document.querySelectorAll('#assetReorderList .reorder-item')].map(el=>el.dataset.id);
     S.assetOrder=ids;
     update(ref(db,'ledgerMeta/'+S.activeLedgerId),{assetOrder:ids});
     toast('✓ Order saved');
+    window._assetReorder=false;
+  } else {
+    window._assetReorder=true;
   }
   _renderInPlace();
-  if(window._assetReorder)requestAnimationFrame(()=>_attachReorderListeners('assetReorderList',()=>{},true));
+  if(window._assetReorder)requestAnimationFrame(()=>_attachReorderListeners('assetReorderList'));
 };
 
 window.toggleCatReorder=()=>{
-  window._catReorder=!window._catReorder;
-  if(!window._catReorder){
+  if(window._catReorder){
+    // Saving — read order from DOM
     const ids=[...document.querySelectorAll('#catReorderList .reorder-item')].map(el=>el.dataset.id);
-    // Rebuild cats object with new order preserved via ordered key insertion
     const cats=getCats();
     const newCats={};
     ids.forEach(k=>{if(cats[k])newCats[k]=cats[k];});
-    // Append any missing (income etc)
     Object.keys(cats).forEach(k=>{if(!newCats[k])newCats[k]=cats[k];});
     S.ledgerCategories=newCats;
     set(ref(db,'ledgerCategories/'+S.activeLedgerId),newCats);
     toast('✓ Order saved');
+    window._catReorder=false;
+  } else {
+    window._catReorder=true;
   }
   _renderInPlace();
-  if(window._catReorder)requestAnimationFrame(()=>_attachReorderListeners('catReorderList',()=>{},true));
+  if(window._catReorder)requestAnimationFrame(()=>_attachReorderListeners('catReorderList'));
 };
 
 // ── Shared drag-and-drop reorder listeners ──────────────────────────────────
