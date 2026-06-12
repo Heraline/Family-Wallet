@@ -5554,6 +5554,38 @@ function renderCatBudgetPage(){
     catSpent[t.category]=(catSpent[t.category]||0)+(t.amount||0);
   });
 
+  // ── Total Monthly Budget (auto-sum of category budgets, or manual override) ──
+  const draftCatSum=catKeys.reduce((s,k)=>s+(parseFloat(window._bgtDraft[k])||0),0);
+  const draftTotal=parseFloat(window._bgtDraft['_total'])||0;
+  const effectiveTotal=draftTotal>0?draftTotal:draftCatSum;
+  const totalSpent=Object.values(catSpent).reduce((s,v)=>s+(v||0),0);
+  const totalFlag=draftTotal>0&&draftCatSum>draftTotal;
+  const totalPct=effectiveTotal>0?Math.min(100,(totalSpent/effectiveTotal)*100):0;
+  const totalBarColor=totalSpent>effectiveTotal&&effectiveTotal>0?'var(--red)':totalPct>80?'var(--yellow)':'var(--accent)';
+
+  const totalBudgetCard=`<div class="surface" style="padding:16px;border-radius:14px;margin-bottom:14px;border:1px solid rgba(108,99,255,0.25)">
+    <p style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px;letter-spacing:0.04em;text-transform:uppercase">Total Monthly Budget</p>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:14px;color:var(--muted);font-weight:600">${cur.symbol}</span>
+      <input id="cb-total-input" class="fw-input" type="number" inputmode="decimal" placeholder="${draftCatSum>0?draftCatSum.toFixed(2):'0.00'}"
+        value="${window._bgtDraft['_total']||''}"
+        style="flex:1;margin:0;font-size:15px;font-weight:700;padding:10px 12px"
+        oninput="window._bgtDirty=true;window._bgtDraft['_total']=this.value;updateCbTotalPreview()">
+      ${totalSpent>0?`<span style="font-size:11px;color:var(--muted);white-space:nowrap">spent ${cur.symbol}${totalSpent.toFixed(2)}</span>`:''}
+    </div>
+    <p style="font-size:10px;color:var(--dim);margin-top:6px">Leave blank to auto-sum all category budgets${draftCatSum>0?' (currently '+cur.symbol+draftCatSum.toFixed(2)+')':''}</p>
+    <div id="cb-total-flag" style="display:${totalFlag?'flex':'none'};align-items:flex-start;gap:6px;margin-top:8px;padding:8px 10px;border-radius:10px;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.25)">
+      <span style="font-size:12px;flex-shrink:0">⚠️</span>
+      <p id="cb-total-flag-msg" style="font-size:11px;color:var(--red);font-weight:600;line-height:1.5">${totalFlag?`Category total (${cur.symbol}${draftCatSum.toFixed(2)}) exceeds this amount`:''}</p>
+    </div>
+    <div id="cb-total-preview">${effectiveTotal>0?`<div style="margin-top:8px">
+      <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.08);overflow:hidden">
+        <div style="height:100%;width:${totalPct}%;background:${totalBarColor};border-radius:2px;transition:width 0.3s"></div>
+      </div>
+      <p style="font-size:10px;color:${totalBarColor};margin-top:4px">${totalSpent>effectiveTotal?`Over by ${cur.symbol}${(totalSpent-effectiveTotal).toFixed(2)}`:`${cur.symbol}${(effectiveTotal-totalSpent).toFixed(2)} remaining`}</p>
+    </div>`:''}</div>
+  </div>`;
+
   const catRows=catKeys.map(key=>{
     const c=cats[key];
     const subcatEntries=Object.entries(c.subcats||{});
@@ -5608,7 +5640,7 @@ function renderCatBudgetPage(){
               <input class="fw-input cb-bgt-input" data-cat="${scBgtKey}" type="number" inputmode="decimal" placeholder="Subcategory budget..."
                 value="${window._bgtDraft[scBgtKey]||''}"
                 style="flex:1;margin:0;font-size:12px;padding:7px 10px"
-                oninput="window._bgtDirty=true;window._bgtDraft['${scBgtKey}']=this.value;updateCbBgtPreview('${scBgtKey}',this.value,${scSpent})">
+            oninput="window._bgtDirty=true;window._bgtDraft['${scBgtKey}']=this.value;updateCbBgtPreview('${scBgtKey}',this.value,${scSpent})">
               ${scSpent>0?`<span style="font-size:10px;color:var(--muted);white-space:nowrap">spent ${cur.symbol}${scSpent.toFixed(2)}</span>`:''}
             </div>
             <div id="cb-preview-${scBgtKey}"></div>
@@ -5627,7 +5659,7 @@ function renderCatBudgetPage(){
           <input class="fw-input cb-bgt-input" data-cat="${key}" type="number" inputmode="decimal" placeholder="0.00"
             value="${window._bgtDraft[key]||''}"
             style="flex:1;margin:0;font-size:14px;padding:10px 12px"
-            oninput="window._bgtDirty=true;window._bgtDraft['${key}']=this.value;updateCbBgtPreview('${key}',this.value,${spent})">
+            oninput="window._bgtDirty=true;window._bgtDraft['${key}']=this.value;updateCbBgtPreview('${key}',this.value,${spent});updateCbTotalPreview()">
           ${spent>0?`<span style="font-size:11px;color:var(--muted);white-space:nowrap">spent ${cur.symbol}${spent.toFixed(2)}</span>`:''}
         </div>
         ${bgt>0?`<div style="margin-top:8px">
@@ -5665,6 +5697,7 @@ function renderCatBudgetPage(){
         ?`<p style="font-size:12px;color:var(--accent);margin-bottom:16px;line-height:1.6">☰ Drag rows to reorder · tap Done to save</p>`
         :`<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">Manage your spending categories and set monthly budgets for each one.</p>`
       }
+      ${!isReorderCat?totalBudgetCard:''}
       <div id="catReorderList">${catRows}</div>
       ${!isReorderCat?addCatForm:''}
     </div>
@@ -5675,6 +5708,54 @@ function renderCatBudgetPage(){
 function attachCatBudgetListeners(){
   // listeners attached inline via oninput/onclick
 }
+
+window.updateCbTotalPreview=()=>{
+  const cur=getCur();
+  const ym=S.budgetMonth||localYm();
+  const cats=getCats();
+  const catKeys=Object.keys(cats).filter(k=>k!=='income');
+  const catSum=catKeys.reduce((s,k)=>{
+    const el=document.querySelector(`.cb-bgt-input[data-cat="${k}"]`);
+    const v=el?el.value:window._bgtDraft[k];
+    return s+(parseFloat(v)||0);
+  },0);
+  const draftTotal=parseFloat(window._bgtDraft['_total'])||0;
+  const effectiveTotal=draftTotal>0?draftTotal:catSum;
+  const totalSpent=Object.values(S.txs||{}).reduce((s,t)=>{
+    if(t.type!=='expense'||!t.date?.startsWith(ym))return s;
+    return s+(t.amount||0);
+  },0);
+
+  // Flag
+  const flagEl=document.getElementById('cb-total-flag');
+  const flagMsg=document.getElementById('cb-total-flag-msg');
+  const totalFlag=draftTotal>0&&catSum>draftTotal;
+  if(flagEl){
+    flagEl.style.display=totalFlag?'flex':'none';
+    if(flagMsg)flagMsg.textContent=totalFlag?`Category total (${cur.symbol}${catSum.toFixed(2)}) exceeds this amount`:'';
+  }
+
+  // Preview bar
+  const previewEl=document.getElementById('cb-total-preview');
+  if(previewEl){
+    if(effectiveTotal>0){
+      const pct=Math.min(100,(totalSpent/effectiveTotal)*100);
+      const barColor=totalSpent>effectiveTotal?'var(--red)':pct>80?'var(--yellow)':'var(--accent)';
+      previewEl.innerHTML=`<div style="margin-top:8px">
+        <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.08);overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px;transition:width 0.3s"></div>
+        </div>
+        <p style="font-size:10px;color:${barColor};margin-top:4px">${totalSpent>effectiveTotal?`Over by ${cur.symbol}${(totalSpent-effectiveTotal).toFixed(2)}`:`${cur.symbol}${(effectiveTotal-totalSpent).toFixed(2)} remaining`}</p>
+      </div>`;
+    } else {
+      previewEl.innerHTML='';
+    }
+  }
+
+  // Update placeholder to reflect live auto-sum when input is blank
+  const inputEl=document.getElementById('cb-total-input');
+  if(inputEl)inputEl.placeholder=catSum>0?catSum.toFixed(2):'0.00';
+};
 
 window.updateCbBgtPreview=(key,val,spent)=>{
   const cur=getCur();
