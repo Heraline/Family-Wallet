@@ -1005,7 +1005,7 @@ function switchBudgetMonth(ym){
   });
   S.budgetMonth=ym;S.budgets={};S.allBudgets={};
   const r=ref(db,'ledgers/'+S.activeLedgerId+'/budgets/'+ym);
-  const fn=s=>{S.budgets=s.exists()?s.val():{};if(S.view==='budget'||S.view==='stats')renderPage();};
+  const fn=s=>{S.budgets=s.exists()?s.val():{};if(S.view==='budget'||S.view==='stats'||S.view==='catBudget')renderPage();};
   onValue(r,fn);S.listeners.push({r,fn,tag:'budget'});
   const r2=ref(db,'users/'+S.user.uid+'/budgets/'+ym);
   const fn2=s=>{S.allBudgets=s.exists()?s.val():{};if(S.view==='budget')renderPage();};
