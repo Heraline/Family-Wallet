@@ -5840,7 +5840,13 @@ window.saveCatBudgets=async()=>{
     const fbKey=k.replace('__','/');
     up[path+'/'+fbKey]=n>0?n:null;
   });
-  await update(ref(db),up);
+  try{
+    await update(ref(db),up);
+  }catch(e){
+    console.error('saveCatBudgets error:',e);
+    toast('✗ Save failed: '+(e.message||e));
+    return;
+  }
   window._bgtDirty=false;
   window._bgtDraft={};
   toast('✓ Budgets saved');
