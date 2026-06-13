@@ -5527,7 +5527,8 @@ function renderCatBudgetPage(){
   const catKeys=Object.keys(cats).filter(k=>k!=='income');
 
   // Init draft budgets
-  const budgets=S.budgets||{};
+  const isAll=(S.budgetScope||'ledger')==='all';
+  const budgets=isAll?(S.allBudgets||{}):(S.budgets||{});
   if(!window._bgtDirty){
     window._bgtDraft={};
     // Load category budgets
@@ -5798,7 +5799,8 @@ window.updateCbBgtPreview=(key,val,spent)=>{
 
 window.saveCatBudgets=async()=>{
   const ym=S.budgetMonth||localYm();
-  const path=`ledgers/${S.activeLedgerId}/budgets/${ym}`;
+  const isAll=(S.budgetScope||'ledger')==='all';
+  const path=isAll?`users/${S.user.uid}/budgets/${ym}`:`ledgers/${S.activeLedgerId}/budgets/${ym}`;
   const up={};
   Object.entries(window._bgtDraft||{}).forEach(([k,v])=>{
     const n=parseFloat(v)||0;
