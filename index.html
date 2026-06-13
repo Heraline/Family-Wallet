@@ -5528,6 +5528,7 @@ function renderCatBudgetPage(){
 
   // Init draft budgets
   const isAll=!!S.totalView;
+  const sym=isAll?'RM':cur.symbol;
   const budgets=isAll?(S.allBudgets||{}):(S.budgets||{});
   if(!window._bgtDirty){
     window._bgtDraft={};
