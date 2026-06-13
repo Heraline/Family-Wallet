@@ -5527,7 +5527,7 @@ function renderCatBudgetPage(){
   const catKeys=Object.keys(cats).filter(k=>k!=='income');
 
   // Init draft budgets
-  const isAll=(S.budgetScope||'ledger')==='all';
+  const isAll=!!S.totalView;
   const budgets=isAll?(S.allBudgets||{}):(S.budgets||{});
   if(!window._bgtDirty){
     window._bgtDraft={};
@@ -5550,10 +5550,25 @@ function renderCatBudgetPage(){
 
   // Compute spending per category
   const catSpent={};
-  Object.values(S.txs||{}).forEach(t=>{
-    if(t.type!=='expense'||!t.date?.startsWith(ym))return;
-    catSpent[t.category]=(catSpent[t.category]||0)+(t.amount||0);
-  });
+  if(isAll){
+    const allTxSources={...S.allLedgerTxs,[S.activeLedgerId]:S.txs||{}};
+    Object.entries(allTxSources).forEach(([lid,txs])=>{
+      if(S.excludedFromTotal.has(lid))return;
+      const rate=(CURRENCIES[S.allLedgerCurrencies[lid]||'MYR']?.rateToMYR||1)/(CURRENCIES['MYR']?.rateToMYR||1);
+      Object.values(txs||{}).forEach(t=>{
+        if(t.type!=='expense'||!t.date?.startsWith(ym))return;
+        const amt=(t.amount||0)*rate;
+        catSpent[t.category]=(catSpent[t.category]||0)+amt;
+        if(t.subcat)catSpent[t.category+'__'+t.subcat]=(catSpent[t.category+'__'+t.subcat]||0)+amt;
+      });
+    });
+  }else{
+    Object.values(S.txs||{}).forEach(t=>{
+      if(t.type!=='expense'||!t.date?.startsWith(ym))return;
+      catSpent[t.category]=(catSpent[t.category]||0)+(t.amount||0);
+      if(t.subcat)catSpent[t.category+'__'+t.subcat]=(catSpent[t.category+'__'+t.subcat]||0)+(t.amount||0);
+    });
+  }
 
   const monthLabel=(()=>{const [yr,mo]=ym.split('-').map(Number);return new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});})();
   const isCurrentMonth=ym===localYm();
@@ -5578,23 +5593,23 @@ function renderCatBudgetPage(){
   const totalBudgetCard=`<div class="surface" style="padding:16px;border-radius:14px;margin-bottom:14px;border:1px solid rgba(108,99,255,0.25)">
     <p style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px;letter-spacing:0.04em;text-transform:uppercase">Total Monthly Budget</p>
     <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:14px;color:var(--muted);font-weight:600">${cur.symbol}</span>
+      <span style="font-size:14px;color:var(--muted);font-weight:600">${sym}</span>
       <input id="cb-total-input" class="fw-input" type="number" inputmode="decimal" placeholder="${draftCatSum>0?draftCatSum.toFixed(2):'0.00'}"
         value="${window._bgtDraft['_total']||''}"
         style="flex:1;margin:0;font-size:15px;font-weight:700;padding:10px 12px"
         oninput="window._bgtDirty=true;window._bgtDraft['_total']=this.value;updateCbTotalPreview()">
-      ${totalSpent>0?`<span style="font-size:11px;color:var(--muted);white-space:nowrap">spent ${cur.symbol}${totalSpent.toFixed(2)}</span>`:''}
+      ${totalSpent>0?`<span style="font-size:11px;color:var(--muted);white-space:nowrap">spent ${sym}${totalSpent.toFixed(2)}</span>`:''}
     </div>
-    <p style="font-size:10px;color:var(--dim);margin-top:6px">Leave blank to auto-sum all category budgets${draftCatSum>0?' (currently '+cur.symbol+draftCatSum.toFixed(2)+')':''}</p>
+    <p style="font-size:10px;color:var(--dim);margin-top:6px">Leave blank to auto-sum all category budgets${draftCatSum>0?' (currently '+sym+draftCatSum.toFixed(2)+')':''}</p>
     <div id="cb-total-flag" style="display:${totalFlag?'flex':'none'};align-items:flex-start;gap:6px;margin-top:8px;padding:8px 10px;border-radius:10px;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.25)">
       <span style="font-size:12px;flex-shrink:0">⚠️</span>
-      <p id="cb-total-flag-msg" style="font-size:11px;color:var(--red);font-weight:600;line-height:1.5">${totalFlag?`Category total (${cur.symbol}${draftCatSum.toFixed(2)}) exceeds this amount`:''}</p>
+      <p id="cb-total-flag-msg" style="font-size:11px;color:var(--red);font-weight:600;line-height:1.5">${totalFlag?`Category total (${sym}${draftCatSum.toFixed(2)}) exceeds this amount`:''}</p>
     </div>
     <div id="cb-total-preview">${effectiveTotal>0?`<div style="margin-top:8px">
       <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.08);overflow:hidden">
         <div style="height:100%;width:${totalPct}%;background:${totalBarColor};border-radius:2px;transition:width 0.3s"></div>
       </div>
-      <p style="font-size:10px;color:${totalBarColor};margin-top:4px">${totalSpent>effectiveTotal?`Over by ${cur.symbol}${(totalSpent-effectiveTotal).toFixed(2)}`:`${cur.symbol}${(effectiveTotal-totalSpent).toFixed(2)} remaining`}</p>
+      <p style="font-size:10px;color:${totalBarColor};margin-top:4px">${totalSpent>effectiveTotal?`Over by ${sym}${(totalSpent-effectiveTotal).toFixed(2)}`:`${sym}${(effectiveTotal-totalSpent).toFixed(2)} remaining`}</p>
     </div>`:''}</div>
   </div>`;
 
@@ -5616,7 +5631,7 @@ function renderCatBudgetPage(){
         <p style="font-size:14px;font-weight:700">${c.label}</p>
         ${subcatEntries.length>0?`<p style="font-size:11px;color:var(--dim)">${subcatEntries.length} subcategor${subcatEntries.length===1?'y':'ies'}</p>`:''}
       </div>
-      ${bgt>0?`<p style="font-size:11px;color:var(--muted)">${cur.symbol} ${bgt.toFixed(0)}</p>`:''}
+      ${bgt>0?`<p style="font-size:11px;color:var(--muted)">${sym} ${bgt.toFixed(0)}</p>`:''}
     </div>`;
 
     return`<div class="surface" style="padding:14px 16px;border-radius:14px;margin-bottom:10px">
@@ -5648,12 +5663,12 @@ function renderCatBudgetPage(){
               <button class="delete-btn" style="font-size:10px;padding:3px 8px" onclick="deleteSubcat('${key}','${sk}')">Del</button>
             </div>
             <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:11px;color:var(--muted)">${cur.symbol}</span>
+              <span style="font-size:11px;color:var(--muted)">${sym}</span>
               <input class="fw-input cb-bgt-input" data-cat="${scBgtKey}" type="number" inputmode="decimal" placeholder="Subcategory budget..."
                 value="${window._bgtDraft[scBgtKey]||''}"
                 style="flex:1;margin:0;font-size:12px;padding:7px 10px"
             oninput="window._bgtDirty=true;window._bgtDraft['${scBgtKey}']=this.value;updateCbBgtPreview('${scBgtKey}',this.value,${scSpent})">
-              ${scSpent>0?`<span style="font-size:10px;color:var(--muted);white-space:nowrap">spent ${cur.symbol}${scSpent.toFixed(2)}</span>`:''}
+              ${scSpent>0?`<span style="font-size:10px;color:var(--muted);white-space:nowrap">spent ${sym}${scSpent.toFixed(2)}</span>`:''}
             </div>
             <div id="cb-preview-${scBgtKey}"></div>
           </div>`;
@@ -5667,18 +5682,18 @@ function renderCatBudgetPage(){
       <div style="border-top:1px solid var(--border);padding-top:10px">
         <p style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:0.04em;text-transform:uppercase">Monthly Budget</p>
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:13px;color:var(--muted);font-weight:600">${cur.symbol}</span>
+          <span style="font-size:13px;color:var(--muted);font-weight:600">${sym}</span>
           <input class="fw-input cb-bgt-input" data-cat="${key}" type="number" inputmode="decimal" placeholder="0.00"
             value="${window._bgtDraft[key]||''}"
             style="flex:1;margin:0;font-size:14px;padding:10px 12px"
             oninput="window._bgtDirty=true;window._bgtDraft['${key}']=this.value;updateCbBgtPreview('${key}',this.value,${spent});updateCbTotalPreview()">
-          ${spent>0?`<span style="font-size:11px;color:var(--muted);white-space:nowrap">spent ${cur.symbol}${spent.toFixed(2)}</span>`:''}
+          ${spent>0?`<span style="font-size:11px;color:var(--muted);white-space:nowrap">spent ${sym}${spent.toFixed(2)}</span>`:''}
         </div>
         ${bgt>0?`<div style="margin-top:8px">
           <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.08);overflow:hidden">
             <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px;transition:width 0.3s"></div>
           </div>
-          <p id="cb-preview-${key}" style="font-size:10px;color:${barColor};margin-top:4px">${spent>bgt?`Over by ${cur.symbol}${(spent-bgt).toFixed(2)}`:`${cur.symbol}${(bgt-spent).toFixed(2)} remaining`}</p>
+          <p id="cb-preview-${key}" style="font-size:10px;color:${barColor};margin-top:4px">${spent>bgt?`Over by ${sym}${(spent-bgt).toFixed(2)}`:`${sym}${(bgt-spent).toFixed(2)} remaining`}</p>
         </div>`:`<div id="cb-preview-${key}"></div>`}
       </div>
     </div>`;
@@ -5697,7 +5712,7 @@ function renderCatBudgetPage(){
   return`<div class="fade-in settings-page" style="padding-top:0;padding-bottom:calc(80px + env(safe-area-inset-bottom))">
     <div style="position:sticky;top:0;z-index:20;background:var(--bg);padding:52px 22px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)">
       <button class="btn-ghost" onclick="goSettings()" style="font-size:20px;padding:0;color:var(--muted)">←</button>
-      <p style="font-size:17px;font-weight:700;flex:1">Categories & Budget</p>
+      <p style="font-size:17px;font-weight:700;flex:1">Categories & Budget${isAll?` <span style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(108,99,255,0.12);border:1px solid rgba(108,99,255,0.3);border-radius:8px;padding:2px 8px;vertical-align:middle">🌐 All Ledgers</span>`:''}</p>
       ${isReorderCat
         ?`<button onclick="toggleCatReorder()" style="padding:7px 14px;border-radius:12px;font-size:12px;font-weight:700;border:1px solid rgba(108,99,255,0.5);background:rgba(108,99,255,0.12);color:var(--accent);cursor:pointer">✓ Done</button>`
         :`<button onclick="toggleCatReorder()" style="padding:7px 13px;border-radius:12px;font-size:12px;font-weight:700;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--muted);cursor:pointer">⇅ Reorder</button>
@@ -5737,6 +5752,8 @@ window.catBudgetChangeMonth=delta=>{
 
 window.updateCbTotalPreview=()=>{
   const cur=getCur();
+  const isAll=!!S.totalView;
+  const sym=isAll?'RM':cur.symbol;
   const ym=S.budgetMonth||localYm();
   const cats=getCats();
   const catKeys=Object.keys(cats).filter(k=>k!=='income');
@@ -5747,10 +5764,23 @@ window.updateCbTotalPreview=()=>{
   },0);
   const draftTotal=parseFloat(window._bgtDraft['_total'])||0;
   const effectiveTotal=draftTotal>0?draftTotal:catSum;
-  const totalSpent=Object.values(S.txs||{}).reduce((s,t)=>{
-    if(t.type!=='expense'||!t.date?.startsWith(ym))return s;
-    return s+(t.amount||0);
-  },0);
+  let totalSpent=0;
+  if(isAll){
+    const allTxSources={...S.allLedgerTxs,[S.activeLedgerId]:S.txs||{}};
+    Object.entries(allTxSources).forEach(([lid,txs])=>{
+      if(S.excludedFromTotal.has(lid))return;
+      const rate=(CURRENCIES[S.allLedgerCurrencies[lid]||'MYR']?.rateToMYR||1)/(CURRENCIES['MYR']?.rateToMYR||1);
+      Object.values(txs||{}).forEach(t=>{
+        if(t.type!=='expense'||!t.date?.startsWith(ym))return;
+        totalSpent+=(t.amount||0)*rate;
+      });
+    });
+  }else{
+    totalSpent=Object.values(S.txs||{}).reduce((s,t)=>{
+      if(t.type!=='expense'||!t.date?.startsWith(ym))return s;
+      return s+(t.amount||0);
+    },0);
+  }
 
   // Flag
   const flagEl=document.getElementById('cb-total-flag');
@@ -5758,7 +5788,7 @@ window.updateCbTotalPreview=()=>{
   const totalFlag=draftTotal>0&&catSum>draftTotal;
   if(flagEl){
     flagEl.style.display=totalFlag?'flex':'none';
-    if(flagMsg)flagMsg.textContent=totalFlag?`Category total (${cur.symbol}${catSum.toFixed(2)}) exceeds this amount`:'';
+    if(flagMsg)flagMsg.textContent=totalFlag?`Category total (${sym}${catSum.toFixed(2)}) exceeds this amount`:'';
   }
 
   // Preview bar
@@ -5771,7 +5801,7 @@ window.updateCbTotalPreview=()=>{
         <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.08);overflow:hidden">
           <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px;transition:width 0.3s"></div>
         </div>
-        <p style="font-size:10px;color:${barColor};margin-top:4px">${totalSpent>effectiveTotal?`Over by ${cur.symbol}${(totalSpent-effectiveTotal).toFixed(2)}`:`${cur.symbol}${(effectiveTotal-totalSpent).toFixed(2)} remaining`}</p>
+        <p style="font-size:10px;color:${barColor};margin-top:4px">${totalSpent>effectiveTotal?`Over by ${sym}${(totalSpent-effectiveTotal).toFixed(2)}`:`${sym}${(effectiveTotal-totalSpent).toFixed(2)} remaining`}</p>
       </div>`;
     } else {
       previewEl.innerHTML='';
@@ -5784,14 +5814,15 @@ window.updateCbTotalPreview=()=>{
 };
 
 window.updateCbBgtPreview=(key,val,spent)=>{
-  const cur=getCur();
+  const isAll=!!S.totalView;
+  const sym=isAll?'RM':getCur().symbol;
   const bgt=parseFloat(val)||0;
   const el=document.getElementById('cb-preview-'+key);
   if(!el)return;
   if(bgt>0){
     const pct=Math.min(100,(spent/bgt)*100);
     const barColor=spent>bgt?'var(--red)':pct>80?'var(--yellow)':'var(--accent)';
-    el.innerHTML=`<div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.08);overflow:hidden;margin-top:8px"><div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px"></div></div><p style="font-size:10px;color:${barColor};margin-top:4px">${spent>bgt?'Over by '+cur.symbol+(spent-bgt).toFixed(2):cur.symbol+(bgt-spent).toFixed(2)+' remaining'}</p>`;
+    el.innerHTML=`<div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.08);overflow:hidden;margin-top:8px"><div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px"></div></div><p style="font-size:10px;color:${barColor};margin-top:4px">${spent>bgt?'Over by '+sym+(spent-bgt).toFixed(2):sym+(bgt-spent).toFixed(2)+' remaining'}</p>`;
   } else {
     el.innerHTML='';
   }
@@ -5799,7 +5830,7 @@ window.updateCbBgtPreview=(key,val,spent)=>{
 
 window.saveCatBudgets=async()=>{
   const ym=S.budgetMonth||localYm();
-  const isAll=(S.budgetScope||'ledger')==='all';
+  const isAll=!!S.totalView;
   const path=isAll?`users/${S.user.uid}/budgets/${ym}`:`ledgers/${S.activeLedgerId}/budgets/${ym}`;
   const up={};
   Object.entries(window._bgtDraft||{}).forEach(([k,v])=>{
