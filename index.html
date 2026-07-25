@@ -1220,7 +1220,7 @@ function renderLedgerPicker(){
     const isActive=!S.totalView&&id===S.activeLedgerId;
     return`<div class="ledger-card ${isActive?'active-ledger':''}" style="opacity:${excluded?'0.55':'1'}">
       <div style="display:flex;align-items:center;gap:12px" onclick="pickLedger('${id}')">
-        <div style="width:46px;height:46px;border-radius:14px;background:rgba(108,99,255,0.15);display:flex;align-items:center;justify-content:center;font-size:22px">${l.icon||'💼'}</div>
+        <div style="width:46px;height:46px;border-radius:14px;background:rgba(108,99,255,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden">${l.customIcon?renderCatIcon(l.customIcon,26,true):(l.icon||'💼')}</div>
         <div style="flex:1">
           <p style="font-size:16px;font-weight:700">${l.name}</p>
           <p style="font-size:11px;color:var(--dim)">${l.role==='owner'?'👑 Owner':'👤 Member'}${isActive?' · Active':''}${excluded?' · Excluded from All':''}</p>
@@ -5230,9 +5230,13 @@ window.bgtSaveAll=async()=>{
     if(btn){btn.disabled=true;btn.innerHTML='<span style="font-size:16px">⏳</span> Saving...';}
     // Write entire budget object atomically — one Firebase call
     await set(ref(db,dbPath),Object.keys(newBudgets).length?newBudgets:null);
+    // Update local state immediately — don't wait for the DB listener round-trip,
+    // which can lag behind this point and cause the page to redraw with stale
+    // (e.g. empty, on a first-ever save) data right after a successful save.
+    if(isAll){S.allBudgets=newBudgets;}else{S.budgets=newBudgets;}
     window._bgtDirty=false;
     toast('✓ Budget saved');
-    // Re-render cleanly after save (draft will reload from new S.budgets)
+    // Re-render cleanly after save (draft will reload from the freshly-set state above)
     renderPage();
   }catch(e){
     if(btn){btn.disabled=false;btn.innerHTML='💾 Save Budget';}
