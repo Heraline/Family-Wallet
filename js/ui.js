@@ -27,6 +27,14 @@ function renderLogin() {
     </div>`;
 }
 
+function ledgerIcon(icon) {
+  // Old app allowed custom uploaded icons (long image data), not just emoji.
+  if (icon && icon.startsWith("data:image")) {
+    return `<img src="${icon}" class="icon-img" alt="" />`;
+  }
+  return `<span class="icon">${icon || "💼"}</span>`;
+}
+
 function renderLedgerList() {
   const ledgers = Object.entries(S.ledgers || {});
   app.innerHTML = `
@@ -38,8 +46,8 @@ function renderLedgerList() {
     <div id="ledgerList" class="ledger-list">
       ${ledgers.length ? ledgers.map(([lid, l]) => `
         <button class="ledger-card" data-lid="${lid}">
-          <span class="icon">${l.icon || "💼"}</span>
-          <span>${l.name}</span>
+          ${ledgerIcon(l.icon)}
+          <span>${l.name || "Untitled ledger"}</span>
           <span class="role">${l.role}</span>
         </button>`).join("") : `<p class="muted">No ledgers yet — create or join one below.</p>`}
     </div>
@@ -63,13 +71,12 @@ function renderLedgerDetail() {
   const balance = txs.reduce((sum, [, t]) => sum + (t.type === "income" ? t.amount : -t.amount), 0);
   const members = Object.values(S.members || {});
 
-  // fetch invite code lazily from the ledgers object we already have client-side
   app.innerHTML = `
     <div class="topbar">
       <button id="btnBack" class="link">&larr; All ledgers</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
-    <h2>${ledger.icon || "💼"} ${ledger.name || ""}</h2>
+    <h2>${ledgerIcon(ledger.icon)} ${ledger.name || ""}</h2>
     <div class="balance">${(ledger.currency || "USD")} ${balance.toFixed(2)}</div>
 
     <div class="panel">

@@ -21,3 +21,4 @@ button.small { font-size: 11px; padding: 2px 6px; }
 .tx-row .income { color: #1f9d63; font-weight: 700; }
 .tx-row .expense { color: #d9455c; font-weight: 700; }
 .muted { color: #999; font-size: 13px; }
+.icon-img { width: 24px; height: 24px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
