@@ -14,6 +14,7 @@ function genInviteCode(len = 6) {
 }
 
 let unsubMembers = null;
+let unsubDetail = null;
 let unsubTxs = null; // set by transactions.js via setTxUnsub, so switching ledgers cleans it up too
 export function setTxUnsub(fn) { unsubTxs = fn; }
 
@@ -61,10 +62,13 @@ export async function joinLedgerByCode(code) {
 
 export function switchLedger(lid) {
   unsubMembers?.();
+  unsubDetail?.();
   unsubTxs?.();
   S.activeLedgerId = lid;
+  S.activeLedgerDetail = null;
   S.members = {};
   S.txs = {};
   notify();
+  unsubDetail = listen(`ledgers/${lid}`, (data) => { S.activeLedgerDetail = data || {}; notify(); });
   unsubMembers = listen(`ledgerMembers/${lid}`, (data) => { S.members = data || {}; notify(); });
 }

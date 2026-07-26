@@ -23,7 +23,7 @@ export async function addTransaction({ type, amount, category, description, curr
     type,                                   // "expense" | "income"
     amount: Number(amount),
     origAmount: Number(amount),
-    currency: currency || S.ledgers[S.activeLedgerId]?.currency || "USD",
+    currency: currency || S.activeLedgerDetail?.currency || "USD",
     category: type === "income" ? "income" : category,
     description: description?.trim() || category,
     date: now.toISOString().slice(0, 10),

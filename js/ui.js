@@ -66,7 +66,7 @@ function renderLedgerList() {
 }
 
 function renderLedgerDetail() {
-  const ledger = S.ledgers[S.activeLedgerId] || {};
+  const ledger = S.activeLedgerDetail || {};
   const txs = Object.entries(S.txs || {}).sort((a, b) => b[1].ts - a[1].ts);
   const balance = txs.reduce((sum, [, t]) => sum + (t.type === "income" ? t.amount : -t.amount), 0);
   const members = Object.values(S.members || {});

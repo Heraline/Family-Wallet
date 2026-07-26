@@ -4,8 +4,9 @@
 export const S = {
   user: null,          // firebase auth user object
   profile: null,       // { displayName, avatar, color } from users/{uid}
-  ledgers: {},         // { ledgerId: {id,name,icon,inviteCode,owner,currency,...} } — ledgers this user belongs to
+  ledgers: {},         // { ledgerId: {name, icon, role} } — lightweight list for the ledger-picker screen
   activeLedgerId: null,
+  activeLedgerDetail: null, // full record from ledgers/{lid} (currency, inviteCode, etc.) — only loaded once a ledger is opened
   members: {},         // members of the active ledger { uid: {displayName, role, ...} }
   txs: {},             // transactions of the active ledger { txId: {...} }
 };
