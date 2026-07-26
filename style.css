@@ -1,0 +1,23 @@
+* { box-sizing: border-box; font-family: system-ui, sans-serif; }
+body { max-width: 480px; margin: 0 auto; padding: 24px 16px 60px; background: #f4f4f8; color: #1a1a2e; }
+h2 { margin-bottom: 12px; } h3 { margin: 8px 0; font-size: 14px; color: #555; }
+input, select { display: block; width: 100%; padding: 10px 12px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+button { padding: 10px 16px; border: none; border-radius: 8px; background: #1a1a2e; color: #fff; font-weight: 600; cursor: pointer; }
+button.secondary { background: #fff; color: #1a1a2e; border: 1px solid #ccc; }
+button.link { background: none; color: #4d7fe0; padding: 4px; font-weight: 500; }
+button.small { font-size: 11px; padding: 2px 6px; }
+.btn-row { display: flex; gap: 8px; }
+.auth-box { background: #fff; padding: 24px; border-radius: 16px; margin-top: 40px; }
+.error { color: #d9455c; font-size: 13px; min-height: 18px; }
+.topbar { display: flex; justify-content: space-between; margin-bottom: 16px; }
+.panel { background: #fff; padding: 16px; border-radius: 12px; margin: 16px 0; }
+.ledger-list { display: flex; flex-direction: column; gap: 8px; }
+.ledger-card { display: flex; align-items: center; gap: 10px; background: #fff; padding: 14px; border-radius: 12px; text-align: left; }
+.ledger-card .role { margin-left: auto; font-size: 11px; color: #999; }
+.balance { font-size: 28px; font-weight: 800; margin-bottom: 16px; }
+.tx-list { background: #fff; border-radius: 12px; padding: 4px 16px; }
+.tx-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+.tx-row span:first-child { flex: 1; }
+.tx-row .income { color: #1f9d63; font-weight: 700; }
+.tx-row .expense { color: #d9455c; font-weight: 700; }
+.muted { color: #999; font-size: 13px; }
