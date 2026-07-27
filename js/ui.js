@@ -115,6 +115,7 @@ function roleLabel(m) {
 }
 
 function renderMembersPanel(memberEntries, myMember, iAmOwner) {
+  const iCanRemove = canRemoveMembers(myMember);
   return `
     <div class="panel">
       <h3>Members (${memberEntries.length})</h3>
@@ -127,9 +128,9 @@ function renderMembersPanel(memberEntries, myMember, iAmOwner) {
               <option value="member" ${m.role === "member" ? "selected" : ""}>Member</option>
               <option value="moderator" ${m.role === "moderator" ? "selected" : ""}>Moderator</option>
             </select>
-            <button class="link small" data-remove-uid="${uid}">remove</button>
           ` : ""}
-          ${iAmOwner && m.guest ? `<button class="link small" data-remove-guest="${uid}">remove</button>` : ""}
+          ${iCanRemove && uid !== S.user.uid && m.role !== "owner" && !m.guest ? `<button class="link small" data-remove-uid="${uid}">remove</button>` : ""}
+          ${iCanRemove && m.guest ? `<button class="link small" data-remove-guest="${uid}">remove</button>` : ""}
         </div>
         ${iAmOwner && m.role === "moderator" ? renderModPermissions(uid, m) : ""}
       `).join("")}
