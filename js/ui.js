@@ -3,6 +3,7 @@
 // in during a later phase. Right now this only renders into <div id="app">.
 
 import { S } from "./state.js";
+import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteLedger, GRANTABLE_PERMISSIONS } from "./permissions.js";
 
 const app = document.getElementById("app");
 
@@ -69,7 +70,9 @@ function renderLedgerDetail() {
   const ledger = S.activeLedgerDetail || {};
   const txs = Object.entries(S.txs || {}).sort((a, b) => b[1].ts - a[1].ts);
   const balance = txs.reduce((sum, [, t]) => sum + (t.type === "income" ? t.amount : -t.amount), 0);
-  const members = Object.values(S.members || {});
+  const memberEntries = Object.entries(S.members || {});
+  const myMember = S.members[S.user.uid];
+  const iAmOwner = isOwner(myMember);
 
   app.innerHTML = `
     <div class="topbar">
@@ -95,13 +98,84 @@ function renderLedgerDetail() {
         <div class="tx-row">
           <span>${t.category}${t.description ? " — " + t.description : ""}</span>
           <span class="${t.type}">${t.type === "income" ? "+" : "-"}${t.amount.toFixed(2)}</span>
-          <button class="link small" data-del="${id}">delete</button>
+          ${canDeleteTx(myMember, t, S.user.uid) ? `<button class="link small" data-del="${id}">delete</button>` : ""}
         </div>`).join("") : `<p class="muted">No transactions yet.</p>`}
     </div>
 
+    ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
+    ${renderSettingsPanel(ledger, myMember, iAmOwner)}
+  `;
+}
+
+function roleLabel(m) {
+  if (m.guest) return "Guest";
+  if (m.role === "owner") return "👑 Owner";
+  if (m.role === "moderator") return "🛡️ Moderator";
+  return "Member";
+}
+
+function renderMembersPanel(memberEntries, myMember, iAmOwner) {
+  return `
     <div class="panel">
-      <h3>Members (${members.length})</h3>
-      ${members.map(m => `<div>${m.avatar || "🙂"} ${m.displayName} <span class="role">${m.role}</span></div>`).join("")}
-      <p class="muted">Invite code: <strong>${ledger.inviteCode || "..."}</strong></p>
+      <h3>Members (${memberEntries.length})</h3>
+      ${memberEntries.map(([uid, m]) => `
+        <div class="member-row">
+          <span>${m.avatar || "🙂"} ${m.displayName}</span>
+          <span class="role">${roleLabel(m)}${uid === S.user.uid ? " · you" : ""}</span>
+          ${iAmOwner && uid !== S.user.uid && !m.guest ? `
+            <select class="role-select" data-role-uid="${uid}">
+              <option value="member" ${m.role === "member" ? "selected" : ""}>Member</option>
+              <option value="moderator" ${m.role === "moderator" ? "selected" : ""}>Moderator</option>
+            </select>
+            <button class="link small" data-remove-uid="${uid}">remove</button>
+          ` : ""}
+          ${iAmOwner && m.guest ? `<button class="link small" data-remove-guest="${uid}">remove</button>` : ""}
+        </div>
+        ${iAmOwner && m.role === "moderator" ? renderModPermissions(uid, m) : ""}
+      `).join("")}
+
+      ${can(myMember, "manageGuests") ? `
+        <div class="sub-panel">
+          <h4>Add guest</h4>
+          <div id="guestError" class="error"></div>
+          <input id="guestName" placeholder="Guest name" />
+          <button id="btnAddGuest">Add guest</button>
+        </div>` : ""}
+
+      ${!iAmOwner ? `<button id="btnLeaveLedger" class="secondary" style="margin-top:10px">Leave this ledger</button>` : ""}
+    </div>`;
+}
+
+function renderModPermissions(uid, m) {
+  const perms = m.permissions || {};
+  return `
+    <div class="sub-panel mod-perms">
+      <p class="muted">Moderator permissions for ${m.displayName}:</p>
+      ${GRANTABLE_PERMISSIONS.map(p => `
+        <label class="perm-check">
+          <input type="checkbox" data-perm-uid="${uid}" data-perm-key="${p.key}" ${perms[p.key] ? "checked" : ""} />
+          ${p.label}
+        </label>`).join("")}
+    </div>`;
+}
+
+function renderSettingsPanel(ledger, myMember, iAmOwner) {
+  const canRename = can(myMember, "renameLedger");
+  const canInvite = can(myMember, "regenerateInvite");
+  if (!canRename && !canInvite && !iAmOwner) {
+    return `<div class="panel"><h3>Invite code</h3><p class="muted"><strong>${ledger.inviteCode || "..."}</strong></p></div>`;
+  }
+  return `
+    <div class="panel">
+      <h3>Ledger settings</h3>
+      ${canRename ? `
+        <div id="renameError" class="error"></div>
+        <input id="ledgerNameInput" value="${ledger.name || ""}" placeholder="Ledger name" />
+        <input id="ledgerIconInput" value="${(ledger.icon || "").startsWith("data:image") ? "" : (ledger.icon || "")}" placeholder="Icon (emoji)" />
+        <button id="btnRenameLedger">Save name / icon</button>
+      ` : ""}
+      <p class="muted" style="margin-top:10px">Invite code: <strong>${ledger.inviteCode || "..."}</strong></p>
+      ${canInvite ? `<button id="btnRegenInvite" class="secondary">Regenerate code</button>` : ""}
+      ${iAmOwner ? `<button id="btnDeleteLedger" class="danger" style="margin-top:14px">Delete this ledger</button>` : ""}
     </div>`;
 }

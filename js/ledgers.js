@@ -4,7 +4,7 @@
 //   ledgerMembers/{lid}/{uid}  -> per-ledger member info
 //   userLedgers/{uid}/{lid}    -> quick lookup of "which ledgers am I in"
 
-import { readOnce, writeSet, writeUpdate, listen, dbRef } from "./firebase.js";
+import { readOnce, writeSet, writeUpdate, writeRemove, listen, dbRef } from "./firebase.js";
 import { get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { S, notify } from "./state.js";
 
@@ -71,4 +71,74 @@ export function switchLedger(lid) {
   notify();
   unsubDetail = listen(`ledgers/${lid}`, (data) => { S.activeLedgerDetail = data || {}; notify(); });
   unsubMembers = listen(`ledgerMembers/${lid}`, (data) => { S.members = data || {}; notify(); });
+}
+
+// ---------- Ledger settings (gated by permissions.js in the UI layer) ----------
+export async function renameLedger(lid, name, icon) {
+  await writeUpdate(`ledgers/${lid}`, { name, icon });
+  // keep every member's lightweight userLedgers copy in sync too
+  const membersSnap = await readOnce(`ledgerMembers/${lid}`);
+  const members = membersSnap.val() || {};
+  const updates = {};
+  Object.keys(members).forEach((uid) => {
+    if (!members[uid].guest) updates[`userLedgers/${uid}/${lid}/name`] = name;
+    if (!members[uid].guest) updates[`userLedgers/${uid}/${lid}/icon`] = icon;
+  });
+  await writeUpdate("/", updates);
+}
+
+export async function regenerateInviteCode(lid) {
+  const inviteCode = genInviteCode();
+  await writeUpdate(`ledgers/${lid}`, { inviteCode });
+  return inviteCode;
+}
+
+// ---------- Guests (no login — placeholder people for splitting bills) ----------
+export async function addGuest(lid, name, avatar = "🙂") {
+  const gid = "guest_" + crypto.randomUUID();
+  await writeSet(`ledgerMembers/${lid}/${gid}`, {
+    displayName: name, avatar, role: "guest", guest: true, joinedAt: Date.now(),
+  });
+  return gid;
+}
+export async function removeGuest(lid, gid) {
+  await writeRemove(`ledgerMembers/${lid}/${gid}`);
+}
+
+// ---------- Roles & permissions (Owner only) ----------
+export async function setMemberRole(lid, uid, role, permissions = null) {
+  const update = { role };
+  if (role === "moderator") update.permissions = permissions || {};
+  else update.permissions = null;
+  await writeUpdate(`ledgerMembers/${lid}/${uid}`, update);
+  await writeUpdate(`userLedgers/${uid}/${lid}`, { role });
+}
+
+export async function setModeratorPermissions(lid, uid, permissions) {
+  await writeUpdate(`ledgerMembers/${lid}/${uid}`, { permissions });
+}
+
+// ---------- Removing / leaving / deleting ----------
+export async function removeMember(lid, uid) {
+  await writeRemove(`ledgerMembers/${lid}/${uid}`);
+  await writeUpdate(`ledgers/${lid}/members`, { [uid]: null });
+  await writeRemove(`userLedgers/${uid}/${lid}`);
+}
+
+export async function leaveLedger(lid, uid) {
+  return removeMember(lid, uid);
+}
+
+export async function deleteLedger(lid) {
+  const membersSnap = await readOnce(`ledgerMembers/${lid}`);
+  const members = membersSnap.val() || {};
+  const updates = {
+    [`ledgers/${lid}`]: null,
+    [`ledgerMembers/${lid}`]: null,
+    [`ledgerTransactions/${lid}`]: null,
+  };
+  Object.keys(members).forEach((uid) => {
+    if (!members[uid].guest) updates[`userLedgers/${uid}/${lid}`] = null;
+  });
+  await writeUpdate("/", updates);
 }

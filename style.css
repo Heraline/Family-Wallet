@@ -14,6 +14,7 @@ button.small { font-size: 11px; padding: 2px 6px; }
 .ledger-list { display: flex; flex-direction: column; gap: 8px; }
 .ledger-card { display: flex; align-items: center; gap: 10px; background: #fff; padding: 14px; border-radius: 12px; text-align: left; }
 .ledger-card .role { margin-left: auto; font-size: 11px; color: #999; }
+.icon-img { width: 24px; height: 24px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
 .balance { font-size: 28px; font-weight: 800; margin-bottom: 16px; }
 .tx-list { background: #fff; border-radius: 12px; padding: 4px 16px; }
 .tx-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
@@ -21,4 +22,12 @@ button.small { font-size: 11px; padding: 2px 6px; }
 .tx-row .income { color: #1f9d63; font-weight: 700; }
 .tx-row .expense { color: #d9455c; font-weight: 700; }
 .muted { color: #999; font-size: 13px; }
-.icon-img { width: 24px; height: 24px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+.member-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+.member-row .role { color: #999; font-size: 11px; }
+.member-row .role-select { width: auto; margin: 0; padding: 4px 8px; font-size: 12px; }
+.sub-panel { background: #f8f8fb; border-radius: 10px; padding: 12px; margin-top: 10px; }
+.sub-panel h4 { font-size: 12px; margin-bottom: 6px; color: #555; }
+.mod-perms { margin-bottom: 4px; }
+.perm-check { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 6px; }
+.perm-check input { width: auto; margin: 0; }
+button.danger { background: #d9455c; }
