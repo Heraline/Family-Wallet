@@ -66,12 +66,26 @@ function renderLedgerList() {
     </div>`;
 }
 
+function fakePreviewMember(role) {
+  if (role === "member") return { role: "member" };
+  if (role === "guest") return { role: "guest", guest: true };
+  if (role === "moderator") return {
+    role: "moderator",
+    permissions: { renameLedger: true, regenerateInvite: true, manageGuests: true, deleteOthersTx: true, removeMembers: true },
+  };
+  return null;
+}
+
 function renderLedgerDetail() {
   const ledger = S.activeLedgerDetail || {};
   const txs = Object.entries(S.txs || {}).sort((a, b) => b[1].ts - a[1].ts);
   const balance = txs.reduce((sum, [, t]) => sum + (t.type === "income" ? t.amount : -t.amount), 0);
   const memberEntries = Object.entries(S.members || {});
-  const myMember = S.members[S.user.uid];
+
+  const realMember = S.members[S.user.uid];
+  const iAmRealOwner = isOwner(realMember);
+  const previewing = iAmRealOwner && S.debugPreviewRole;
+  const myMember = previewing ? fakePreviewMember(S.debugPreviewRole) : realMember;
   const iAmOwner = isOwner(myMember);
 
   app.innerHTML = `
@@ -79,31 +93,46 @@ function renderLedgerDetail() {
       <button id="btnBack" class="link">&larr; All ledgers</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
-    <h2>${ledgerIcon(ledger.icon)} ${ledger.name || ""}</h2>
-    <div class="balance">${(ledger.currency || "USD")} ${balance.toFixed(2)}</div>
 
-    <div class="panel">
-      <h3>Add entry</h3>
-      <div id="txError" class="error"></div>
-      <select id="txType"><option value="expense">Expense</option><option value="income">Income</option></select>
-      <input id="txAmount" type="number" step="0.01" placeholder="Amount" />
-      <input id="txCategory" placeholder="Category (e.g. Food)" />
-      <input id="txDesc" placeholder="Description (optional)" />
-      <button id="btnAddTx">Add</button>
+    ${iAmRealOwner ? `
+      <div class="preview-bar">
+        <label>🔍 Preview as:</label>
+        <select id="previewRoleSelect">
+          <option value="" ${!S.debugPreviewRole ? "selected" : ""}>My real view (Owner)</option>
+          <option value="moderator" ${S.debugPreviewRole === "moderator" ? "selected" : ""}>Moderator (all permissions)</option>
+          <option value="member" ${S.debugPreviewRole === "member" ? "selected" : ""}>Member</option>
+          <option value="guest" ${S.debugPreviewRole === "guest" ? "selected" : ""}>Guest</option>
+        </select>
+      </div>` : ""}
+
+    <div class="${previewing ? "preview-lock" : ""}">
+      ${previewing ? `<p class="preview-note">Previewing as <strong>${S.debugPreviewRole}</strong> — everything below is view-only, no actions will actually run.</p>` : ""}
+      <h2>${ledgerIcon(ledger.icon)} ${ledger.name || ""}</h2>
+      <div class="balance">${(ledger.currency || "USD")} ${balance.toFixed(2)}</div>
+
+      <div class="panel">
+        <h3>Add entry</h3>
+        <div id="txError" class="error"></div>
+        <select id="txType"><option value="expense">Expense</option><option value="income">Income</option></select>
+        <input id="txAmount" type="number" step="0.01" placeholder="Amount" />
+        <input id="txCategory" placeholder="Category (e.g. Food)" />
+        <input id="txDesc" placeholder="Description (optional)" />
+        <button id="btnAddTx">Add</button>
+      </div>
+
+      <h3>Recent activity</h3>
+      <div class="tx-list">
+        ${txs.length ? txs.map(([id, t]) => `
+          <div class="tx-row">
+            <span>${t.category}${t.description ? " — " + t.description : ""}</span>
+            <span class="${t.type}">${t.type === "income" ? "+" : "-"}${t.amount.toFixed(2)}</span>
+            ${canDeleteTx(myMember, t, S.user.uid) ? `<button class="link small" data-del="${id}">delete</button>` : ""}
+          </div>`).join("") : `<p class="muted">No transactions yet.</p>`}
+      </div>
+
+      ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
+      ${renderSettingsPanel(ledger, myMember, iAmOwner)}
     </div>
-
-    <h3>Recent activity</h3>
-    <div class="tx-list">
-      ${txs.length ? txs.map(([id, t]) => `
-        <div class="tx-row">
-          <span>${t.category}${t.description ? " — " + t.description : ""}</span>
-          <span class="${t.type}">${t.type === "income" ? "+" : "-"}${t.amount.toFixed(2)}</span>
-          ${canDeleteTx(myMember, t, S.user.uid) ? `<button class="link small" data-del="${id}">delete</button>` : ""}
-        </div>`).join("") : `<p class="muted">No transactions yet.</p>`}
-    </div>
-
-    ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
-    ${renderSettingsPanel(ledger, myMember, iAmOwner)}
   `;
 }
 

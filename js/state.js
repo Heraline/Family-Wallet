@@ -9,6 +9,7 @@ export const S = {
   activeLedgerDetail: null, // full record from ledgers/{lid} (currency, inviteCode, etc.) — only loaded once a ledger is opened
   members: {},         // members of the active ledger { uid: {displayName, role, ...} }
   txs: {},             // transactions of the active ledger { txId: {...} }
+  debugPreviewRole: null, // Owner-only testing tool: "member" | "moderator" | "guest" | null
 };
 
 // Very small pub/sub so ui.js can re-render whenever state changes,

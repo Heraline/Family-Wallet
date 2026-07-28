@@ -107,6 +107,7 @@ function showError(id, msg) {
 
 // Role changes and permission checkboxes fire "change", not "click".
 document.getElementById("app").addEventListener("change", async (e) => {
+  const id = e.target.id;
   try {
     if (e.target.dataset.roleUid) {
       const uid = e.target.dataset.roleUid, role = e.target.value;
@@ -117,6 +118,10 @@ document.getElementById("app").addEventListener("change", async (e) => {
       const member = S.members[uid];
       const perms = { ...(member?.permissions || {}), [key]: e.target.checked };
       await setModeratorPermissions(S.activeLedgerId, uid, perms);
+    }
+    if (id === "previewRoleSelect") {
+      S.debugPreviewRole = e.target.value || null;
+      render();
     }
   } catch (err) {
     console.error(err);
