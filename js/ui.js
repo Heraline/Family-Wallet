@@ -224,6 +224,8 @@ function renderPersonalBudget() {
       <button id="btnRefreshOverview" class="secondary" style="margin-top:10px">🔄 Refresh</button>
     </div>`;
 }
+
+function roleLabel(m) {
   if (m.guest) return "Guest";
   if (m.role === "owner") return "👑 Owner";
   if (m.role === "moderator") return "🛡️ Moderator";
