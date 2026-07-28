@@ -9,6 +9,7 @@ export const GRANTABLE_PERMISSIONS = [
   { key: "manageGuests", label: "Add / manage guest members" },
   { key: "deleteOthersTx", label: "Delete other members' transactions" },
   { key: "removeMembers", label: "Remove members from the ledger" },
+  { key: "manageBudget", label: "Set the ledger's monthly budget" },
 ];
 
 // Things ONLY the Owner can ever do, no matter what — never grantable.
@@ -30,5 +31,6 @@ export function canDeleteTx(member, tx, myUid) {
 }
 
 export function canRemoveMembers(member) { return can(member, "removeMembers"); }
+export function canManageBudget(member) { return can(member, "manageBudget"); }
 export function canDeleteLedger(member) { return isOwner(member); }
 export function canManageRoles(member) { return isOwner(member); } // promoting/demoting stays Owner-only — more sensitive than removing

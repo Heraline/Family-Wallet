@@ -10,6 +10,11 @@ export const S = {
   members: {},         // members of the active ledger { uid: {displayName, role, ...} }
   txs: {},             // transactions of the active ledger { txId: {...} }
   debugPreviewRole: null, // Owner-only testing tool: "member" | "moderator" | "guest" | null
+  view: "ledgers",     // "ledgers" | "ledgerDetail" | "personalBudget"
+  personalBudget: {},  // this month's personal target, from users/{uid}/personalBudget/{ym}
+  includedLedgers: {}, // { lid: true } — which ledgers count toward the personal overview
+  personalOverview: null, // computed on demand by budgets.js refreshPersonalOverview()
+  ledgerBudget: {},    // active ledger's monthly target, from ledgers/{lid}/budgets/{ym}
 };
 
 // Very small pub/sub so ui.js can re-render whenever state changes,

@@ -10,15 +10,26 @@ import {
   setMemberRole, setModeratorPermissions, removeMember, leaveLedger, deleteLedger,
 } from "./ledgers.js";
 import { listenTransactions, addTransaction, deleteTransaction } from "./transactions.js";
+import {
+  listenPersonalBudget, setPersonalBudget, listenIncludedLedgers, setLedgerIncluded,
+  listenLedgerBudget, setLedgerBudget, refreshPersonalOverview,
+} from "./budgets.js";
+import { setBudgetUnsub } from "./ledgers.js";
 import { render } from "./ui.js";
 
 onStateChange(render);
 
 let unsubUserLedgers = null;
+let unsubPersonalBudget = null;
+let unsubIncluded = null;
 
 initAuthWatcher((user) => {
-  unsubUserLedgers?.();
-  if (user) unsubUserLedgers = listenUserLedgers();
+  unsubUserLedgers?.(); unsubPersonalBudget?.(); unsubIncluded?.();
+  if (user) {
+    unsubUserLedgers = listenUserLedgers();
+    unsubPersonalBudget = listenPersonalBudget();
+    unsubIncluded = listenIncludedLedgers();
+  }
   render();
 });
 
@@ -37,8 +48,14 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnLogout") await logout();
 
-    if (e.target.dataset.lid) switchLedger(e.target.dataset.lid), listenTransactions(e.target.dataset.lid);
-    if (id === "btnBack") { S.activeLedgerId = null; render(); }
+    if (e.target.dataset.lid) {
+      switchLedger(e.target.dataset.lid);
+      listenTransactions(e.target.dataset.lid);
+      setBudgetUnsub(listenLedgerBudget(e.target.dataset.lid));
+    }
+    if (id === "btnBack") { S.activeLedgerId = null; S.view = "ledgers"; render(); }
+    if (id === "btnBackFromBudget") { S.view = "ledgers"; render(); }
+    if (id === "btnMyBudget") { S.view = "personalBudget"; render(); }
 
     if (id === "btnCreateLedger") {
       const name = val("newLedgerName");
@@ -52,9 +69,9 @@ document.getElementById("app").addEventListener("click", async (e) => {
       await joinLedgerByCode(code);
     }
     if (id === "btnAddTx") {
-      const type = val("txType"), amount = val("txAmount"), category = val("txCategory"), description = val("txDesc");
+      const type = val("txType"), amount = val("txAmount"), category = val("txCategory"), description = val("txDesc"), currency = val("txCurrency");
       if (!amount || !category) return showError("txError", "Amount and category are required.");
-      await addTransaction({ type, amount, category, description });
+      await addTransaction({ type, amount, category, description, currency });
     }
     if (e.target.dataset.del) await deleteTransaction(e.target.dataset.del);
 
@@ -90,6 +107,19 @@ document.getElementById("app").addEventListener("click", async (e) => {
         render();
       }
     }
+
+    if (id === "btnSaveLedgerBudget") {
+      const total = val("ledgerBudgetInput");
+      if (total) await setLedgerBudget(S.activeLedgerId, total);
+    }
+    if (id === "btnSavePersonalBudget") {
+      const total = val("personalBudgetTotal"), homeCurrency = val("personalHomeCurrency");
+      if (total) await setPersonalBudget(total, homeCurrency);
+    }
+    if (id === "btnRefreshOverview") {
+      const homeCurrency = val("personalHomeCurrency") || S.personalBudget?.homeCurrency || "USD";
+      await refreshPersonalOverview(homeCurrency);
+    }
   } catch (err) {
     console.error(err);
     showError("authError", err.message) || showError("createError", err.message) ||
@@ -122,6 +152,9 @@ document.getElementById("app").addEventListener("change", async (e) => {
     if (id === "previewRoleSelect") {
       S.debugPreviewRole = e.target.value || null;
       render();
+    }
+    if (e.target.dataset.includeLid) {
+      await setLedgerIncluded(e.target.dataset.includeLid, e.target.checked);
     }
   } catch (err) {
     console.error(err);

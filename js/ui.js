@@ -4,13 +4,15 @@
 
 import { S } from "./state.js";
 import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteLedger, GRANTABLE_PERMISSIONS } from "./permissions.js";
+import { currentYM } from "./budgets.js";
 
 const app = document.getElementById("app");
 
 export function render() {
   if (!S.user) return renderLogin();
-  if (!S.activeLedgerId) return renderLedgerList();
-  return renderLedgerDetail();
+  if (S.activeLedgerId) return renderLedgerDetail();
+  if (S.view === "personalBudget") return renderPersonalBudget();
+  return renderLedgerList();
 }
 
 function renderLogin() {
@@ -44,13 +46,20 @@ function renderLedgerList() {
       <button id="btnLogout" class="link">Log out</button>
     </div>
     <h2>Your ledgers</h2>
+    <button id="btnMyBudget" class="secondary" style="margin-bottom:14px">📊 My Budget Overview</button>
     <div id="ledgerList" class="ledger-list">
       ${ledgers.length ? ledgers.map(([lid, l]) => `
-        <button class="ledger-card" data-lid="${lid}">
-          ${ledgerIcon(l.icon)}
-          <span>${l.name || "Untitled ledger"}</span>
-          <span class="role">${l.role}</span>
-        </button>`).join("") : `<p class="muted">No ledgers yet — create or join one below.</p>`}
+        <div class="ledger-card-row">
+          <button class="ledger-card" data-lid="${lid}">
+            ${ledgerIcon(l.icon)}
+            <span>${l.name || "Untitled ledger"}</span>
+            <span class="role">${l.role}</span>
+          </button>
+          <label class="include-toggle">
+            <input type="checkbox" data-include-lid="${lid}" ${S.includedLedgers?.[lid] ? "checked" : ""} />
+            Include in my budget
+          </label>
+        </div>`).join("") : `<p class="muted">No ledgers yet — create or join one below.</p>`}
     </div>
     <div class="panel">
       <h3>Create a new ledger</h3>
@@ -114,7 +123,12 @@ function renderLedgerDetail() {
         <h3>Add entry</h3>
         <div id="txError" class="error"></div>
         <select id="txType"><option value="expense">Expense</option><option value="income">Income</option></select>
-        <input id="txAmount" type="number" step="0.01" placeholder="Amount" />
+        <div class="btn-row">
+          <input id="txAmount" type="number" step="0.01" placeholder="Amount" style="flex:2" />
+          <select id="txCurrency" style="flex:1">
+            ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map(c => `<option value="${c}" ${((ledger.currency || "USD") === c) ? "selected" : ""}>${c}</option>`).join("")}
+          </select>
+        </div>
         <input id="txCategory" placeholder="Category (e.g. Food)" />
         <input id="txDesc" placeholder="Description (optional)" />
         <button id="btnAddTx">Add</button>
@@ -125,18 +139,91 @@ function renderLedgerDetail() {
         ${txs.length ? txs.map(([id, t]) => `
           <div class="tx-row">
             <span>${t.category}${t.description ? " — " + t.description : ""}</span>
-            <span class="${t.type}">${t.type === "income" ? "+" : "-"}${t.amount.toFixed(2)}</span>
+            <span class="${t.type}">
+              ${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}
+              ${t.origCurrency && t.origCurrency !== t.currency ? `<span class="muted" style="font-weight:400"> (≈ ${t.currency} ${t.amount.toFixed(2)})</span>` : ""}
+            </span>
             ${canDeleteTx(myMember, t, S.user.uid) ? `<button class="link small" data-del="${id}">delete</button>` : ""}
           </div>`).join("") : `<p class="muted">No transactions yet.</p>`}
       </div>
 
+      ${renderLedgerBudgetPanel(ledger, myMember, txs)}
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
       ${renderSettingsPanel(ledger, myMember, iAmOwner)}
     </div>
   `;
 }
 
-function roleLabel(m) {
+function renderLedgerBudgetPanel(ledger, myMember, txs) {
+  const canEdit = can(myMember, "manageBudget");
+  const budget = S.ledgerBudget || {};
+  const target = budget.total || 0;
+  const ym = currentYM();
+  const spent = txs.filter(([, t]) => t.type === "expense" && t.date?.startsWith(ym)).reduce((sum, [, t]) => sum + t.amount, 0);
+  const pct = target > 0 ? Math.min(100, Math.round((spent / target) * 100)) : 0;
+  const over = target > 0 && spent > target;
+
+  return `
+    <div class="panel">
+      <h3>Ledger budget — ${ym}</h3>
+      <div class="balance" style="font-size:20px">${ledger.currency || "USD"} ${spent.toFixed(2)} <span class="muted" style="font-size:13px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
+      ${target > 0 ? `
+        <div class="budget-bar-track"><div class="budget-bar-fill ${over ? "over" : ""}" style="width:${pct}%"></div></div>
+        ${over ? `<p class="budget-over">Over budget</p>` : `<p class="muted">${pct}% used</p>`}
+      ` : ""}
+      ${canEdit ? `
+        <div class="btn-row" style="margin-top:10px">
+          <input id="ledgerBudgetInput" type="number" step="0.01" placeholder="Monthly target" value="${target || ""}" />
+          <button id="btnSaveLedgerBudget">Save</button>
+        </div>` : ""}
+    </div>`;
+}
+
+function renderPersonalBudget() {
+  const ym = currentYM();
+  const pb = S.personalBudget || {};
+  const homeCurrency = pb.homeCurrency || "USD";
+  const overview = S.personalOverview;
+  const target = pb.total || 0;
+  const spent = overview?.total || 0;
+  const pct = target > 0 ? Math.min(100, Math.round((spent / target) * 100)) : 0;
+  const over = target > 0 && spent > target;
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromBudget" class="link">&larr; All ledgers</button>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+    <h2>📊 My Budget — ${ym}</h2>
+
+    <div class="panel">
+      <h3>Target</h3>
+      <div class="btn-row">
+        <input id="personalBudgetTotal" type="number" step="0.01" placeholder="Monthly target" value="${target || ""}" />
+        <select id="personalHomeCurrency">
+          ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map(c => `<option value="${c}" ${homeCurrency === c ? "selected" : ""}>${c}</option>`).join("")}
+        </select>
+      </div>
+      <button id="btnSavePersonalBudget">Save target</button>
+    </div>
+
+    <div class="panel">
+      <h3>This month's spending (from ledgers you've flagged)</h3>
+      ${overview ? `
+        <div class="balance">${homeCurrency} ${spent.toFixed(2)} <span class="muted" style="font-size:14px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
+        ${target > 0 ? `
+          <div class="budget-bar-track"><div class="budget-bar-fill ${over ? "over" : ""}" style="width:${pct}%"></div></div>
+          ${over ? `<p class="budget-over">Over budget</p>` : `<p class="muted">${pct}% used</p>`}
+        ` : ""}
+        <div style="margin-top:12px">
+          ${Object.values(overview.perLedger).map(l => `
+            <div class="tx-row"><span>${l.name}</span><span>${l.currency} ${l.spend.toFixed(2)}${l.currency !== homeCurrency ? ` <span class="muted">(≈ ${homeCurrency} ${l.spendInHomeCurrency.toFixed(2)})</span>` : ""}</span></div>
+          `).join("") || `<p class="muted">No ledgers flagged yet — go back and tick "Include in my budget" on the ones you want counted.</p>`}
+        </div>
+      ` : `<p class="muted">Tap refresh to calculate.</p>`}
+      <button id="btnRefreshOverview" class="secondary" style="margin-top:10px">🔄 Refresh</button>
+    </div>`;
+}
   if (m.guest) return "Guest";
   if (m.role === "owner") return "👑 Owner";
   if (m.role === "moderator") return "🛡️ Moderator";
