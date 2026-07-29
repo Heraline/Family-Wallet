@@ -56,6 +56,7 @@ export async function refreshPersonalOverview(homeCurrency) {
   const includedIds = Object.keys(S.includedLedgers || {}).filter((lid) => S.includedLedgers[lid]);
   let total = 0;
   const perLedger = {};
+  let allTx = [];
 
   for (const lid of includedIds) {
     const [ledgerSnap, txSnap] = await Promise.all([
@@ -67,8 +68,9 @@ export async function refreshPersonalOverview(homeCurrency) {
     if (!ledger) continue;
 
     let ledgerSpend = 0;
-    Object.values(txs).forEach((t) => {
+    Object.entries(txs).forEach(([txId, t]) => {
       if (t.type === "expense" && t.date?.startsWith(ym)) ledgerSpend += t.amount;
+      allTx.push({ ...t, txId, ledgerId: lid, ledgerName: ledger.name, ledgerIcon: ledger.icon });
     });
 
     const converted = await convert(ledgerSpend, ledger.currency || "USD", homeCurrency);
@@ -77,6 +79,8 @@ export async function refreshPersonalOverview(homeCurrency) {
     total += spendInHomeCurrency;
   }
 
+  allTx.sort((a, b) => b.ts - a.ts);
+  S.recentTx = allTx.slice(0, 5);
   S.personalOverview = { ym, total, perLedger, homeCurrency };
   notify();
 }

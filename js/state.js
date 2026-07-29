@@ -10,10 +10,11 @@ export const S = {
   members: {},         // members of the active ledger { uid: {displayName, role, ...} }
   txs: {},             // transactions of the active ledger { txId: {...} }
   debugPreviewRole: null, // Owner-only testing tool: "member" | "moderator" | "guest" | null
-  view: "ledgers",     // "ledgers" | "ledgerDetail" | "personalBudget"
+  view: "home",        // "home" | "ledgers" | "personalBudget" | "aiSettings"
   personalBudget: {},  // this month's personal target, from users/{uid}/personalBudget/{ym}
   includedLedgers: {}, // { lid: true } — which ledgers count toward the personal overview
   personalOverview: null, // computed on demand by budgets.js refreshPersonalOverview()
+  recentTx: [],        // latest 5 transactions across flagged ledgers, for the Home screen
   ledgerBudget: {},    // active ledger's monthly target, from ledgers/{lid}/budgets/{ym}
 };
 

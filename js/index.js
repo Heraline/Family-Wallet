@@ -30,9 +30,22 @@ initAuthWatcher((user) => {
     unsubUserLedgers = listenUserLedgers();
     unsubPersonalBudget = listenPersonalBudget();
     unsubIncluded = listenIncludedLedgers();
+    refreshHomeOverview();
   }
   render();
 });
+
+function refreshHomeOverview() {
+  const homeCurrency = S.personalBudget?.homeCurrency || "USD";
+  refreshPersonalOverview(homeCurrency).catch((err) => console.error("Overview refresh failed:", err));
+}
+
+function goTo(view) {
+  S.activeLedgerId = null;
+  S.view = view;
+  if (view === "home") refreshHomeOverview();
+  render();
+}
 
 // Event delegation: one listener handles all clicks/submits, since ui.js
 // re-renders the whole #app div each time (simple + no memory leaks).
@@ -49,16 +62,18 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnLogout") await logout();
 
+    const navBtn = e.target.closest?.("[data-nav]");
+    if (navBtn) goTo(navBtn.dataset.nav);
+
+    if (id === "btnHomeBudgetCard") goTo("personalBudget");
+
     if (e.target.dataset.lid) {
       switchLedger(e.target.dataset.lid);
       listenTransactions(e.target.dataset.lid);
       setBudgetUnsub(listenLedgerBudget(e.target.dataset.lid));
     }
     if (id === "btnBack") { S.activeLedgerId = null; S.view = "ledgers"; render(); }
-    if (id === "btnBackFromBudget") { S.view = "ledgers"; render(); }
-    if (id === "btnMyBudget") { S.view = "personalBudget"; render(); }
-    if (id === "btnAiSettings") { S.view = "aiSettings"; render(); }
-    if (id === "btnBackFromAi") { S.view = "ledgers"; render(); }
+    if (id === "btnBackFromBudget") goTo("home");
     if (id === "btnSaveAiKey") {
       const key = val("geminiKeyInput");
       if (!key) return showError("aiKeyError", "Paste a key first.");
@@ -125,7 +140,10 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnSavePersonalBudget") {
       const total = val("personalBudgetTotal"), homeCurrency = val("personalHomeCurrency");
-      if (total) await setPersonalBudget(total, homeCurrency);
+      if (total) {
+        await setPersonalBudget(total, homeCurrency);
+        await refreshPersonalOverview(homeCurrency);
+      }
     }
     if (id === "btnRefreshOverview") {
       const homeCurrency = val("personalHomeCurrency") || S.personalBudget?.homeCurrency || "USD";
@@ -166,6 +184,7 @@ document.getElementById("app").addEventListener("change", async (e) => {
     }
     if (e.target.dataset.includeLid) {
       await setLedgerIncluded(e.target.dataset.includeLid, e.target.checked);
+      refreshHomeOverview();
     }
     if (id === "receiptFileInput") {
       const file = e.target.files[0];

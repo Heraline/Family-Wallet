@@ -35,6 +35,9 @@ export function initAuthWatcher(onReady) {
       S.activeLedgerId = null;
       S.members = {};
       S.txs = {};
+      S.view = "home";
+      S.recentTx = [];
+      S.personalOverview = null;
     }
     notify();
     onReady?.(user);

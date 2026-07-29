@@ -14,7 +14,21 @@ export function render() {
   if (S.activeLedgerId) return renderLedgerDetail();
   if (S.view === "personalBudget") return renderPersonalBudget();
   if (S.view === "aiSettings") return renderAiSettings();
-  return renderLedgerList();
+  if (S.view === "ledgers") return renderLedgerList();
+  return renderHome();
+}
+
+function bottomNav(active) {
+  const tab = (key, icon, label) => `
+    <button class="nav-btn ${active === key ? "active" : ""}" data-nav="${key}">
+      <span class="nav-icon">${icon}</span><span class="nav-label">${label}</span>
+    </button>`;
+  return `
+    <div class="bottom-nav">
+      ${tab("home", "🏠", "Home")}
+      ${tab("ledgers", "📒", "Ledgers")}
+      ${tab("aiSettings", "⚙️", "Settings")}
+    </div>`;
 }
 
 function renderLogin() {
@@ -40,6 +54,59 @@ function ledgerIcon(icon) {
   return `<span class="icon">${icon || "💼"}</span>`;
 }
 
+function renderHome() {
+  const pb = S.personalBudget || {};
+  const homeCurrency = pb.homeCurrency || "USD";
+  const overview = S.personalOverview;
+  const target = pb.total || 0;
+  const spent = overview?.total || 0;
+  const pct = target > 0 ? Math.min(100, Math.round((spent / target) * 100)) : 0;
+  const over = target > 0 && spent > target;
+  const ledgerEntries = Object.entries(S.ledgers || {});
+
+  app.innerHTML = `
+    <div class="topbar">
+      <span>Hi, ${S.profile?.displayName || "there"} 👋</span>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+
+    <button id="btnHomeBudgetCard" class="card-button">
+      <div class="panel" style="margin:0">
+        <h3>📊 This month's budget</h3>
+        ${overview ? `
+          <div class="balance" style="font-size:22px">${homeCurrency} ${spent.toFixed(2)} <span class="muted" style="font-size:13px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
+          ${target > 0 ? `<div class="budget-bar-track"><div class="budget-bar-fill ${over ? "over" : ""}" style="width:${pct}%"></div></div>` : ""}
+        ` : `<p class="muted">Set a personal budget target to see your overview here.</p>`}
+        <p class="muted" style="margin-top:6px">Tap for details →</p>
+      </div>
+    </button>
+
+    <h3 style="margin-top:16px">Latest activity</h3>
+    <div class="tx-list">
+      ${S.recentTx?.length ? S.recentTx.map((t) => `
+        <div class="tx-row">
+          <span>${t.ledgerIcon || "💼"} ${t.category}${t.description ? " — " + t.description : ""}</span>
+          <span class="${t.type}">${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}</span>
+        </div>`).join("") : `<p class="muted">No recent activity yet — flag a ledger to include in your budget to see it here.</p>`}
+    </div>
+
+    <h3 style="margin-top:16px">Your ledgers</h3>
+    <div class="ledger-scroll-row">
+      ${ledgerEntries.length ? ledgerEntries.map(([lid, l]) => `
+        <button class="ledger-scroll-card" data-lid="${lid}">
+          ${ledgerIcon(l.icon)}
+          <span>${l.name || "Untitled"}</span>
+        </button>`).join("") : `<p class="muted">No ledgers yet — head to the Ledgers tab to create one.</p>`}
+    </div>
+
+    <div class="btn-row" style="margin-top:16px">
+      <button class="secondary" disabled title="Coming soon">🤝 Splits</button>
+      <button class="secondary" disabled title="Coming soon">✅ Settled</button>
+    </div>
+
+    ${bottomNav("home")}`;
+}
+
 function renderLedgerList() {
   const ledgers = Object.entries(S.ledgers || {});
   app.innerHTML = `
@@ -48,10 +115,6 @@ function renderLedgerList() {
       <button id="btnLogout" class="link">Log out</button>
     </div>
     <h2>Your ledgers</h2>
-    <div class="btn-row" style="margin-bottom:14px">
-      <button id="btnMyBudget" class="secondary">📊 My Budget</button>
-      <button id="btnAiSettings" class="secondary">🔑 AI Settings</button>
-    </div>
     <div id="ledgerList" class="ledger-list">
       ${ledgers.length ? ledgers.map(([lid, l]) => `
         <div class="ledger-card-row">
@@ -77,14 +140,15 @@ function renderLedgerList() {
       <div id="joinError" class="error"></div>
       <input id="joinCode" placeholder="6-character code" />
       <button id="btnJoinLedger">Join</button>
-    </div>`;
+    </div>
+    ${bottomNav("ledgers")}`;
 }
 
 function renderAiSettings() {
   const hasKey = !!getGeminiKey();
   app.innerHTML = `
     <div class="topbar">
-      <button id="btnBackFromAi" class="link">&larr; All ledgers</button>
+      <span>Settings</span>
       <button id="btnLogout" class="link">Log out</button>
     </div>
     <h2>🔑 AI Settings</h2>
@@ -97,7 +161,8 @@ function renderAiSettings() {
         ${hasKey ? `<button id="btnClearAiKey" class="secondary">Remove key</button>` : ""}
       </div>
       ${hasKey ? `<p class="muted" style="margin-top:8px">✓ Key saved</p>` : ""}
-    </div>`;
+    </div>
+    ${bottomNav("aiSettings")}`;
 }
 
 function fakePreviewMember(role) {
@@ -219,7 +284,7 @@ function renderPersonalBudget() {
 
   app.innerHTML = `
     <div class="topbar">
-      <button id="btnBackFromBudget" class="link">&larr; All ledgers</button>
+      <button id="btnBackFromBudget" class="link">&larr; Home</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
     <h2>📊 My Budget — ${ym}</h2>
@@ -246,11 +311,12 @@ function renderPersonalBudget() {
         <div style="margin-top:12px">
           ${Object.values(overview.perLedger).map(l => `
             <div class="tx-row"><span>${l.name}</span><span>${l.currency} ${l.spend.toFixed(2)}${l.currency !== homeCurrency ? ` <span class="muted">(≈ ${homeCurrency} ${l.spendInHomeCurrency.toFixed(2)})</span>` : ""}</span></div>
-          `).join("") || `<p class="muted">No ledgers flagged yet — go back and tick "Include in my budget" on the ones you want counted.</p>`}
+          `).join("") || `<p class="muted">No ledgers flagged yet — go to the Ledgers tab and tick "Include in my budget" on the ones you want counted.</p>`}
         </div>
       ` : `<p class="muted">Tap refresh to calculate.</p>`}
       <button id="btnRefreshOverview" class="secondary" style="margin-top:10px">🔄 Refresh</button>
-    </div>`;
+    </div>
+    ${bottomNav("home")}`;
 }
 
 function roleLabel(m) {
