@@ -16,6 +16,7 @@ export const S = {
   personalOverview: null, // computed on demand by budgets.js refreshPersonalOverview()
   recentTx: [],        // latest 5 transactions across flagged ledgers, for the Home screen
   ledgerBudget: {},    // active ledger's monthly target, from ledgers/{lid}/budgets/{ym}
+  uiPrefs: { theme: "teal", cardStyle: "glass", chartStyle: "donut" }, // synced appearance settings
 };
 
 // Very small pub/sub so ui.js can re-render whenever state changes,

@@ -6,6 +6,7 @@ import { S } from "./state.js";
 import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteLedger, GRANTABLE_PERMISSIONS } from "./permissions.js";
 import { currentYM } from "./budgets.js";
 import { getGeminiKey } from "./receipt.js";
+import { THEMES } from "./theme.js";
 
 const app = document.getElementById("app");
 
@@ -16,6 +17,23 @@ export function render() {
   if (S.view === "aiSettings") return renderAiSettings();
   if (S.view === "ledgers") return renderLedgerList();
   return renderHome();
+}
+
+function budgetProgress(pct, over) {
+  if ((S.uiPrefs?.chartStyle || "donut") === "donut") {
+    const r = 26, circumference = 2 * Math.PI * r;
+    const offset = circumference - (pct / 100) * circumference;
+    return `
+      <div class="ring-wrap">
+        <svg viewBox="0 0 60 60">
+          <circle cx="30" cy="30" r="${r}" fill="none" stroke="var(--budget-track)" stroke-width="6" />
+          <circle cx="30" cy="30" r="${r}" fill="none" stroke="${over ? "var(--budget-over)" : "var(--accent)"}" stroke-width="6"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" stroke-linecap="round" transform="rotate(-90 30 30)" />
+        </svg>
+        <span class="ring-pct">${pct}%</span>
+      </div>`;
+  }
+  return `<div class="budget-bar-track"><div class="budget-bar-fill ${over ? "over" : ""}" style="width:${pct}%"></div></div>`;
 }
 
 function bottomNav(active) {
@@ -74,7 +92,7 @@ function renderHome() {
       <h3>📊 This month's budget</h3>
       ${overview ? `
         <div class="balance" style="font-size:22px">${homeCurrency} ${spent.toFixed(2)} <span class="muted" style="font-size:13px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
-        ${target > 0 ? `<div class="budget-bar-track"><div class="budget-bar-fill ${over ? "over" : ""}" style="width:${pct}%"></div></div>` : ""}
+        ${target > 0 ? budgetProgress(pct, over) : ""}
       ` : `<p class="muted">Set a personal budget target to see your overview here.</p>`}
       <p class="muted" style="margin-top:6px">Tap for details →</p>
     </div>
@@ -144,13 +162,34 @@ function renderLedgerList() {
 
 function renderAiSettings() {
   const hasKey = !!getGeminiKey();
+  const prefs = S.uiPrefs || {};
+  const themeBtn = (t) => `<button class="opt-btn ${prefs.theme === t.key ? "active" : ""}" data-set-theme="${t.key}">${t.label}</button>`;
   app.innerHTML = `
     <div class="topbar">
       <span>Settings</span>
       <button id="btnLogout" class="link">Log out</button>
     </div>
-    <h2>🔑 AI Settings</h2>
+
     <div class="panel">
+      <h3>🎨 Appearance</h3>
+      <p class="muted" style="margin-bottom:8px">Dark themes</p>
+      <div class="btn-row" style="flex-wrap:wrap;margin-bottom:10px">${THEMES.dark.map(themeBtn).join("")}</div>
+      <p class="muted" style="margin-bottom:8px">Light themes</p>
+      <div class="btn-row" style="flex-wrap:wrap;margin-bottom:10px">${THEMES.light.map(themeBtn).join("")}</div>
+      <p class="muted" style="margin-bottom:8px">Card style</p>
+      <div class="btn-row" style="margin-bottom:10px">
+        <button class="opt-btn ${prefs.cardStyle === "glass" ? "active" : ""}" data-set-card="glass">Glass / Blurred</button>
+        <button class="opt-btn ${prefs.cardStyle === "flat" ? "active" : ""}" data-set-card="flat">Flat / Minimal</button>
+      </div>
+      <p class="muted" style="margin-bottom:8px">Budget progress style</p>
+      <div class="btn-row">
+        <button class="opt-btn ${prefs.chartStyle === "donut" ? "active" : ""}" data-set-chart="donut">Ring</button>
+        <button class="opt-btn ${prefs.chartStyle === "bar" ? "active" : ""}" data-set-chart="bar">Bar</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>🔑 AI Settings</h3>
       <p class="muted" style="margin-bottom:10px">Used for scanning receipt photos. Get a free key at <strong>aistudio.google.com/apikey</strong>. It's stored only in this browser — never sent anywhere except directly to Google when you scan a receipt.</p>
       <div id="aiKeyError" class="error"></div>
       <input id="geminiKeyInput" type="password" placeholder="Paste Gemini API key..." value="${getGeminiKey()}" />
@@ -259,7 +298,7 @@ function renderLedgerBudgetPanel(ledger, myMember, txs) {
       <h3>Ledger budget — ${ym}</h3>
       <div class="balance" style="font-size:20px">${ledger.currency || "USD"} ${spent.toFixed(2)} <span class="muted" style="font-size:13px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
       ${target > 0 ? `
-        <div class="budget-bar-track"><div class="budget-bar-fill ${over ? "over" : ""}" style="width:${pct}%"></div></div>
+        ${budgetProgress(pct, over)}
         ${over ? `<p class="budget-over">Over budget</p>` : `<p class="muted">${pct}% used</p>`}
       ` : ""}
       ${canEdit ? `
@@ -303,7 +342,7 @@ function renderPersonalBudget() {
       ${overview ? `
         <div class="balance">${homeCurrency} ${spent.toFixed(2)} <span class="muted" style="font-size:14px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
         ${target > 0 ? `
-          <div class="budget-bar-track"><div class="budget-bar-fill ${over ? "over" : ""}" style="width:${pct}%"></div></div>
+          ${budgetProgress(pct, over)}
           ${over ? `<p class="budget-over">Over budget</p>` : `<p class="muted">${pct}% used</p>`}
         ` : ""}
         <div style="margin-top:12px">

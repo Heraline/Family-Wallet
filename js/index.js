@@ -16,22 +16,26 @@ import {
 } from "./budgets.js";
 import { setBudgetUnsub } from "./ledgers.js";
 import { getGeminiKey, setGeminiKey, clearGeminiKey, scanReceipt, fileToBase64 } from "./receipt.js";
+import { listenThemePrefs, setThemePref, applyTheme } from "./theme.js";
 import { render } from "./ui.js";
 
-onStateChange(render);
+onStateChange((s) => { applyTheme(); render(s); });
 
 let unsubUserLedgers = null;
 let unsubPersonalBudget = null;
 let unsubIncluded = null;
+let unsubTheme = null;
 
 initAuthWatcher((user) => {
-  unsubUserLedgers?.(); unsubPersonalBudget?.(); unsubIncluded?.();
+  unsubUserLedgers?.(); unsubPersonalBudget?.(); unsubIncluded?.(); unsubTheme?.();
   if (user) {
     unsubUserLedgers = listenUserLedgers();
     unsubPersonalBudget = listenPersonalBudget();
     unsubIncluded = listenIncludedLedgers();
+    unsubTheme = listenThemePrefs();
     refreshHomeOverview();
   }
+  applyTheme();
   render();
 });
 
@@ -50,7 +54,8 @@ function goTo(view) {
 // Event delegation: one listener handles all clicks/submits, since ui.js
 // re-renders the whole #app div each time (simple + no memory leaks).
 document.getElementById("app").addEventListener("click", async (e) => {
-  const id = e.target.id;
+  const btn = e.target.closest("button");
+  const id = btn ? btn.id : "";
   try {
     if (id === "btnLogin") {
       const email = val("authEmail"), pass = val("authPass");
@@ -82,6 +87,13 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnClearAiKey") { clearGeminiKey(); render(); }
     if (id === "btnScanReceipt") { document.getElementById("receiptFileInput").click(); }
+
+    const themeBtn = e.target.closest?.("[data-set-theme]");
+    if (themeBtn) await setThemePref("theme", themeBtn.dataset.setTheme);
+    const cardBtn = e.target.closest?.("[data-set-card]");
+    if (cardBtn) await setThemePref("cardStyle", cardBtn.dataset.setCard);
+    const chartBtn = e.target.closest?.("[data-set-chart]");
+    if (chartBtn) await setThemePref("chartStyle", chartBtn.dataset.setChart);
 
     if (id === "btnCreateLedger") {
       const name = val("newLedgerName");
