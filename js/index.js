@@ -15,6 +15,7 @@ import {
   listenLedgerBudget, setLedgerBudget, refreshPersonalOverview,
 } from "./budgets.js";
 import { setBudgetUnsub } from "./ledgers.js";
+import { getGeminiKey, setGeminiKey, clearGeminiKey, scanReceipt, fileToBase64 } from "./receipt.js";
 import { render } from "./ui.js";
 
 onStateChange(render);
@@ -56,6 +57,16 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnBack") { S.activeLedgerId = null; S.view = "ledgers"; render(); }
     if (id === "btnBackFromBudget") { S.view = "ledgers"; render(); }
     if (id === "btnMyBudget") { S.view = "personalBudget"; render(); }
+    if (id === "btnAiSettings") { S.view = "aiSettings"; render(); }
+    if (id === "btnBackFromAi") { S.view = "ledgers"; render(); }
+    if (id === "btnSaveAiKey") {
+      const key = val("geminiKeyInput");
+      if (!key) return showError("aiKeyError", "Paste a key first.");
+      setGeminiKey(key);
+      render();
+    }
+    if (id === "btnClearAiKey") { clearGeminiKey(); render(); }
+    if (id === "btnScanReceipt") { document.getElementById("receiptFileInput").click(); }
 
     if (id === "btnCreateLedger") {
       const name = val("newLedgerName");
@@ -155,6 +166,33 @@ document.getElementById("app").addEventListener("change", async (e) => {
     }
     if (e.target.dataset.includeLid) {
       await setLedgerIncluded(e.target.dataset.includeLid, e.target.checked);
+    }
+    if (id === "receiptFileInput") {
+      const file = e.target.files[0];
+      if (!file) return;
+      const statusEl = document.getElementById("scanStatus");
+      if (statusEl) statusEl.style.display = "block";
+      showError("txError", "");
+      try {
+        const { base64, mimeType } = await fileToBase64(file);
+        const parsed = await scanReceipt(base64, mimeType);
+        const amountEl = document.getElementById("txAmount");
+        const categoryEl = document.getElementById("txCategory");
+        const descEl = document.getElementById("txDesc");
+        const currencyEl = document.getElementById("txCurrency");
+        if (amountEl) amountEl.value = parsed.amount ?? "";
+        if (categoryEl) categoryEl.value = parsed.category ?? "";
+        if (descEl) descEl.value = parsed.description ?? "";
+        if (currencyEl && parsed.currency) {
+          const hasOption = Array.from(currencyEl.options).some((o) => o.value === parsed.currency);
+          if (hasOption) currencyEl.value = parsed.currency;
+        }
+      } catch (err) {
+        showError("txError", err.message);
+      } finally {
+        if (statusEl) statusEl.style.display = "none";
+        e.target.value = ""; // allow re-selecting the same photo again later
+      }
     }
   } catch (err) {
     console.error(err);

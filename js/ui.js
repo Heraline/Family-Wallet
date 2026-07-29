@@ -5,6 +5,7 @@
 import { S } from "./state.js";
 import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteLedger, GRANTABLE_PERMISSIONS } from "./permissions.js";
 import { currentYM } from "./budgets.js";
+import { getGeminiKey } from "./receipt.js";
 
 const app = document.getElementById("app");
 
@@ -12,6 +13,7 @@ export function render() {
   if (!S.user) return renderLogin();
   if (S.activeLedgerId) return renderLedgerDetail();
   if (S.view === "personalBudget") return renderPersonalBudget();
+  if (S.view === "aiSettings") return renderAiSettings();
   return renderLedgerList();
 }
 
@@ -46,7 +48,10 @@ function renderLedgerList() {
       <button id="btnLogout" class="link">Log out</button>
     </div>
     <h2>Your ledgers</h2>
-    <button id="btnMyBudget" class="secondary" style="margin-bottom:14px">📊 My Budget Overview</button>
+    <div class="btn-row" style="margin-bottom:14px">
+      <button id="btnMyBudget" class="secondary">📊 My Budget</button>
+      <button id="btnAiSettings" class="secondary">🔑 AI Settings</button>
+    </div>
     <div id="ledgerList" class="ledger-list">
       ${ledgers.length ? ledgers.map(([lid, l]) => `
         <div class="ledger-card-row">
@@ -72,6 +77,26 @@ function renderLedgerList() {
       <div id="joinError" class="error"></div>
       <input id="joinCode" placeholder="6-character code" />
       <button id="btnJoinLedger">Join</button>
+    </div>`;
+}
+
+function renderAiSettings() {
+  const hasKey = !!getGeminiKey();
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromAi" class="link">&larr; All ledgers</button>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+    <h2>🔑 AI Settings</h2>
+    <div class="panel">
+      <p class="muted" style="margin-bottom:10px">Used for scanning receipt photos. Get a free key at <strong>aistudio.google.com/apikey</strong>. It's stored only in this browser — never sent anywhere except directly to Google when you scan a receipt.</p>
+      <div id="aiKeyError" class="error"></div>
+      <input id="geminiKeyInput" type="password" placeholder="Paste Gemini API key..." value="${getGeminiKey()}" />
+      <div class="btn-row">
+        <button id="btnSaveAiKey">Save key</button>
+        ${hasKey ? `<button id="btnClearAiKey" class="secondary">Remove key</button>` : ""}
+      </div>
+      ${hasKey ? `<p class="muted" style="margin-top:8px">✓ Key saved</p>` : ""}
     </div>`;
 }
 
@@ -122,6 +147,9 @@ function renderLedgerDetail() {
       <div class="panel">
         <h3>Add entry</h3>
         <div id="txError" class="error"></div>
+        <button id="btnScanReceipt" class="secondary" style="margin-bottom:10px">📷 Scan receipt (optional)</button>
+        <input type="file" id="receiptFileInput" accept="image/*" capture="environment" style="display:none" />
+        <p id="scanStatus" class="muted" style="display:none;margin-bottom:8px">Reading receipt with AI...</p>
         <select id="txType"><option value="expense">Expense</option><option value="income">Income</option></select>
         <div class="btn-row">
           <input id="txAmount" type="number" step="0.01" placeholder="Amount" style="flex:2" />
