@@ -70,16 +70,14 @@ function renderHome() {
       <button id="btnLogout" class="link">Log out</button>
     </div>
 
-    <button id="btnHomeBudgetCard" class="card-button">
-      <div class="panel" style="margin:0">
-        <h3>📊 This month's budget</h3>
-        ${overview ? `
-          <div class="balance" style="font-size:22px">${homeCurrency} ${spent.toFixed(2)} <span class="muted" style="font-size:13px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
-          ${target > 0 ? `<div class="budget-bar-track"><div class="budget-bar-fill ${over ? "over" : ""}" style="width:${pct}%"></div></div>` : ""}
-        ` : `<p class="muted">Set a personal budget target to see your overview here.</p>`}
-        <p class="muted" style="margin-top:6px">Tap for details →</p>
-      </div>
-    </button>
+    <div id="btnHomeBudgetCard" class="panel card-button" role="button" tabindex="0">
+      <h3>📊 This month's budget</h3>
+      ${overview ? `
+        <div class="balance" style="font-size:22px">${homeCurrency} ${spent.toFixed(2)} <span class="muted" style="font-size:13px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
+        ${target > 0 ? `<div class="budget-bar-track"><div class="budget-bar-fill ${over ? "over" : ""}" style="width:${pct}%"></div></div>` : ""}
+      ` : `<p class="muted">Set a personal budget target to see your overview here.</p>`}
+      <p class="muted" style="margin-top:6px">Tap for details →</p>
+    </div>
 
     <h3 style="margin-top:16px">Latest activity</h3>
     <div class="tx-list">

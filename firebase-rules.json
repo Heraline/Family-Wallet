@@ -21,7 +21,7 @@
     "ledgerMembers": {
       "$lid": {
         ".read": "auth != null && root.child('ledgers').child($lid).child('members').child(auth.uid).exists()",
-        ".write": "auth != null && root.child('ledgers').child($lid).child('members').child(auth.uid).exists()"
+        ".write": "auth != null && (root.child('ledgers').child($lid).child('members').child(auth.uid).exists() || newData.child(auth.uid).exists())"
       }
     },
     "ledgerCategories": {
@@ -33,7 +33,7 @@
     "ledgers": {
       "$lid": {
         ".read": "auth != null && root.child('ledgers').child($lid).child('members').child(auth.uid).exists()",
-        ".write": "auth != null && root.child('ledgers').child($lid).child('members').child(auth.uid).exists()"
+        ".write": "auth != null && (root.child('ledgers').child($lid).child('members').child(auth.uid).exists() || newData.child('members').child(auth.uid).exists())"
       }
     }
   }

@@ -65,7 +65,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
     const navBtn = e.target.closest?.("[data-nav]");
     if (navBtn) goTo(navBtn.dataset.nav);
 
-    if (id === "btnHomeBudgetCard") goTo("personalBudget");
+    if (e.target.closest?.("#btnHomeBudgetCard")) goTo("personalBudget");
 
     if (e.target.dataset.lid) {
       switchLedger(e.target.dataset.lid);
