@@ -279,7 +279,7 @@ function renderLedgerDetail() {
       </div>
 
       ${renderLedgerBudgetPanel(ledger, myMember, txs)}
-      ${renderRecurringPanel(myMember)}
+      ${renderRecurringPanel(myMember, ledger)}
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
       ${renderSettingsPanel(ledger, myMember, iAmOwner)}
     </div>
@@ -311,9 +311,10 @@ function renderLedgerBudgetPanel(ledger, myMember, txs) {
     </div>`;
 }
 
-function renderRecurringPanel(myMember) {
+function renderRecurringPanel(myMember, ledger) {
   const canEdit = can(myMember, "manageRecurring");
   const items = Object.entries(S.recurring || {});
+  const ledgerCurrency = ledger?.currency || "USD";
   return `
     <div class="panel">
       <h3>🔄 Recurring transactions</h3>
@@ -336,7 +337,12 @@ function renderRecurringPanel(myMember) {
             <input id="recurAmount" type="number" step="0.01" placeholder="Amount" style="flex:1" />
           </div>
           <input id="recurCategory" placeholder="Category" />
-          <select id="recurFreq">${FREQUENCIES.map(f => `<option value="${f.key}">${f.label}</option>`).join("")}</select>
+          <div class="btn-row">
+            <select id="recurFreq" style="flex:1">${FREQUENCIES.map(f => `<option value="${f.key}">${f.label}</option>`).join("")}</select>
+            <select id="recurCurrency" style="flex:1">
+              ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map(c => `<option value="${c}" ${ledgerCurrency === c ? "selected" : ""}>${c}</option>`).join("")}
+            </select>
+          </div>
           <p class="muted" style="margin:6px 0 4px">Starts on</p>
           <input id="recurNextDate" type="date" value="${new Date().toISOString().slice(0, 10)}" />
           <p class="muted" style="margin:6px 0 4px">Ends (optional)</p>

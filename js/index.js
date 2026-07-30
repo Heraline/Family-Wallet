@@ -119,11 +119,10 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnAddRecurring") {
       const name = val("recurName"), type = val("recurType"), amount = val("recurAmount"),
         category = val("recurCategory"), freq = val("recurFreq"), nextDate = val("recurNextDate"),
-        endDate = val("recurEndDate"), maxOccurrences = val("recurMaxOccurrences");
+        endDate = val("recurEndDate"), maxOccurrences = val("recurMaxOccurrences"), currency = val("recurCurrency");
       if (!name || !amount || !category || !nextDate) return showError("recurringError", "Name, amount, category, and start date are required.");
       await addRecurring(S.activeLedgerId, {
-        name, type, amount, category, freq, nextDate, endDate, maxOccurrences,
-        currency: S.activeLedgerDetail?.currency || "USD",
+        name, type, amount, category, freq, nextDate, endDate, maxOccurrences, currency,
       });
     }
     if (e.target.dataset.delRecurring) {

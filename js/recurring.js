@@ -8,6 +8,7 @@
 
 import { readOnce, writeSet, writeUpdate, writeRemove, writePush, listen } from "./firebase.js";
 import { S, notify } from "./state.js";
+import { convert } from "./currency.js";
 
 export const FREQUENCIES = [
   { key: "daily", label: "Daily" },
@@ -55,8 +56,12 @@ export async function deleteRecurring(lid, id) {
 // Called whenever a ledger is opened. Silently posts any due transactions
 // (matching the old app's behavior), respecting end date / occurrence cap.
 export async function processDueRecurring(lid) {
-  const snap = await readOnce(`ledgers/${lid}/recurring`);
-  const recurring = snap.exists() ? snap.val() : {};
+  const [recurringSnap, ledgerSnap] = await Promise.all([
+    readOnce(`ledgers/${lid}/recurring`),
+    readOnce(`ledgers/${lid}`),
+  ]);
+  const recurring = recurringSnap.exists() ? recurringSnap.val() : {};
+  const ledgerCurrency = ledgerSnap.exists() ? (ledgerSnap.val().currency || "USD") : "USD";
   const today = new Date().toISOString().slice(0, 10);
   let postedCount = 0;
 
@@ -64,6 +69,7 @@ export async function processDueRecurring(lid) {
     let nextDate = r.nextDate;
     let occurrenceCount = r.occurrenceCount || 0;
     let stopped = false;
+    const origCurrency = r.currency || ledgerCurrency;
 
     // A template can be overdue by more than one cycle if the app hasn't
     // been opened in a while — post each missed occurrence in turn.
@@ -71,11 +77,23 @@ export async function processDueRecurring(lid) {
       if (r.endDate && nextDate > r.endDate) { stopped = true; break; }
       if (r.maxOccurrences && occurrenceCount >= r.maxOccurrences) { stopped = true; break; }
 
+      // Convert live at post-time (rates can drift since the template was created),
+      // same pattern as manually-entered transactions — original amount/currency
+      // is always kept too, so nothing is ever silently lost.
+      let amount = r.amount, fxRate = 1;
+      if (origCurrency !== ledgerCurrency) {
+        const converted = await convert(r.amount, origCurrency, ledgerCurrency);
+        if (converted != null) { amount = converted; fxRate = converted / r.amount; }
+        else { fxRate = null; }
+      }
+
       await writePush(`ledgerTransactions/${lid}`, {
         type: r.type || "expense",
-        amount: r.amount,
+        amount,
+        currency: ledgerCurrency,
         origAmount: r.amount,
-        currency: r.currency,
+        origCurrency,
+        fxRate,
         category: r.category,
         description: `${r.name} (auto)`,
         date: nextDate,
