@@ -17,7 +17,7 @@ export function listenTransactions(lid) {
   return unsub;
 }
 
-export async function addTransaction({ type, amount, category, description, currency }) {
+export async function addTransaction({ type, amount, category, description, currency, payers, splitWith, splitAmounts }) {
   if (!S.activeLedgerId) throw new Error("No active ledger.");
   const now = new Date();
   const ledgerCurrency = S.activeLedgerDetail?.currency || "USD";
@@ -42,6 +42,12 @@ export async function addTransaction({ type, amount, category, description, curr
     }
   }
 
+  const scaleToLedgerCurrency = (map) => {
+    if (!map) return undefined;
+    const rate = fxRate ?? 1; // if conversion was unavailable, treat 1:1 rather than lose the split entirely
+    return Object.fromEntries(Object.entries(map).map(([uid, amt]) => [uid, Number(amt) * rate]));
+  };
+
   const data = {
     type,                                   // "expense" | "income"
     amount: amountInLedgerCurrency,         // used for ledger balance/budget math
@@ -55,6 +61,9 @@ export async function addTransaction({ type, amount, category, description, curr
     time: now.toTimeString().slice(0, 5),
     ts: Date.now(),
     addedBy: S.user.uid,
+    ...(payers ? { payers: scaleToLedgerCurrency(payers) } : {}),
+    ...(splitWith?.length ? { splitWith } : {}),
+    ...(splitAmounts ? { splitAmounts: scaleToLedgerCurrency(splitAmounts) } : {}),
   };
   await writePush(`ledgerTransactions/${S.activeLedgerId}`, data);
 }

@@ -6,6 +6,7 @@ import { S } from "./state.js";
 import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteLedger, GRANTABLE_PERMISSIONS } from "./permissions.js";
 import { currentYM } from "./budgets.js";
 import { FREQUENCIES } from "./recurring.js";
+import { computeBalances } from "./splits.js";
 import { getGeminiKey } from "./receipt.js";
 import { THEMES } from "./theme.js";
 
@@ -13,7 +14,10 @@ const app = document.getElementById("app");
 
 export function render() {
   if (!S.user) return renderLogin();
-  if (S.activeLedgerId) return renderLedgerDetail();
+  if (S.activeLedgerId) {
+    if (S.view === "splits") return renderSplitsPage();
+    return renderLedgerDetail();
+  }
   if (S.view === "personalBudget") return renderPersonalBudget();
   if (S.view === "aiSettings") return renderAiSettings();
   if (S.view === "ledgers") return renderLedgerList();
@@ -35,6 +39,28 @@ function budgetProgress(pct, over) {
       </div>`;
   }
   return `<div class="budget-bar-track"><div class="budget-bar-fill ${over ? "over" : ""}" style="width:${pct}%"></div></div>`;
+}
+
+function memberChips(memberEntries, group) {
+  return memberEntries.map(([uid, m]) => `
+    <button type="button" class="chip" data-group="${group}" data-uid="${uid}">${m.avatar || "🙂"} ${m.displayName}</button>
+  `).join("");
+}
+
+// Rebuilds the equal-split-by-default amount inputs for a group of selected
+// people. Called from index.js (not during a full render) whenever chip
+// selection or the total amount changes — keeps typed form values intact.
+export function splitAmountRowsHtml(uids, totalAmount, group) {
+  if (!uids.length) return "";
+  const share = (Number(totalAmount) || 0) / uids.length;
+  return uids.map((uid) => {
+    const m = S.members[uid];
+    return `
+      <div class="split-amt-row">
+        <span>${m?.avatar || "🙂"} ${m?.displayName || uid}</span>
+        <input type="number" step="0.01" class="split-amt-input" data-amt-group="${group}" data-amt-uid="${uid}" value="${share.toFixed(2)}" />
+      </div>`;
+  }).join("");
 }
 
 function bottomNav(active) {
@@ -262,6 +288,18 @@ function renderLedgerDetail() {
         </div>
         <input id="txCategory" placeholder="Category (e.g. Food)" />
         <input id="txDesc" placeholder="Description (optional)" />
+
+        <button type="button" id="btnToggleSplit" class="secondary" style="margin-bottom:10px">➕ Split this expense (optional)</button>
+        <div id="splitSection" class="sub-panel hidden">
+          <p class="muted" style="margin-bottom:6px">Paid by <span class="muted">(none selected = you)</span></p>
+          <div class="chip-row" id="payerChips">${memberChips(memberEntries, "payer")}</div>
+          <div id="payerAmounts" class="split-amounts"></div>
+
+          <p class="muted" style="margin:12px 0 6px">Split between</p>
+          <div class="chip-row" id="splitChips">${memberChips(memberEntries, "split")}</div>
+          <div id="splitAmounts" class="split-amounts"></div>
+        </div>
+
         <button id="btnAddTx">Add</button>
       </div>
 
@@ -280,6 +318,7 @@ function renderLedgerDetail() {
 
       ${renderLedgerBudgetPanel(ledger, myMember, txs)}
       ${renderRecurringPanel(myMember, ledger)}
+      <button id="btnOpenSplits" class="secondary" style="width:100%;margin-bottom:16px">🤝 Splits & Settle</button>
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
       ${renderSettingsPanel(ledger, myMember, iAmOwner)}
     </div>
@@ -352,6 +391,52 @@ function renderRecurringPanel(myMember, ledger) {
           </div>
           <button id="btnAddRecurring" style="margin-top:8px">Add recurring</button>
         </div>` : ""}
+    </div>`;
+}
+
+function nameOf(uid) { return S.members[uid] ? `${S.members[uid].avatar || "🙂"} ${S.members[uid].displayName}` : "Unknown"; }
+
+function renderSplitsPage() {
+  const ledger = S.activeLedgerDetail || {};
+  const balances = computeBalances(S.txs, S.settlements);
+  const memberEntries = Object.entries(S.members || {});
+  const settleLog = Object.entries(S.settlements || {}).sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0)).slice(0, 10);
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromSplits" class="link">&larr; ${ledger.name || "Ledger"}</button>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+    <h2>🤝 Splits & Settle</h2>
+
+    <div class="panel">
+      <h3>Balances</h3>
+      ${balances.length ? balances.map(b => `
+        <div class="tx-row"><span>${nameOf(b.from)} owes ${nameOf(b.to)}</span><span class="expense">${ledger.currency || "USD"} ${b.amount.toFixed(2)}</span></div>
+      `).join("") : `<p class="muted">All settled up — no split expenses outstanding.</p>`}
+    </div>
+
+    <div class="panel">
+      <h3>Record a settlement</h3>
+      <div id="settleError" class="error"></div>
+      <p class="muted" style="margin-bottom:4px">Who paid</p>
+      <select id="settleFrom">${memberEntries.map(([uid, m]) => `<option value="${uid}">${m.avatar || "🙂"} ${m.displayName}</option>`).join("")}</select>
+      <p class="muted" style="margin-bottom:4px">Paid to</p>
+      <select id="settleTo">${memberEntries.map(([uid, m]) => `<option value="${uid}">${m.avatar || "🙂"} ${m.displayName}</option>`).join("")}</select>
+      <input id="settleAmount" type="number" step="0.01" placeholder="Amount" />
+      <input id="settleNote" placeholder="Note (optional)" />
+      <button id="btnAddSettlement">Record settlement</button>
+    </div>
+
+    <div class="panel">
+      <h3>Recent settlements</h3>
+      ${settleLog.length ? settleLog.map(([id, s]) => `
+        <div class="tx-row">
+          <span>${nameOf(s.from)} → ${nameOf(s.to)}${s.note ? " — " + s.note : ""}</span>
+          <span class="income">${ledger.currency || "USD"} ${s.amount.toFixed(2)}</span>
+          <button class="link small" data-del-settlement="${id}">delete</button>
+        </div>
+      `).join("") : `<p class="muted">No settlements recorded yet.</p>`}
     </div>`;
 }
 

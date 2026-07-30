@@ -18,7 +18,8 @@ import { setBudgetUnsub } from "./ledgers.js";
 import { getGeminiKey, setGeminiKey, clearGeminiKey, scanReceipt, fileToBase64 } from "./receipt.js";
 import { listenThemePrefs, setThemePref, applyTheme } from "./theme.js";
 import { listenRecurring, addRecurring, deleteRecurring, processDueRecurring } from "./recurring.js";
-import { render } from "./ui.js";
+import { listenSettlements, addSettlement, deleteSettlement } from "./splits.js";
+import { render, splitAmountRowsHtml } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
 
@@ -79,9 +80,22 @@ document.getElementById("app").addEventListener("click", async (e) => {
       setBudgetUnsub(listenLedgerBudget(e.target.dataset.lid));
       listenRecurring(e.target.dataset.lid);
       processDueRecurring(e.target.dataset.lid).catch((err) => console.error("Recurring processing failed:", err));
+      listenSettlements(e.target.dataset.lid);
     }
     if (id === "btnBack") { S.activeLedgerId = null; S.view = "ledgers"; render(); }
     if (id === "btnBackFromBudget") goTo("home");
+    if (id === "btnOpenSplits") { S.view = "splits"; render(); }
+    if (id === "btnBackFromSplits") { S.view = null; render(); }
+    if (id === "btnAddSettlement") {
+      const from = val("settleFrom"), to = val("settleTo"), amount = val("settleAmount"), note = val("settleNote");
+      if (from === to) return showError("settleError", "Pick two different people.");
+      if (!amount || Number(amount) <= 0) return showError("settleError", "Enter a valid amount.");
+      await addSettlement(S.activeLedgerId, { from, to, amount, note });
+      render();
+    }
+    if (e.target.dataset.delSettlement) {
+      if (confirm("Delete this settlement record?")) await deleteSettlement(S.activeLedgerId, e.target.dataset.delSettlement);
+    }
     if (id === "btnSaveAiKey") {
       const key = val("geminiKeyInput");
       if (!key) return showError("aiKeyError", "Paste a key first.");
@@ -112,8 +126,40 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnAddTx") {
       const type = val("txType"), amount = val("txAmount"), category = val("txCategory"), description = val("txDesc"), currency = val("txCurrency");
       if (!amount || !category) return showError("txError", "Amount and category are required.");
-      await addTransaction({ type, amount, category, description, currency });
+
+      const payerUids = Array.from(document.querySelectorAll('.chip[data-group="payer"].active')).map((c) => c.dataset.uid);
+      const splitUids = Array.from(document.querySelectorAll('.chip[data-group="split"].active')).map((c) => c.dataset.uid);
+      let payers, splitAmounts;
+      if (payerUids.length >= 2) {
+        payers = {};
+        payerUids.forEach((uid) => {
+          const input = document.querySelector(`.split-amt-input[data-amt-group="payer"][data-amt-uid="${uid}"]`);
+          payers[uid] = Number(input?.value) || 0;
+        });
+        const payerSum = Object.values(payers).reduce((a, b) => a + b, 0);
+        if (Math.abs(payerSum - Number(amount)) > 0.01) {
+          return showError("txError", `"Paid by" amounts add up to ${payerSum.toFixed(2)}, but the total is ${Number(amount).toFixed(2)}.`);
+        }
+      } else if (payerUids.length === 1) {
+        payers = { [payerUids[0]]: Number(amount) };
+      }
+      if (splitUids.length >= 1) {
+        splitAmounts = {};
+        splitUids.forEach((uid) => {
+          const input = document.querySelector(`.split-amt-input[data-amt-group="split"][data-amt-uid="${uid}"]`);
+          splitAmounts[uid] = Number(input?.value) || 0;
+        });
+        const splitSum = Object.values(splitAmounts).reduce((a, b) => a + b, 0);
+        if (Math.abs(splitSum - Number(amount)) > 0.01) {
+          return showError("txError", `"Split between" amounts add up to ${splitSum.toFixed(2)}, but the total is ${Number(amount).toFixed(2)}.`);
+        }
+      }
+
+      await addTransaction({ type, amount, category, description, currency, payers, splitAmounts });
     }
+    if (id === "btnToggleSplit") document.getElementById("splitSection")?.classList.toggle("hidden");
+    const chip = e.target.closest?.(".chip");
+    if (chip) { chip.classList.toggle("active"); rebuildSplitAmounts(chip.dataset.group); }
     if (e.target.dataset.del) await deleteTransaction(e.target.dataset.del);
 
     if (id === "btnAddRecurring") {
@@ -183,7 +229,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
     console.error(err);
     showError("authError", err.message) || showError("createError", err.message) ||
       showError("joinError", err.message) || showError("txError", err.message) ||
-      showError("recurringError", err.message) || showError("guestError", err.message);
+      showError("recurringError", err.message) || showError("guestError", err.message) ||
+      showError("settleError", err.message);
   }
 });
 
@@ -193,6 +240,21 @@ function showError(id, msg) {
   if (!el) return false;
   el.textContent = msg;
   return true;
+}
+
+// Redraws the equal-split amount inputs for whichever group (payer/split)
+// just had a chip toggled, based on currently-active chips + the amount
+// typed so far. Direct DOM update (not a full render()) so nothing else
+// in the form gets wiped while someone's mid-entry.
+function rebuildSplitAmounts(group) {
+  const container = document.getElementById(group === "payer" ? "payerAmounts" : "splitAmounts");
+  if (!container) return;
+  const uids = Array.from(document.querySelectorAll(`.chip[data-group="${group}"].active`)).map((c) => c.dataset.uid);
+  const totalAmount = document.getElementById("txAmount")?.value || 0;
+  // A single payer doesn't need a custom-amount input (they're implicitly paying it all);
+  // 2+ payers, or any number of split-between people, do.
+  if (group === "payer" && uids.length < 2) { container.innerHTML = ""; return; }
+  container.innerHTML = splitAmountRowsHtml(uids, totalAmount, group);
 }
 
 // Role changes and permission checkboxes fire "change", not "click".
@@ -213,6 +275,7 @@ document.getElementById("app").addEventListener("change", async (e) => {
       S.debugPreviewRole = e.target.value || null;
       render();
     }
+    if (id === "txAmount") { rebuildSplitAmounts("payer"); rebuildSplitAmounts("split"); }
     if (e.target.dataset.includeLid) {
       await setLedgerIncluded(e.target.dataset.includeLid, e.target.checked);
       refreshHomeOverview();
