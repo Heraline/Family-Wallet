@@ -17,6 +17,7 @@ import {
 import { setBudgetUnsub } from "./ledgers.js";
 import { getGeminiKey, setGeminiKey, clearGeminiKey, scanReceipt, fileToBase64 } from "./receipt.js";
 import { listenThemePrefs, setThemePref, applyTheme } from "./theme.js";
+import { listenRecurring, addRecurring, deleteRecurring, processDueRecurring } from "./recurring.js";
 import { render } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
@@ -76,6 +77,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
       switchLedger(e.target.dataset.lid);
       listenTransactions(e.target.dataset.lid);
       setBudgetUnsub(listenLedgerBudget(e.target.dataset.lid));
+      listenRecurring(e.target.dataset.lid);
+      processDueRecurring(e.target.dataset.lid).catch((err) => console.error("Recurring processing failed:", err));
     }
     if (id === "btnBack") { S.activeLedgerId = null; S.view = "ledgers"; render(); }
     if (id === "btnBackFromBudget") goTo("home");
@@ -112,6 +115,22 @@ document.getElementById("app").addEventListener("click", async (e) => {
       await addTransaction({ type, amount, category, description, currency });
     }
     if (e.target.dataset.del) await deleteTransaction(e.target.dataset.del);
+
+    if (id === "btnAddRecurring") {
+      const name = val("recurName"), type = val("recurType"), amount = val("recurAmount"),
+        category = val("recurCategory"), freq = val("recurFreq"), nextDate = val("recurNextDate"),
+        endDate = val("recurEndDate"), maxOccurrences = val("recurMaxOccurrences");
+      if (!name || !amount || !category || !nextDate) return showError("recurringError", "Name, amount, category, and start date are required.");
+      await addRecurring(S.activeLedgerId, {
+        name, type, amount, category, freq, nextDate, endDate, maxOccurrences,
+        currency: S.activeLedgerDetail?.currency || "USD",
+      });
+    }
+    if (e.target.dataset.delRecurring) {
+      if (confirm("Delete this recurring transaction? Past entries it already created will stay.")) {
+        await deleteRecurring(S.activeLedgerId, e.target.dataset.delRecurring);
+      }
+    }
 
     if (id === "btnRenameLedger") {
       const name = val("ledgerNameInput"), icon = val("ledgerIconInput");
@@ -164,7 +183,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
   } catch (err) {
     console.error(err);
     showError("authError", err.message) || showError("createError", err.message) ||
-      showError("joinError", err.message) || showError("txError", err.message);
+      showError("joinError", err.message) || showError("txError", err.message) ||
+      showError("recurringError", err.message) || showError("guestError", err.message);
   }
 });
 

@@ -5,6 +5,7 @@
 import { S } from "./state.js";
 import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteLedger, GRANTABLE_PERMISSIONS } from "./permissions.js";
 import { currentYM } from "./budgets.js";
+import { FREQUENCIES } from "./recurring.js";
 import { getGeminiKey } from "./receipt.js";
 import { THEMES } from "./theme.js";
 
@@ -268,7 +269,7 @@ function renderLedgerDetail() {
       <div class="tx-list">
         ${txs.length ? txs.map(([id, t]) => `
           <div class="tx-row">
-            <span>${t.category}${t.description ? " — " + t.description : ""}</span>
+            <span>${t.fromRecurringId ? "🔄 " : ""}${t.category}${t.description ? " — " + t.description : ""}</span>
             <span class="${t.type}">
               ${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}
               ${t.origCurrency && t.origCurrency !== t.currency ? `<span class="muted" style="font-weight:400"> (≈ ${t.currency} ${t.amount.toFixed(2)})</span>` : ""}
@@ -278,6 +279,7 @@ function renderLedgerDetail() {
       </div>
 
       ${renderLedgerBudgetPanel(ledger, myMember, txs)}
+      ${renderRecurringPanel(myMember)}
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
       ${renderSettingsPanel(ledger, myMember, iAmOwner)}
     </div>
@@ -305,6 +307,44 @@ function renderLedgerBudgetPanel(ledger, myMember, txs) {
         <div class="btn-row" style="margin-top:10px">
           <input id="ledgerBudgetInput" type="number" step="0.01" placeholder="Monthly target" value="${target || ""}" />
           <button id="btnSaveLedgerBudget">Save</button>
+        </div>` : ""}
+    </div>`;
+}
+
+function renderRecurringPanel(myMember) {
+  const canEdit = can(myMember, "manageRecurring");
+  const items = Object.entries(S.recurring || {});
+  return `
+    <div class="panel">
+      <h3>🔄 Recurring transactions</h3>
+      ${items.length ? items.map(([id, r]) => `
+        <div class="tx-row">
+          <span>${r.name} <span class="muted">(${FREQUENCIES.find(f => f.key === r.freq)?.label || r.freq})</span></span>
+          <span class="${r.type}">${r.type === "income" ? "+" : "-"}${r.amount.toFixed(2)} ${r.currency}</span>
+          ${canEdit ? `<button class="link small" data-del-recurring="${id}">delete</button>` : ""}
+        </div>
+        <p class="muted" style="margin:-4px 0 6px">Next: ${r.stopped ? "ended" : r.nextDate}</p>
+      `).join("") : `<p class="muted">No recurring transactions set up.</p>`}
+
+      ${canEdit ? `
+        <div class="sub-panel">
+          <h4>Add recurring</h4>
+          <div id="recurringError" class="error"></div>
+          <input id="recurName" placeholder="Name (e.g. Netflix, Rent)" />
+          <div class="btn-row">
+            <select id="recurType" style="flex:1"><option value="expense">Expense</option><option value="income">Income</option></select>
+            <input id="recurAmount" type="number" step="0.01" placeholder="Amount" style="flex:1" />
+          </div>
+          <input id="recurCategory" placeholder="Category" />
+          <select id="recurFreq">${FREQUENCIES.map(f => `<option value="${f.key}">${f.label}</option>`).join("")}</select>
+          <p class="muted" style="margin:6px 0 4px">Starts on</p>
+          <input id="recurNextDate" type="date" value="${new Date().toISOString().slice(0, 10)}" />
+          <p class="muted" style="margin:6px 0 4px">Ends (optional)</p>
+          <div class="btn-row">
+            <input id="recurEndDate" type="date" placeholder="End date" style="flex:1" />
+            <input id="recurMaxOccurrences" type="number" placeholder="Or # of times" style="flex:1" />
+          </div>
+          <button id="btnAddRecurring" style="margin-top:8px">Add recurring</button>
         </div>` : ""}
     </div>`;
 }
