@@ -21,6 +21,7 @@ export function render() {
   if (S.view === "personalBudget") return renderPersonalBudget();
   if (S.view === "aiSettings") return renderAiSettings();
   if (S.view === "ledgers") return renderLedgerList();
+  if (S.view === "homeSplits") return renderHomeSplitsPage();
   return renderHome();
 }
 
@@ -143,8 +144,7 @@ function renderHome() {
     </div>
 
     <div class="btn-row" style="margin-top:16px">
-      <button class="secondary" disabled title="Coming soon">🤝 Splits</button>
-      <button class="secondary" disabled title="Coming soon">✅ Settled</button>
+      <button id="btnHomeSplits" class="secondary" style="width:100%">🤝 Splits & Settle (all ledgers)</button>
     </div>
 
     ${bottomNav("home")}`;
@@ -395,6 +395,38 @@ function renderRecurringPanel(myMember, ledger) {
 }
 
 function nameOf(uid) { return S.members[uid] ? `${S.members[uid].avatar || "🙂"} ${S.members[uid].displayName}` : "Unknown"; }
+function nameFrom(namesMap, uid) { return namesMap[uid] ? `${namesMap[uid].avatar || "🙂"} ${namesMap[uid].displayName}` : "Unknown"; }
+
+function renderHomeSplitsPage() {
+  const overview = S.homeSplitsOverview;
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromHomeSplits" class="link">&larr; Home</button>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+    <h2>🤝 Splits & Settle</h2>
+    <p class="muted" style="margin-bottom:12px">Combined across all your ledgers, converted to ${overview?.homeCurrency || "your home currency"}. To record a settlement, open the relevant ledger's own Splits & Settle screen.</p>
+
+    <div class="panel">
+      <h3>Combined balances</h3>
+      ${overview ? (overview.combined.length ? overview.combined.map(b => `
+        <div class="tx-row"><span>${nameFrom(overview.namesMap, b.from)} owes ${nameFrom(overview.namesMap, b.to)}</span><span class="expense">${overview.homeCurrency} ${b.amount.toFixed(2)}</span></div>
+      `).join("") : `<p class="muted">All settled up across every ledger 🎉</p>`) : `<p class="muted">Loading...</p>`}
+    </div>
+
+    ${overview?.perLedger.length ? `
+      <h3 style="margin-top:16px">By ledger</h3>
+      ${overview.perLedger.map(l => `
+        <div class="panel">
+          <h4 style="margin-bottom:6px">${l.icon || "💼"} ${l.name}</h4>
+          ${l.balances.map(b => `
+            <div class="tx-row"><span>${nameFrom(overview.namesMap, b.from)} owes ${nameFrom(overview.namesMap, b.to)}</span><span class="expense">${overview.homeCurrency} ${b.amount.toFixed(2)}</span></div>
+          `).join("")}
+        </div>
+      `).join("")}
+    ` : ""}
+    ${bottomNav("home")}`;
+}
 
 function renderSplitsPage() {
   const ledger = S.activeLedgerDetail || {};

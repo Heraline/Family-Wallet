@@ -17,6 +17,8 @@ export const S = {
   recentTx: [],        // latest 5 transactions across flagged ledgers, for the Home screen
   ledgerBudget: {},    // active ledger's monthly target, from ledgers/{lid}/budgets/{ym}
   recurring: {},       // active ledger's recurring transaction templates
+  settlements: {},     // active ledger's recorded settlements
+  homeSplitsOverview: null, // cross-ledger combined splits overview for Home
   uiPrefs: { theme: "teal", cardStyle: "glass", chartStyle: "donut" }, // synced appearance settings
 };
 

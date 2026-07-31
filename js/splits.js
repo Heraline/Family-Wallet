@@ -4,8 +4,9 @@
 // payments) — just straightforward per-transaction + settlement netting,
 // as agreed for v1.
 
-import { listen, writePush, writeRemove } from "./firebase.js";
+import { listen, readOnce, writePush, writeRemove } from "./firebase.js";
 import { S, notify } from "./state.js";
+import { convert } from "./currency.js";
 
 export function listenSettlements(lid) {
   return listen(`ledgers/${lid}/settlements`, (data) => {
@@ -84,4 +85,61 @@ export function computeBalances(txs, settlements) {
     });
   });
   return result;
+}
+
+// Home-screen overview: combines split balances across every ledger the
+// user belongs to into one net "who owes who", converting each ledger's
+// currency into `homeCurrency` first so mixed-currency ledgers combine
+// correctly. Read-only — actually recording a settlement still happens
+// inside the relevant ledger, where the currency/members context lives.
+export async function computeHomeSplitsOverview(ledgerIds, homeCurrency) {
+  const netGlobal = {};
+  const namesMap = {};
+  const perLedger = [];
+
+  for (const lid of ledgerIds) {
+    const [txSnap, settleSnap, memberSnap, ledgerSnap] = await Promise.all([
+      readOnce(`ledgerTransactions/${lid}`),
+      readOnce(`ledgers/${lid}/settlements`),
+      readOnce(`ledgerMembers/${lid}`),
+      readOnce(`ledgers/${lid}`),
+    ]);
+    const txs = txSnap.exists() ? txSnap.val() : {};
+    const settlements = settleSnap.exists() ? settleSnap.val() : {};
+    const members = memberSnap.exists() ? memberSnap.val() : {};
+    const ledger = ledgerSnap.exists() ? ledgerSnap.val() : {};
+    Object.entries(members).forEach(([uid, m]) => { namesMap[uid] = m; });
+
+    const balances = computeBalances(txs, settlements);
+    if (!balances.length) continue;
+
+    const ledgerCurrency = ledger.currency || "USD";
+    const converted = [];
+    for (const b of balances) {
+      let amt = b.amount;
+      if (ledgerCurrency !== homeCurrency) {
+        const c = await convert(b.amount, ledgerCurrency, homeCurrency);
+        if (c != null) amt = c;
+      }
+      converted.push({ ...b, amount: amt });
+      netGlobal[b.from] = (netGlobal[b.from] || 0) - amt;
+      netGlobal[b.to] = (netGlobal[b.to] || 0) + amt;
+    }
+    perLedger.push({ lid, name: ledger.name, icon: ledger.icon, balances: converted });
+  }
+
+  const EPS = 0.01;
+  const creditors = Object.entries(netGlobal).filter(([, v]) => v > EPS).map(([uid, v]) => ({ uid, amt: v })).sort((a, b) => b.amt - a.amt);
+  const debtors = Object.entries(netGlobal).filter(([, v]) => v < -EPS).map(([uid, v]) => ({ uid, amt: -v })).sort((a, b) => b.amt - a.amt);
+  const combined = [];
+  let ci = 0, di = 0;
+  while (ci < creditors.length && di < debtors.length) {
+    const pay = Math.min(creditors[ci].amt, debtors[di].amt);
+    combined.push({ from: debtors[di].uid, to: creditors[ci].uid, amount: pay });
+    creditors[ci].amt -= pay; debtors[di].amt -= pay;
+    if (creditors[ci].amt < EPS) ci++;
+    if (debtors[di].amt < EPS) di++;
+  }
+
+  return { combined, perLedger, namesMap, homeCurrency };
 }

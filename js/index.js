@@ -18,7 +18,7 @@ import { setBudgetUnsub } from "./ledgers.js";
 import { getGeminiKey, setGeminiKey, clearGeminiKey, scanReceipt, fileToBase64 } from "./receipt.js";
 import { listenThemePrefs, setThemePref, applyTheme } from "./theme.js";
 import { listenRecurring, addRecurring, deleteRecurring, processDueRecurring } from "./recurring.js";
-import { listenSettlements, addSettlement, deleteSettlement } from "./splits.js";
+import { listenSettlements, addSettlement, deleteSettlement, computeHomeSplitsOverview } from "./splits.js";
 import { render, splitAmountRowsHtml } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
@@ -73,6 +73,16 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (navBtn) goTo(navBtn.dataset.nav);
 
     if (e.target.closest?.("#btnHomeBudgetCard")) goTo("personalBudget");
+    if (id === "btnHomeSplits") {
+      S.activeLedgerId = null;
+      S.view = "homeSplits";
+      render();
+      const homeCurrency = S.personalBudget?.homeCurrency || "USD";
+      computeHomeSplitsOverview(Object.keys(S.ledgers || {}), homeCurrency)
+        .then((overview) => { S.homeSplitsOverview = overview; render(); })
+        .catch((err) => console.error("Home splits overview failed:", err));
+    }
+    if (id === "btnBackFromHomeSplits") goTo("home");
 
     if (e.target.dataset.lid) {
       switchLedger(e.target.dataset.lid);
