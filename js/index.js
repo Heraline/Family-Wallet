@@ -19,6 +19,7 @@ import { getGeminiKey, setGeminiKey, clearGeminiKey, scanReceipt, fileToBase64 }
 import { listenThemePrefs, setThemePref, applyTheme } from "./theme.js";
 import { listenRecurring, addRecurring, deleteRecurring, processDueRecurring } from "./recurring.js";
 import { listenSettlements, addSettlement, deleteSettlement, computeHomeSplitsOverview } from "./splits.js";
+import { listenCategories, addCategory, deleteCategory, setCategoryBudget } from "./categories.js";
 import { render, splitAmountRowsHtml } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
@@ -91,6 +92,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       listenRecurring(e.target.dataset.lid);
       processDueRecurring(e.target.dataset.lid).catch((err) => console.error("Recurring processing failed:", err));
       listenSettlements(e.target.dataset.lid);
+      listenCategories(e.target.dataset.lid);
     }
     if (id === "btnBack") { S.activeLedgerId = null; S.view = "ledgers"; render(); }
     if (id === "btnBackFromBudget") goTo("home");
@@ -187,6 +189,29 @@ document.getElementById("app").addEventListener("click", async (e) => {
       }
     }
 
+    const emojiChip = e.target.closest?.(".emoji-chip");
+    if (emojiChip) {
+      document.querySelectorAll("#catEmojiPicker .emoji-chip").forEach((c) => c.classList.remove("active"));
+      emojiChip.classList.add("active");
+    }
+    if (id === "btnAddCategory") {
+      const label = val("catName");
+      const icon = document.querySelector("#catEmojiPicker .emoji-chip.active")?.dataset.emoji || "📦";
+      if (!label) return showError("catError", "Enter a category name.");
+      await addCategory(S.activeLedgerId, { label, icon });
+      document.getElementById("catName").value = "";
+    }
+    if (e.target.dataset.delCat) {
+      if (confirm("Delete this category? Past transactions using it will keep showing its name.")) {
+        await deleteCategory(S.activeLedgerId, e.target.dataset.delCat);
+      }
+    }
+    if (e.target.dataset.saveCatBudget) {
+      const key = e.target.dataset.saveCatBudget;
+      const input = document.querySelector(`.cat-budget-input[data-cat-budget-key="${key}"]`);
+      await setCategoryBudget(S.activeLedgerId, key, input?.value);
+    }
+
     if (id === "btnRenameLedger") {
       const name = val("ledgerNameInput"), icon = val("ledgerIconInput");
       if (!name) return showError("renameError", "Enter a ledger name.");
@@ -240,7 +265,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
     showError("authError", err.message) || showError("createError", err.message) ||
       showError("joinError", err.message) || showError("txError", err.message) ||
       showError("recurringError", err.message) || showError("guestError", err.message) ||
-      showError("settleError", err.message);
+      showError("settleError", err.message) || showError("catError", err.message);
   }
 });
 

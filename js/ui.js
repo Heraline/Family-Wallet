@@ -3,10 +3,11 @@
 // in during a later phase. Right now this only renders into <div id="app">.
 
 import { S } from "./state.js";
-import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteLedger, GRANTABLE_PERMISSIONS } from "./permissions.js";
+import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteLedger, canManageCategories, GRANTABLE_PERMISSIONS } from "./permissions.js";
 import { currentYM } from "./budgets.js";
 import { FREQUENCIES } from "./recurring.js";
 import { computeBalances } from "./splits.js";
+import { activeCategories, EMOJI_PALETTE } from "./categories.js";
 import { getGeminiKey } from "./receipt.js";
 import { THEMES } from "./theme.js";
 
@@ -90,6 +91,10 @@ function renderLogin() {
         <button id="btnSignup" class="secondary">Sign up</button>
       </div>
     </div>`;
+}
+
+function categoryOptionsHtml(selectedLabel) {
+  return Object.values(activeCategories()).map(c => `<option value="${c.label}" ${c.label === selectedLabel ? "selected" : ""}>${c.icon} ${c.label}</option>`).join("");
 }
 
 function ledgerIcon(icon) {
@@ -286,7 +291,7 @@ function renderLedgerDetail() {
             ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map(c => `<option value="${c}" ${((ledger.currency || "USD") === c) ? "selected" : ""}>${c}</option>`).join("")}
           </select>
         </div>
-        <input id="txCategory" placeholder="Category (e.g. Food)" />
+        <select id="txCategory">${categoryOptionsHtml()}</select>
         <input id="txDesc" placeholder="Description (optional)" />
 
         <button type="button" id="btnToggleSplit" class="secondary" style="margin-bottom:10px">➕ Split this expense (optional)</button>
@@ -317,6 +322,7 @@ function renderLedgerDetail() {
       </div>
 
       ${renderLedgerBudgetPanel(ledger, myMember, txs)}
+      ${renderCategoriesPanel(myMember, txs)}
       ${renderRecurringPanel(myMember, ledger)}
       <button id="btnOpenSplits" class="secondary" style="width:100%;margin-bottom:16px">🤝 Splits & Settle</button>
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
@@ -350,6 +356,50 @@ function renderLedgerBudgetPanel(ledger, myMember, txs) {
     </div>`;
 }
 
+function renderCategoriesPanel(myMember, txs) {
+  const canEdit = canManageCategories(myMember);
+  const cats = Object.entries(activeCategories());
+  const ym = currentYM();
+  const spentByCat = {};
+  txs.forEach(([, t]) => {
+    if (t.type === "expense" && t.date?.startsWith(ym)) spentByCat[t.category] = (spentByCat[t.category] || 0) + t.amount;
+  });
+
+  return `
+    <div class="panel">
+      <h3>🏷️ Categories</h3>
+      ${cats.map(([key, c]) => {
+        const spent = spentByCat[c.label] || 0;
+        const pct = c.budget ? Math.min(100, Math.round((spent / c.budget) * 100)) : null;
+        return `
+          <div class="tx-row">
+            <span>${c.icon} ${c.label}</span>
+            <span>${c.budget ? `${spent.toFixed(2)} / ${c.budget.toFixed(2)}` : (spent > 0 ? spent.toFixed(2) : "")}</span>
+            ${canEdit ? `<button class="link small" data-del-cat="${key}">delete</button>` : ""}
+          </div>
+          ${pct !== null ? `<div class="budget-bar-track" style="margin:-2px 0 8px"><div class="budget-bar-fill ${pct >= 100 ? "over" : ""}" style="width:${pct}%"></div></div>` : ""}
+          ${canEdit ? `
+            <div class="btn-row" style="margin:-4px 0 10px">
+              <input type="number" step="0.01" class="cat-budget-input" data-cat-budget-key="${key}" placeholder="Monthly budget" value="${c.budget || ""}" style="flex:1" />
+              <button class="secondary small" data-save-cat-budget="${key}">Save</button>
+            </div>` : ""}
+        `;
+      }).join("")}
+
+      ${canEdit ? `
+        <div class="sub-panel">
+          <h4>Add category</h4>
+          <div id="catError" class="error"></div>
+          <input id="catName" placeholder="Category name" />
+          <p class="muted" style="margin:6px 0 4px">Icon</p>
+          <div class="chip-row" id="catEmojiPicker">
+            ${EMOJI_PALETTE.map((e, i) => `<button type="button" class="chip emoji-chip ${i === 0 ? "active" : ""}" data-emoji="${e}">${e}</button>`).join("")}
+          </div>
+          <button id="btnAddCategory">Add category</button>
+        </div>` : ""}
+    </div>`;
+}
+
 function renderRecurringPanel(myMember, ledger) {
   const canEdit = can(myMember, "manageRecurring");
   const items = Object.entries(S.recurring || {});
@@ -375,7 +425,7 @@ function renderRecurringPanel(myMember, ledger) {
             <select id="recurType" style="flex:1"><option value="expense">Expense</option><option value="income">Income</option></select>
             <input id="recurAmount" type="number" step="0.01" placeholder="Amount" style="flex:1" />
           </div>
-          <input id="recurCategory" placeholder="Category" />
+          <select id="recurCategory">${categoryOptionsHtml()}</select>
           <div class="btn-row">
             <select id="recurFreq" style="flex:1">${FREQUENCIES.map(f => `<option value="${f.key}">${f.label}</option>`).join("")}</select>
             <select id="recurCurrency" style="flex:1">
