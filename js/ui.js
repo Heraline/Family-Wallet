@@ -405,26 +405,31 @@ function renderHomeSplitsPage() {
       <button id="btnLogout" class="link">Log out</button>
     </div>
     <h2>🤝 Splits & Settle</h2>
-    <p class="muted" style="margin-bottom:12px">Combined across all your ledgers, converted to ${overview?.homeCurrency || "your home currency"}. To record a settlement, open the relevant ledger's own Splits & Settle screen.</p>
 
-    <div class="panel">
-      <h3>Combined balances</h3>
-      ${overview ? (overview.combined.length ? overview.combined.map(b => `
-        <div class="tx-row"><span>${nameFrom(overview.namesMap, b.from)} owes ${nameFrom(overview.namesMap, b.to)}</span><span class="expense">${overview.homeCurrency} ${b.amount.toFixed(2)}</span></div>
-      `).join("") : `<p class="muted">All settled up across every ledger 🎉</p>`) : `<p class="muted">Loading...</p>`}
-    </div>
+    ${overview ? `
+      <div class="panel">
+        <h3>Combined balances <span class="muted" style="font-weight:400">(net, in ${overview.homeCurrency})</span></h3>
+        ${overview.combined.length ? overview.combined.map(b => `
+          <div class="tx-row"><span>${nameFrom(overview.namesMap, b.from)} owes ${nameFrom(overview.namesMap, b.to)}</span><span class="expense">${overview.homeCurrency} ${b.amount.toFixed(2)}</span></div>
+        `).join("") : `<p class="muted">All settled up across every ledger 🎉</p>`}
+      </div>
 
-    ${overview?.perLedger.length ? `
-      <h3 style="margin-top:16px">By ledger</h3>
-      ${overview.perLedger.map(l => `
+      <div class="panel">
+        <h3 style="margin-bottom:4px">Summary</h3>
+        <div class="balance" style="font-size:22px">${overview.ledgersWithSplitsCount} of ${overview.totalLedgersChecked} ledgers</div>
+        <p class="muted">have outstanding split balances</p>
+      </div>
+      <p class="muted" style="margin-bottom:12px">Each ledger's balances shown below in its own currency. To record a settlement, open that ledger's own Splits & Settle screen.</p>
+
+      ${overview.perLedger.length ? overview.perLedger.map(l => `
         <div class="panel">
           <h4 style="margin-bottom:6px">${l.icon || "💼"} ${l.name}</h4>
           ${l.balances.map(b => `
-            <div class="tx-row"><span>${nameFrom(overview.namesMap, b.from)} owes ${nameFrom(overview.namesMap, b.to)}</span><span class="expense">${overview.homeCurrency} ${b.amount.toFixed(2)}</span></div>
+            <div class="tx-row"><span>${nameFrom(overview.namesMap, b.from)} owes ${nameFrom(overview.namesMap, b.to)}</span><span class="expense">${l.currency} ${b.amount.toFixed(2)}</span></div>
           `).join("")}
         </div>
-      `).join("")}
-    ` : ""}
+      `).join("") : ""}
+    ` : `<p class="muted">Loading...</p>`}
     ${bottomNav("home")}`;
 }
 

@@ -87,15 +87,17 @@ export function computeBalances(txs, settlements) {
   return result;
 }
 
-// Home-screen overview: combines split balances across every ledger the
-// user belongs to into one net "who owes who", converting each ledger's
-// currency into `homeCurrency` first so mixed-currency ledgers combine
-// correctly. Read-only — actually recording a settlement still happens
-// inside the relevant ledger, where the currency/members context lives.
+// Home-screen overview: gathers each ledger's own split balances (each in
+// its own currency — no conversion needed for the per-ledger list) onto
+// one page, PLUS a combined net total across every ledger (which does
+// need currency conversion into `homeCurrency`, since a real member's
+// account is the same person everywhere — guests are per-ledger only and
+// don't net across ledgers). Read-only — recording a settlement still
+// happens inside the relevant ledger.
 export async function computeHomeSplitsOverview(ledgerIds, homeCurrency) {
-  const netGlobal = {};
   const namesMap = {};
   const perLedger = [];
+  const netGlobal = {};
 
   for (const lid of ledgerIds) {
     const [txSnap, settleSnap, memberSnap, ledgerSnap] = await Promise.all([
@@ -114,18 +116,17 @@ export async function computeHomeSplitsOverview(ledgerIds, homeCurrency) {
     if (!balances.length) continue;
 
     const ledgerCurrency = ledger.currency || "USD";
-    const converted = [];
+    perLedger.push({ lid, name: ledger.name, icon: ledger.icon, currency: ledgerCurrency, balances });
+
     for (const b of balances) {
       let amt = b.amount;
       if (ledgerCurrency !== homeCurrency) {
         const c = await convert(b.amount, ledgerCurrency, homeCurrency);
-        if (c != null) amt = c;
+        if (c != null) amt = c; // if conversion unavailable, still net using the raw number rather than dropping it
       }
-      converted.push({ ...b, amount: amt });
       netGlobal[b.from] = (netGlobal[b.from] || 0) - amt;
       netGlobal[b.to] = (netGlobal[b.to] || 0) + amt;
     }
-    perLedger.push({ lid, name: ledger.name, icon: ledger.icon, balances: converted });
   }
 
   const EPS = 0.01;
@@ -141,5 +142,5 @@ export async function computeHomeSplitsOverview(ledgerIds, homeCurrency) {
     if (debtors[di].amt < EPS) di++;
   }
 
-  return { combined, perLedger, namesMap, homeCurrency };
+  return { combined, perLedger, namesMap, homeCurrency, ledgersWithSplitsCount: perLedger.length, totalLedgersChecked: ledgerIds.length };
 }
