@@ -8,6 +8,7 @@
 import { readOnce, writeSet, writeUpdate, listen } from "./firebase.js";
 import { S, notify } from "./state.js";
 import { convert } from "./currency.js";
+import { DEFAULT_CATEGORIES } from "./categories.js";
 
 export function currentYM() {
   const d = new Date();
@@ -78,17 +79,22 @@ export async function refreshPersonalOverview(homeCurrency) {
   let total = 0;
   const perLedger = {};
   const categorySpend = {}; // { label: amountInHomeCurrency }
+  const availableCatMap = {}; // { label: icon } — deduped across every flagged ledger's category list
   let allTx = [];
 
   for (const lid of includedIds) {
-    const [ledgerSnap, txSnap] = await Promise.all([
+    const [ledgerSnap, txSnap, catSnap] = await Promise.all([
       readOnce(`ledgers/${lid}`),
       readOnce(`ledgerTransactions/${lid}`),
+      readOnce(`ledgers/${lid}/categories`),
     ]);
     const ledger = ledgerSnap.exists() ? ledgerSnap.val() : null;
     const txs = txSnap.exists() ? txSnap.val() : {};
     if (!ledger) continue;
     const ledgerCurrency = ledger.currency || "USD";
+
+    const ledgerCats = catSnap.exists() ? catSnap.val() : DEFAULT_CATEGORIES;
+    Object.values(ledgerCats).forEach((c) => { if (!(c.label in availableCatMap)) availableCatMap[c.label] = c.icon; });
 
     let ledgerSpend = 0;
     for (const [txId, t] of Object.entries(txs)) {
@@ -112,6 +118,7 @@ export async function refreshPersonalOverview(homeCurrency) {
 
   allTx.sort((a, b) => b.ts - a.ts);
   S.recentTx = allTx.slice(0, 5);
-  S.personalOverview = { ym, total, perLedger, categorySpend, homeCurrency };
+  const availableCategories = Object.entries(availableCatMap).map(([label, icon]) => ({ label, icon })).sort((a, b) => a.label.localeCompare(b.label));
+  S.personalOverview = { ym, total, perLedger, categorySpend, availableCategories, homeCurrency };
   notify();
 }

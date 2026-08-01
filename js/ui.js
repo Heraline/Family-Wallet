@@ -636,7 +636,11 @@ function renderPersonalCategoryBudgetsPanel(overview, homeCurrency) {
         <h4>Add a category target</h4>
         <div id="pcatError" class="error"></div>
         <div class="btn-row">
-          <input id="pcatName" placeholder="Category name (must match exactly)" style="flex:2" />
+          <select id="pcatName" style="flex:2">
+            ${overview?.availableCategories?.length
+              ? overview.availableCategories.map(c => `<option value="${c.label}">${c.icon} ${c.label}</option>`).join("")
+              : `<option value="">Flag a ledger first to see its categories</option>`}
+          </select>
           <input id="pcatAmount" type="number" step="0.01" placeholder="Budget" style="flex:1" />
         </div>
         <button id="btnAddPersonalCatBudget" style="margin-top:6px">Set target</button>
