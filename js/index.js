@@ -19,7 +19,7 @@ import { getGeminiKey, setGeminiKey, clearGeminiKey, scanReceipt, fileToBase64 }
 import { listenThemePrefs, setThemePref, applyTheme } from "./theme.js";
 import { listenRecurring, addRecurring, deleteRecurring, processDueRecurring } from "./recurring.js";
 import { listenSettlements, addSettlement, deleteSettlement, computeHomeSplitsOverview } from "./splits.js";
-import { listenCategories, addCategory, deleteCategory, setCategoryBudget } from "./categories.js";
+import { listenCategories, addCategory, updateCategory, deleteCategory, setCategoryBudget, moveCategory } from "./categories.js";
 import { render, splitAmountRowsHtml } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
@@ -196,9 +196,10 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnAddCategory") {
       const label = val("catName");
+      const type = val("catType");
       const icon = document.querySelector("#catEmojiPicker .emoji-chip.active")?.dataset.emoji || "📦";
       if (!label) return showError("catError", "Enter a category name.");
-      await addCategory(S.activeLedgerId, { label, icon });
+      await addCategory(S.activeLedgerId, { label, icon, type });
       document.getElementById("catName").value = "";
     }
     if (e.target.dataset.delCat) {
@@ -206,10 +207,22 @@ document.getElementById("app").addEventListener("click", async (e) => {
         await deleteCategory(S.activeLedgerId, e.target.dataset.delCat);
       }
     }
-    if (e.target.dataset.saveCatBudget) {
-      const key = e.target.dataset.saveCatBudget;
-      const input = document.querySelector(`.cat-budget-input[data-cat-budget-key="${key}"]`);
-      await setCategoryBudget(S.activeLedgerId, key, input?.value);
+    if (e.target.dataset.moveCat) {
+      await moveCategory(S.activeLedgerId, e.target.dataset.moveCat, e.target.dataset.dir);
+    }
+    // Tap a category's icon to open a shared picker; tap an emoji in it to apply.
+    if (e.target.dataset.changeIconKey) {
+      const picker = document.getElementById("catChangeIconPicker");
+      if (picker) {
+        picker.dataset.editingKey = e.target.dataset.changeIconKey;
+        picker.classList.remove("hidden");
+      }
+    }
+    if (e.target.dataset.setIcon) {
+      const picker = document.getElementById("catChangeIconPicker");
+      const key = picker?.dataset.editingKey;
+      if (key) await updateCategory(S.activeLedgerId, key, { icon: e.target.dataset.setIcon });
+      picker?.classList.add("hidden");
     }
 
     if (id === "btnRenameLedger") {
@@ -311,6 +324,11 @@ document.getElementById("app").addEventListener("change", async (e) => {
       render();
     }
     if (id === "txAmount") { rebuildSplitAmounts("payer"); rebuildSplitAmounts("split"); }
+    if (e.target.dataset.catField && e.target.dataset.catKey) {
+      const field = e.target.dataset.catField, key = e.target.dataset.catKey;
+      if (field === "budget") await setCategoryBudget(S.activeLedgerId, key, e.target.value);
+      else if (field === "label" && e.target.value.trim()) await updateCategory(S.activeLedgerId, key, { label: e.target.value.trim() });
+    }
     if (e.target.dataset.includeLid) {
       await setLedgerIncluded(e.target.dataset.includeLid, e.target.checked);
       refreshHomeOverview();

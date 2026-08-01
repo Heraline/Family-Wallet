@@ -92,6 +92,19 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .split-amt-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; color: var(--card-text); }
 .split-amt-input { width: 90px; margin: 0; padding: 6px 8px; }
 
+.cat-manage-list { margin-bottom: 4px; }
+.cat-row { display: flex; align-items: center; gap: 6px; padding: 5px 0; }
+.cat-emoji-btn { font-size: 18px; background: none; border: none; padding: 2px; width: 30px; flex-shrink: 0; cursor: pointer; }
+.cat-emoji-btn:disabled { cursor: default; }
+.cat-label-input { flex: 2; margin: 0; }
+.cat-budget-input { flex: 1; margin: 0; }
+.cat-row-actions { display: flex; gap: 2px; flex-shrink: 0; }
+.cat-row-actions button { padding: 2px 5px; font-size: 12px; }
+.cat-label-static { flex: 1; font-size: 13px; color: var(--card-text); }
+.cat-spend-line { margin: -2px 0 8px 36px; }
+.cat-spend-line .budget-bar-track { margin: 3px 0; }
+.cat-spend-line .muted { font-size: 11px; }
+
 /* ===== Cards: glass vs flat (applies to every card-like surface) ===== */
 [data-card="glass"] .panel, [data-card="glass"] .auth-box, [data-card="glass"] .tx-list,
 [data-card="glass"] .ledger-card-row, [data-card="glass"] .ledger-scroll-card, [data-card="glass"] .bottom-nav {

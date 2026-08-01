@@ -7,7 +7,7 @@ import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteL
 import { currentYM } from "./budgets.js";
 import { FREQUENCIES } from "./recurring.js";
 import { computeBalances } from "./splits.js";
-import { activeCategories, EMOJI_PALETTE } from "./categories.js";
+import { groupedCategories, EMOJI_PALETTE } from "./categories.js";
 import { getGeminiKey } from "./receipt.js";
 import { THEMES } from "./theme.js";
 
@@ -94,7 +94,11 @@ function renderLogin() {
 }
 
 function categoryOptionsHtml(selectedLabel) {
-  return Object.values(activeCategories()).map(c => `<option value="${c.label}" ${c.label === selectedLabel ? "selected" : ""}>${c.icon} ${c.label}</option>`).join("");
+  const { expense, income } = groupedCategories();
+  const opt = (c) => `<option value="${c.label}" ${c.label === selectedLabel ? "selected" : ""}>${c.icon} ${c.label}</option>`;
+  return `
+    <optgroup label="Expense">${expense.map(opt).join("")}</optgroup>
+    <optgroup label="Income">${income.map(opt).join("")}</optgroup>`;
 }
 
 function ledgerIcon(icon) {
@@ -322,7 +326,7 @@ function renderLedgerDetail() {
       </div>
 
       ${renderLedgerBudgetPanel(ledger, myMember, txs)}
-      ${renderCategoriesPanel(myMember, txs)}
+      ${renderCategoriesPanel(myMember, txs, ledger)}
       ${renderRecurringPanel(myMember, ledger)}
       <button id="btnOpenSplits" class="secondary" style="width:100%;margin-bottom:16px">🤝 Splits & Settle</button>
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
@@ -356,10 +360,34 @@ function renderLedgerBudgetPanel(ledger, myMember, txs) {
     </div>`;
 }
 
-function renderCategoriesPanel(myMember, txs) {
+function categoryRowHtml(c, canEdit, spentByCat, ledgerCurrency, isFirst, isLast) {
+  const spent = spentByCat[c.label] || 0;
+  const pct = c.budget ? Math.min(100, Math.round((spent / c.budget) * 100)) : null;
+  return `
+    <div class="cat-row">
+      <button type="button" class="cat-emoji-btn" data-change-icon-key="${c.key}" ${canEdit ? "" : "disabled"}>${c.icon}</button>
+      ${canEdit ? `
+        <input class="cat-label-input" data-cat-field="label" data-cat-key="${c.key}" value="${c.label}" />
+        <input class="cat-budget-input" type="number" step="0.01" data-cat-field="budget" data-cat-key="${c.key}" value="${c.budget || ""}" placeholder="Budget" />
+        <div class="cat-row-actions">
+          <button type="button" class="link small" data-move-cat="${c.key}" data-dir="up" ${isFirst ? "disabled" : ""}>↑</button>
+          <button type="button" class="link small" data-move-cat="${c.key}" data-dir="down" ${isLast ? "disabled" : ""}>↓</button>
+          <button type="button" class="link small" data-del-cat="${c.key}">🗑️</button>
+        </div>
+      ` : `<span class="cat-label-static">${c.label}</span>`}
+    </div>
+    ${pct !== null ? `
+      <div class="cat-spend-line">
+        <div class="budget-bar-track"><div class="budget-bar-fill ${pct >= 100 ? "over" : ""}" style="width:${pct}%"></div></div>
+        <span class="muted">${ledgerCurrency} ${spent.toFixed(2)} / ${c.budget.toFixed(2)}</span>
+      </div>` : (spent > 0 ? `<div class="cat-spend-line"><span class="muted">${ledgerCurrency} ${spent.toFixed(2)} spent this month</span></div>` : "")}`;
+}
+
+function renderCategoriesPanel(myMember, txs, ledger) {
   const canEdit = canManageCategories(myMember);
-  const cats = Object.entries(activeCategories());
+  const { expense, income } = groupedCategories();
   const ym = currentYM();
+  const ledgerCurrency = ledger?.currency || "USD";
   const spentByCat = {};
   txs.forEach(([, t]) => {
     if (t.type === "expense" && t.date?.startsWith(ym)) spentByCat[t.category] = (spentByCat[t.category] || 0) + t.amount;
@@ -368,35 +396,36 @@ function renderCategoriesPanel(myMember, txs) {
   return `
     <div class="panel">
       <h3>🏷️ Categories</h3>
-      ${cats.map(([key, c]) => {
-        const spent = spentByCat[c.label] || 0;
-        const pct = c.budget ? Math.min(100, Math.round((spent / c.budget) * 100)) : null;
-        return `
-          <div class="tx-row">
-            <span>${c.icon} ${c.label}</span>
-            <span>${c.budget ? `${spent.toFixed(2)} / ${c.budget.toFixed(2)}` : (spent > 0 ? spent.toFixed(2) : "")}</span>
-            ${canEdit ? `<button class="link small" data-del-cat="${key}">delete</button>` : ""}
-          </div>
-          ${pct !== null ? `<div class="budget-bar-track" style="margin:-2px 0 8px"><div class="budget-bar-fill ${pct >= 100 ? "over" : ""}" style="width:${pct}%"></div></div>` : ""}
-          ${canEdit ? `
-            <div class="btn-row" style="margin:-4px 0 10px">
-              <input type="number" step="0.01" class="cat-budget-input" data-cat-budget-key="${key}" placeholder="Monthly budget" value="${c.budget || ""}" style="flex:1" />
-              <button class="secondary small" data-save-cat-budget="${key}">Save</button>
-            </div>` : ""}
-        `;
-      }).join("")}
+
+      <p class="muted" style="margin:6px 0 4px">Expense</p>
+      <div class="cat-manage-list">
+        ${expense.length ? expense.map((c, i) => categoryRowHtml(c, canEdit, spentByCat, ledgerCurrency, i === 0, i === expense.length - 1)).join("") : `<p class="muted">No expense categories.</p>`}
+      </div>
+
+      <p class="muted" style="margin:14px 0 4px">Income</p>
+      <div class="cat-manage-list">
+        ${income.length ? income.map((c, i) => categoryRowHtml(c, canEdit, spentByCat, ledgerCurrency, i === 0, i === income.length - 1)).join("") : `<p class="muted">No income categories.</p>`}
+      </div>
 
       ${canEdit ? `
-        <div class="sub-panel">
+        <div class="sub-panel" style="margin-top:14px">
           <h4>Add category</h4>
           <div id="catError" class="error"></div>
           <input id="catName" placeholder="Category name" />
-          <p class="muted" style="margin:6px 0 4px">Icon</p>
+          <div class="btn-row" style="margin:6px 0 8px">
+            <select id="catType" style="flex:1"><option value="expense">Expense</option><option value="income">Income</option></select>
+          </div>
+          <p class="muted" style="margin:0 0 4px">Icon</p>
           <div class="chip-row" id="catEmojiPicker">
             ${EMOJI_PALETTE.map((e, i) => `<button type="button" class="chip emoji-chip ${i === 0 ? "active" : ""}" data-emoji="${e}">${e}</button>`).join("")}
           </div>
           <button id="btnAddCategory">Add category</button>
-        </div>` : ""}
+        </div>
+
+        <div class="chip-row hidden" id="catChangeIconPicker" style="margin-top:10px">
+          ${EMOJI_PALETTE.map((e) => `<button type="button" class="chip" data-set-icon="${e}">${e}</button>`).join("")}
+        </div>
+      ` : ""}
     </div>`;
 }
 
