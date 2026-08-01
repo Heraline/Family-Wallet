@@ -47,6 +47,27 @@ export async function setLedgerBudget(lid, total, ym = currentYM()) {
   await writeSet(`ledgers/${lid}/budgets/${ym}`, { total: Number(total) });
 }
 
+// ---------- Personal category budgets: your own target per category name,
+// combined across every flagged ledger (separate from each ledger's own
+// category budgets). Keyed by a sanitized slug of the category label,
+// same pattern as ledger categories — Firebase keys can't contain some
+// characters a category name might have (., #, $, [, ]).
+function slugifyCat(label) {
+  return label.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "cat_" + Date.now();
+}
+export function listenPersonalCategoryBudgets(ym = currentYM()) {
+  return listen(`users/${S.user.uid}/personalCategoryBudgets/${ym}`, (data) => {
+    S.personalCategoryBudgets = data || {};
+    notify();
+  });
+}
+export async function setPersonalCategoryBudget(label, amount, ym = currentYM()) {
+  const slug = slugifyCat(label);
+  await writeSet(`users/${S.user.uid}/personalCategoryBudgets/${ym}/${slug}`, {
+    label, budget: amount ? Number(amount) : null,
+  });
+}
+
 // ---------- Personal overview: spending this month across flagged ledgers ----------
 // This is computed on demand (not a live listener) since it may span many
 // ledgers — call refreshPersonalOverview() when the screen opens or the
@@ -56,6 +77,7 @@ export async function refreshPersonalOverview(homeCurrency) {
   const includedIds = Object.keys(S.includedLedgers || {}).filter((lid) => S.includedLedgers[lid]);
   let total = 0;
   const perLedger = {};
+  const categorySpend = {}; // { label: amountInHomeCurrency }
   let allTx = [];
 
   for (const lid of includedIds) {
@@ -66,21 +88,30 @@ export async function refreshPersonalOverview(homeCurrency) {
     const ledger = ledgerSnap.exists() ? ledgerSnap.val() : null;
     const txs = txSnap.exists() ? txSnap.val() : {};
     if (!ledger) continue;
+    const ledgerCurrency = ledger.currency || "USD";
 
     let ledgerSpend = 0;
-    Object.entries(txs).forEach(([txId, t]) => {
-      if (t.type === "expense" && t.date?.startsWith(ym)) ledgerSpend += t.amount;
+    for (const [txId, t] of Object.entries(txs)) {
       allTx.push({ ...t, txId, ledgerId: lid, ledgerName: ledger.name, ledgerIcon: ledger.icon });
-    });
+      if (t.type !== "expense" || !t.date?.startsWith(ym)) continue;
+      ledgerSpend += t.amount;
 
-    const converted = await convert(ledgerSpend, ledger.currency || "USD", homeCurrency);
+      let catAmt = t.amount;
+      if (ledgerCurrency !== homeCurrency) {
+        const c = await convert(t.amount, ledgerCurrency, homeCurrency);
+        if (c != null) catAmt = c;
+      }
+      categorySpend[t.category] = (categorySpend[t.category] || 0) + catAmt;
+    }
+
+    const converted = await convert(ledgerSpend, ledgerCurrency, homeCurrency);
     const spendInHomeCurrency = converted != null ? converted : ledgerSpend;
-    perLedger[lid] = { name: ledger.name, spend: ledgerSpend, currency: ledger.currency, spendInHomeCurrency };
+    perLedger[lid] = { name: ledger.name, spend: ledgerSpend, currency: ledgerCurrency, spendInHomeCurrency };
     total += spendInHomeCurrency;
   }
 
   allTx.sort((a, b) => b.ts - a.ts);
   S.recentTx = allTx.slice(0, 5);
-  S.personalOverview = { ym, total, perLedger, homeCurrency };
+  S.personalOverview = { ym, total, perLedger, categorySpend, homeCurrency };
   notify();
 }

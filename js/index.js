@@ -13,6 +13,7 @@ import { listenTransactions, addTransaction, deleteTransaction } from "./transac
 import {
   listenPersonalBudget, setPersonalBudget, listenIncludedLedgers, setLedgerIncluded,
   listenLedgerBudget, setLedgerBudget, refreshPersonalOverview,
+  listenPersonalCategoryBudgets, setPersonalCategoryBudget,
 } from "./budgets.js";
 import { setBudgetUnsub } from "./ledgers.js";
 import { getGeminiKey, setGeminiKey, clearGeminiKey, scanReceipt, fileToBase64 } from "./receipt.js";
@@ -28,14 +29,16 @@ let unsubUserLedgers = null;
 let unsubPersonalBudget = null;
 let unsubIncluded = null;
 let unsubTheme = null;
+let unsubPersonalCatBudgets = null;
 
 initAuthWatcher((user) => {
-  unsubUserLedgers?.(); unsubPersonalBudget?.(); unsubIncluded?.(); unsubTheme?.();
+  unsubUserLedgers?.(); unsubPersonalBudget?.(); unsubIncluded?.(); unsubTheme?.(); unsubPersonalCatBudgets?.();
   if (user) {
     unsubUserLedgers = listenUserLedgers();
     unsubPersonalBudget = listenPersonalBudget();
     unsubIncluded = listenIncludedLedgers();
     unsubTheme = listenThemePrefs();
+    unsubPersonalCatBudgets = listenPersonalCategoryBudgets();
     refreshHomeOverview();
   }
   applyTheme();
@@ -194,6 +197,13 @@ document.getElementById("app").addEventListener("click", async (e) => {
       document.querySelectorAll("#catEmojiPicker .emoji-chip").forEach((c) => c.classList.remove("active"));
       emojiChip.classList.add("active");
     }
+    if (id === "btnAddPersonalCatBudget") {
+      const label = val("pcatName"), amount = val("pcatAmount");
+      if (!label) return showError("pcatError", "Enter a category name.");
+      await setPersonalCategoryBudget(label, amount);
+      document.getElementById("pcatName").value = "";
+      document.getElementById("pcatAmount").value = "";
+    }
     if (id === "btnAddCategory") {
       const label = val("catName");
       const type = val("catType");
@@ -278,7 +288,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
     showError("authError", err.message) || showError("createError", err.message) ||
       showError("joinError", err.message) || showError("txError", err.message) ||
       showError("recurringError", err.message) || showError("guestError", err.message) ||
-      showError("settleError", err.message) || showError("catError", err.message);
+      showError("settleError", err.message) || showError("catError", err.message) ||
+      showError("pcatError", err.message);
   }
 });
 
@@ -328,6 +339,9 @@ document.getElementById("app").addEventListener("change", async (e) => {
       const field = e.target.dataset.catField, key = e.target.dataset.catKey;
       if (field === "budget") await setCategoryBudget(S.activeLedgerId, key, e.target.value);
       else if (field === "label" && e.target.value.trim()) await updateCategory(S.activeLedgerId, key, { label: e.target.value.trim() });
+    }
+    if (e.target.dataset.pcatLabel) {
+      await setPersonalCategoryBudget(e.target.dataset.pcatLabel, e.target.value);
     }
     if (e.target.dataset.includeLid) {
       await setLedgerIncluded(e.target.dataset.includeLid, e.target.checked);

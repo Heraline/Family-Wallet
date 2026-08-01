@@ -600,7 +600,48 @@ function renderPersonalBudget() {
       ` : `<p class="muted">Tap refresh to calculate.</p>`}
       <button id="btnRefreshOverview" class="secondary" style="margin-top:10px">🔄 Refresh</button>
     </div>
+
+    ${renderPersonalCategoryBudgetsPanel(overview, homeCurrency)}
     ${bottomNav("home")}`;
+}
+
+function renderPersonalCategoryBudgetsPanel(overview, homeCurrency) {
+  const categorySpend = overview?.categorySpend || {};
+  const catBudgets = S.personalCategoryBudgets || {};
+  const rows = {}; // label -> { spent, budget }
+  Object.entries(categorySpend).forEach(([label, spent]) => { rows[label] = { spent, budget: null }; });
+  Object.values(catBudgets).forEach((c) => {
+    if (!rows[c.label]) rows[c.label] = { spent: 0, budget: c.budget };
+    else rows[c.label].budget = c.budget;
+  });
+  const entries = Object.entries(rows).sort((a, b) => b[1].spent - a[1].spent);
+
+  return `
+    <div class="panel">
+      <h3>Category budgets <span class="muted" style="font-weight:400">(combined, ${homeCurrency})</span></h3>
+      ${entries.length ? entries.map(([label, r]) => {
+        const pct = r.budget ? Math.min(100, Math.round((r.spent / r.budget) * 100)) : null;
+        return `
+          <div class="cat-row">
+            <span class="cat-label-static" style="flex:2">${label}</span>
+            <input class="cat-budget-input" type="number" step="0.01" data-pcat-label="${label}" value="${r.budget || ""}" placeholder="Budget" />
+          </div>
+          <div class="cat-spend-line" style="margin-left:0">
+            ${pct !== null ? `<div class="budget-bar-track"><div class="budget-bar-fill ${pct >= 100 ? "over" : ""}" style="width:${pct}%"></div></div>` : ""}
+            <span class="muted">${homeCurrency} ${r.spent.toFixed(2)}${r.budget ? ` / ${r.budget.toFixed(2)}` : " spent this month"}</span>
+          </div>`;
+      }).join("") : `<p class="muted">No category spending yet from your flagged ledgers this month.</p>`}
+
+      <div class="sub-panel" style="margin-top:10px">
+        <h4>Add a category target</h4>
+        <div id="pcatError" class="error"></div>
+        <div class="btn-row">
+          <input id="pcatName" placeholder="Category name (must match exactly)" style="flex:2" />
+          <input id="pcatAmount" type="number" step="0.01" placeholder="Budget" style="flex:1" />
+        </div>
+        <button id="btnAddPersonalCatBudget" style="margin-top:6px">Set target</button>
+      </div>
+    </div>`;
 }
 
 function roleLabel(m) {

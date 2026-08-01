@@ -12,11 +12,13 @@ export const S = {
   debugPreviewRole: null, // Owner-only testing tool: "member" | "moderator" | "guest" | null
   view: "home",        // "home" | "ledgers" | "personalBudget" | "aiSettings"
   personalBudget: {},  // this month's personal target, from users/{uid}/personalBudget/{ym}
+  personalCategoryBudgets: {}, // this month's per-category personal targets
   includedLedgers: {}, // { lid: true } — which ledgers count toward the personal overview
   personalOverview: null, // computed on demand by budgets.js refreshPersonalOverview()
   recentTx: [],        // latest 5 transactions across flagged ledgers, for the Home screen
   ledgerBudget: {},    // active ledger's monthly target, from ledgers/{lid}/budgets/{ym}
   recurring: {},       // active ledger's recurring transaction templates
+  categories: {},      // active ledger's custom categories (empty = use DEFAULT_CATEGORIES)
   settlements: {},     // active ledger's recorded settlements
   homeSplitsOverview: null, // cross-ledger combined splits overview for Home
   uiPrefs: { theme: "teal", cardStyle: "glass", chartStyle: "donut" }, // synced appearance settings
