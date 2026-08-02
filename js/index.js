@@ -22,6 +22,7 @@ import { listenRecurring, addRecurring, deleteRecurring, processDueRecurring } f
 import { listenSettlements, addSettlement, deleteSettlement, computeHomeSplitsOverview } from "./splits.js";
 import { listenCategories, addCategory, updateCategory, deleteCategory, setCategoryBudget, moveCategory } from "./categories.js";
 import { listenTags, ensureTagExists, renameTag, deleteTag } from "./tags.js";
+import { listenWallet, addFunds, transferToLedger, addWalletRecurring, deleteWalletRecurring, processDueWalletRecurring } from "./wallet.js";
 import { render, splitAmountRowsHtml } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
@@ -31,15 +32,17 @@ let unsubPersonalBudget = null;
 let unsubIncluded = null;
 let unsubTheme = null;
 let unsubPersonalCatBudgets = null;
+let unsubWallet = null;
 
 initAuthWatcher((user) => {
-  unsubUserLedgers?.(); unsubPersonalBudget?.(); unsubIncluded?.(); unsubTheme?.(); unsubPersonalCatBudgets?.();
+  unsubUserLedgers?.(); unsubPersonalBudget?.(); unsubIncluded?.(); unsubTheme?.(); unsubPersonalCatBudgets?.(); unsubWallet?.();
   if (user) {
     unsubUserLedgers = listenUserLedgers();
     unsubPersonalBudget = listenPersonalBudget();
     unsubIncluded = listenIncludedLedgers();
     unsubTheme = listenThemePrefs();
     unsubPersonalCatBudgets = listenPersonalCategoryBudgets();
+    unsubWallet = listenWallet();
     refreshHomeOverview();
   }
   applyTheme();
@@ -88,6 +91,42 @@ document.getElementById("app").addEventListener("click", async (e) => {
         .catch((err) => console.error("Home splits overview failed:", err));
     }
     if (id === "btnBackFromHomeSplits") goTo("home");
+    if (e.target.closest?.("#btnHomeWalletCard")) {
+      goTo("wallet");
+      processDueWalletRecurring().catch((err) => console.error("Wallet recurring processing failed:", err));
+    }
+    if (id === "btnBackFromWallet") goTo("home");
+    if (id === "btnWalletAddFunds") {
+      const amount = val("walletAddAmount"), currency = val("walletAddCurrency"), note = val("walletAddNote");
+      if (!amount || Number(amount) <= 0) return showError("walletAddError", "Enter a valid amount.");
+      await addFunds(amount, currency, note);
+      document.getElementById("walletAddAmount").value = "";
+      document.getElementById("walletAddNote").value = "";
+    }
+    if (id === "btnWalletTransfer") {
+      const ledgerId = val("walletTransferLedger");
+      const ledgerName = document.getElementById("walletTransferLedger")?.selectedOptions[0]?.textContent.trim();
+      const amount = val("walletTransferAmount"), currency = val("walletTransferCurrency"),
+        mode = val("walletTransferMode"), note = val("walletTransferNote");
+      if (!amount || Number(amount) <= 0) return showError("walletTransferError", "Enter a valid amount.");
+      try {
+        await transferToLedger(ledgerId, ledgerName, amount, currency, mode, note);
+        document.getElementById("walletTransferAmount").value = "";
+        document.getElementById("walletTransferNote").value = "";
+      } catch (err) {
+        return showError("walletTransferError", err.message);
+      }
+    }
+    if (id === "btnAddWalletRecurring") {
+      const name = val("walletRecurName"), amount = val("walletRecurAmount"), currency = val("walletRecurCurrency"),
+        freq = val("walletRecurFreq"), nextDate = val("walletRecurNextDate"),
+        endDate = val("walletRecurEndDate"), maxOccurrences = val("walletRecurMaxOccurrences");
+      if (!name || !amount || !nextDate) return showError("walletRecurError", "Name, amount, and start date are required.");
+      await addWalletRecurring({ name, amount, currency, freq, nextDate, endDate, maxOccurrences });
+    }
+    if (e.target.dataset.delWalletRecurring) {
+      if (confirm("Delete this recurring top-up?")) await deleteWalletRecurring(e.target.dataset.delWalletRecurring);
+    }
 
     if (e.target.dataset.lid) {
       switchLedger(e.target.dataset.lid);
@@ -335,7 +374,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
       showError("joinError", err.message) || showError("txError", err.message) ||
       showError("recurringError", err.message) || showError("guestError", err.message) ||
       showError("settleError", err.message) || showError("catError", err.message) ||
-      showError("pcatError", err.message);
+      showError("pcatError", err.message) || showError("walletAddError", err.message) ||
+      showError("walletTransferError", err.message) || showError("walletRecurError", err.message);
   }
 });
 

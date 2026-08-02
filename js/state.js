@@ -19,6 +19,9 @@ export const S = {
   ledgerBudget: {},    // active ledger's monthly target, from ledgers/{lid}/budgets/{ym}
   recurring: {},       // active ledger's recurring transaction templates
   tags: [],            // active ledger's shared tag list
+  walletBalances: {},  // { currency: amount } — your real wallet balance, per currency
+  walletTx: {},        // wallet top-up/transfer history
+  walletRecurring: {}, // wallet recurring top-up templates (e.g. fixed pocket money)
   categories: {},      // active ledger's custom categories (empty = use DEFAULT_CATEGORIES)
   settlements: {},     // active ledger's recorded settlements
   homeSplitsOverview: null, // cross-ledger combined splits overview for Home

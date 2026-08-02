@@ -24,6 +24,7 @@ export function render() {
   if (S.view === "aiSettings") return renderAiSettings();
   if (S.view === "ledgers") return renderLedgerList();
   if (S.view === "homeSplits") return renderHomeSplitsPage();
+  if (S.view === "wallet") return renderWalletPage();
   return renderHome();
 }
 
@@ -133,6 +134,16 @@ function renderHome() {
         ${target > 0 ? budgetProgress(pct, over) : ""}
       ` : `<p class="muted">Set a personal budget target to see your overview here.</p>`}
       <p class="muted" style="margin-top:6px">Tap for details →</p>
+    </div>
+
+    <div id="btnHomeWalletCard" class="panel card-button" role="button" tabindex="0" style="margin-top:14px">
+      <h3>💰 Wallet</h3>
+      ${Object.keys(S.walletBalances || {}).length ? `
+        <div class="btn-row" style="flex-wrap:wrap;gap:14px">
+          ${Object.entries(S.walletBalances).map(([cur, amt]) => `<span class="balance" style="font-size:18px">${cur} ${amt.toFixed(2)}</span>`).join("")}
+        </div>
+      ` : `<p class="muted">No funds yet — tap to add some.</p>`}
+      <p class="muted" style="margin-top:6px">Tap to manage →</p>
     </div>
 
     <h3 style="margin-top:16px">Latest activity</h3>
@@ -507,6 +518,106 @@ function renderRecurringPanel(myMember, ledger) {
 
 function nameOf(uid) { return S.members[uid] ? `${S.members[uid].avatar || "🙂"} ${S.members[uid].displayName}` : "Unknown"; }
 function nameFrom(namesMap, uid) { return namesMap[uid] ? `${namesMap[uid].avatar || "🙂"} ${namesMap[uid].displayName}` : "Unknown"; }
+
+function renderWalletPage() {
+  const balances = S.walletBalances || {};
+  const txList = Object.entries(S.walletTx || {}).sort((a, b) => b[1].ts - a[1].ts).slice(0, 15);
+  const recurring = Object.entries(S.walletRecurring || {});
+  const ledgerOptions = Object.entries(S.ledgers || {}).map(([lid, l]) => `<option value="${lid}">${l.icon || "💼"} ${l.name}</option>`).join("");
+  const currencyOptions = (selected) => ["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map(c => `<option value="${c}" ${c === selected ? "selected" : ""}>${c}</option>`).join("");
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromWallet" class="link">&larr; Home</button>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+    <h2>💰 Wallet</h2>
+    <p class="muted" style="margin-bottom:12px">Real money you top up yourself — separate from ledger spending. Transfer some into a ledger whenever you want it available to spend.</p>
+
+    <div class="panel">
+      <h3>Balances</h3>
+      ${Object.keys(balances).length ? `
+        <div class="btn-row" style="flex-wrap:wrap;gap:18px;margin-bottom:4px">
+          ${Object.entries(balances).map(([cur, amt]) => `<span class="balance" style="font-size:22px">${cur} ${amt.toFixed(2)}</span>`).join("")}
+        </div>` : `<p class="muted">No funds yet.</p>`}
+    </div>
+
+    <div class="panel">
+      <h3>Add funds</h3>
+      <div id="walletAddError" class="error"></div>
+      <div class="btn-row">
+        <input id="walletAddAmount" type="number" step="0.01" placeholder="Amount" style="flex:2" />
+        <select id="walletAddCurrency" style="flex:1">${currencyOptions("USD")}</select>
+      </div>
+      <input id="walletAddNote" placeholder="Note (e.g. Freelance payment)" />
+      <button id="btnWalletAddFunds">Add funds</button>
+    </div>
+
+    <div class="panel">
+      <h3>Transfer to a ledger</h3>
+      <div id="walletTransferError" class="error"></div>
+      ${ledgerOptions ? `
+        <select id="walletTransferLedger">${ledgerOptions}</select>
+        <div class="btn-row">
+          <input id="walletTransferAmount" type="number" step="0.01" placeholder="Amount" style="flex:2" />
+          <select id="walletTransferCurrency" style="flex:1">${currencyOptions("USD")}</select>
+        </div>
+        <select id="walletTransferMode">
+          <option value="income">As regular income</option>
+          <option value="transfer">As a wallet transfer (flagged separately)</option>
+        </select>
+        <input id="walletTransferNote" placeholder="Note (optional)" />
+        <button id="btnWalletTransfer">Transfer</button>
+      ` : `<p class="muted">No ledgers yet — create one in the Ledgers tab first.</p>`}
+    </div>
+
+    <div class="panel">
+      <h3>🔄 Recurring top-up <span class="muted" style="font-weight:400">(e.g. fixed pocket money)</span></h3>
+      ${recurring.length ? recurring.map(([id, r]) => `
+        <div class="tx-row">
+          <span>${r.name} <span class="muted">(${r.freq})</span></span>
+          <span class="income">+${r.amount.toFixed(2)} ${r.currency}</span>
+          <button class="link small" data-del-wallet-recurring="${id}">delete</button>
+        </div>
+        <p class="muted" style="margin:-4px 0 6px">Next: ${r.stopped ? "ended" : r.nextDate}</p>
+      `).join("") : `<p class="muted">None set up.</p>`}
+      <div class="sub-panel">
+        <h4>Add recurring top-up</h4>
+        <div id="walletRecurError" class="error"></div>
+        <input id="walletRecurName" placeholder="Name (e.g. Weekly allowance)" />
+        <div class="btn-row">
+          <input id="walletRecurAmount" type="number" step="0.01" placeholder="Amount" style="flex:2" />
+          <select id="walletRecurCurrency" style="flex:1">${currencyOptions("USD")}</select>
+        </div>
+        <select id="walletRecurFreq">
+          <option value="daily">Daily</option>
+          <option value="weekly" selected>Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+        <p class="muted" style="margin:6px 0 4px">Starts on</p>
+        <input id="walletRecurNextDate" type="date" value="${new Date().toISOString().slice(0, 10)}" />
+        <p class="muted" style="margin:6px 0 4px">Ends (optional)</p>
+        <div class="btn-row">
+          <input id="walletRecurEndDate" type="date" style="flex:1" />
+          <input id="walletRecurMaxOccurrences" type="number" placeholder="Or # of times" style="flex:1" />
+        </div>
+        <button id="btnAddWalletRecurring" style="margin-top:8px">Add recurring top-up</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>History</h3>
+      ${txList.length ? txList.map(([id, t]) => `
+        <div class="tx-row">
+          <span>${t.type === "topup" ? "💰" : "➡️"} ${t.type === "topup" ? (t.note || "Top-up") : `To ${t.toLedgerName}${t.note ? " — " + t.note : ""}`}</span>
+          <span class="${t.type === "topup" ? "income" : "expense"}">${t.type === "topup" ? "+" : "-"}${t.amount.toFixed(2)} ${t.currency}</span>
+        </div>
+      `).join("") : `<p class="muted">No wallet activity yet.</p>`}
+    </div>
+    ${bottomNav("home")}`;
+}
+
 
 function renderHomeSplitsPage() {
   const overview = S.homeSplitsOverview;

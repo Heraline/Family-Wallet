@@ -38,6 +38,9 @@ export function initAuthWatcher(onReady) {
       S.view = "home";
       S.recentTx = [];
       S.personalOverview = null;
+      S.walletBalances = {};
+      S.walletTx = {};
+      S.walletRecurring = {};
     }
     notify();
     onReady?.(user);
