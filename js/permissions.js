@@ -12,6 +12,7 @@ export const GRANTABLE_PERMISSIONS = [
   { key: "manageBudget", label: "Set the ledger's monthly budget" },
   { key: "manageRecurring", label: "Set up recurring transactions" },
   { key: "manageCategories", label: "Add/edit categories & category budgets" },
+  { key: "manageTags", label: "Rename/delete tags" },
 ];
 
 // Things ONLY the Owner can ever do, no matter what — never grantable.
@@ -36,5 +37,6 @@ export function canRemoveMembers(member) { return can(member, "removeMembers"); 
 export function canManageBudget(member) { return can(member, "manageBudget"); }
 export function canManageRecurring(member) { return can(member, "manageRecurring"); }
 export function canManageCategories(member) { return can(member, "manageCategories"); }
+export function canManageTags(member) { return can(member, "manageTags"); }
 export function canDeleteLedger(member) { return isOwner(member); }
 export function canManageRoles(member) { return isOwner(member); } // promoting/demoting stays Owner-only — more sensitive than removing

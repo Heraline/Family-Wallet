@@ -21,6 +21,7 @@ import { listenThemePrefs, setThemePref, applyTheme } from "./theme.js";
 import { listenRecurring, addRecurring, deleteRecurring, processDueRecurring } from "./recurring.js";
 import { listenSettlements, addSettlement, deleteSettlement, computeHomeSplitsOverview } from "./splits.js";
 import { listenCategories, addCategory, updateCategory, deleteCategory, setCategoryBudget, moveCategory } from "./categories.js";
+import { listenTags, ensureTagExists, renameTag, deleteTag } from "./tags.js";
 import { render, splitAmountRowsHtml } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
@@ -96,6 +97,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       processDueRecurring(e.target.dataset.lid).catch((err) => console.error("Recurring processing failed:", err));
       listenSettlements(e.target.dataset.lid);
       listenCategories(e.target.dataset.lid);
+      listenTags(e.target.dataset.lid);
     }
     if (id === "btnBack") { S.activeLedgerId = null; S.view = "ledgers"; render(); }
     if (id === "btnBackFromBudget") goTo("home");
@@ -170,7 +172,11 @@ document.getElementById("app").addEventListener("click", async (e) => {
         }
       }
 
-      await addTransaction({ type, amount, category, description, currency, payers, splitAmounts });
+      const selectedTags = Array.from(document.querySelectorAll(".tag-chip.active")).map((c) => c.dataset.tag);
+
+      await addTransaction({ type, amount, category, description, currency, payers, splitAmounts, tags: selectedTags });
+      const newTags = selectedTags.filter((t) => !(S.tags || []).some((existing) => existing.toLowerCase() === t.toLowerCase()));
+      await Promise.all(newTags.map((t) => ensureTagExists(S.activeLedgerId, t)));
     }
     if (id === "btnToggleSplit") document.getElementById("splitSection")?.classList.toggle("hidden");
     const chip = e.target.closest?.(".chip");
@@ -189,6 +195,33 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (e.target.dataset.delRecurring) {
       if (confirm("Delete this recurring transaction? Past entries it already created will stay.")) {
         await deleteRecurring(S.activeLedgerId, e.target.dataset.delRecurring);
+      }
+    }
+
+    const tagChip = e.target.closest?.(".tag-chip");
+    if (tagChip) tagChip.classList.toggle("active");
+    if (id === "btnAddTagChip") {
+      const input = document.getElementById("newTagInput");
+      const tagName = input?.value.trim();
+      if (tagName) {
+        const container = document.getElementById("tagChips");
+        const existing = Array.from(container.querySelectorAll(".tag-chip")).find((c) => c.dataset.tag.toLowerCase() === tagName.toLowerCase());
+        if (existing) {
+          existing.classList.add("active");
+        } else {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "chip tag-chip active";
+          btn.dataset.tag = tagName;
+          btn.textContent = "🏷️ " + tagName;
+          container.appendChild(btn);
+        }
+        input.value = "";
+      }
+    }
+    if (e.target.dataset.delTag) {
+      if (confirm(`Delete tag "${e.target.dataset.delTag}"? It'll be removed from every transaction using it.`)) {
+        await deleteTag(S.activeLedgerId, e.target.dataset.delTag);
       }
     }
 
@@ -355,6 +388,9 @@ document.getElementById("app").addEventListener("change", async (e) => {
     }
     if (e.target.dataset.pcatLabel) {
       await setPersonalCategoryBudget(e.target.dataset.pcatLabel, e.target.value);
+    }
+    if (e.target.dataset.tagRenameOld && e.target.value.trim() && e.target.value.trim() !== e.target.dataset.tagRenameOld) {
+      await renameTag(S.activeLedgerId, e.target.dataset.tagRenameOld, e.target.value.trim());
     }
     if (e.target.dataset.includeLid) {
       await setLedgerIncluded(e.target.dataset.includeLid, e.target.checked);

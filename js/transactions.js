@@ -17,7 +17,7 @@ export function listenTransactions(lid) {
   return unsub;
 }
 
-export async function addTransaction({ type, amount, category, description, currency, payers, splitWith, splitAmounts }) {
+export async function addTransaction({ type, amount, category, description, currency, payers, splitWith, splitAmounts, tags }) {
   if (!S.activeLedgerId) throw new Error("No active ledger.");
   const now = new Date();
   const ledgerCurrency = S.activeLedgerDetail?.currency || "USD";
@@ -64,6 +64,7 @@ export async function addTransaction({ type, amount, category, description, curr
     ...(payers ? { payers: scaleToLedgerCurrency(payers) } : {}),
     ...(splitWith?.length ? { splitWith } : {}),
     ...(splitAmounts ? { splitAmounts: scaleToLedgerCurrency(splitAmounts) } : {}),
+    ...(tags?.length ? { tags } : {}),
   };
   await writePush(`ledgerTransactions/${S.activeLedgerId}`, data);
 }

@@ -3,11 +3,12 @@
 // in during a later phase. Right now this only renders into <div id="app">.
 
 import { S } from "./state.js";
-import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteLedger, canManageCategories, GRANTABLE_PERMISSIONS } from "./permissions.js";
+import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteLedger, canManageCategories, canManageTags, GRANTABLE_PERMISSIONS } from "./permissions.js";
 import { currentYM } from "./budgets.js";
 import { FREQUENCIES } from "./recurring.js";
 import { computeBalances } from "./splits.js";
 import { groupedCategories, EMOJI_PALETTE } from "./categories.js";
+import { tagUsageCounts } from "./tags.js";
 import { getGeminiKey } from "./receipt.js";
 import { THEMES } from "./theme.js";
 
@@ -309,6 +310,15 @@ function renderLedgerDetail() {
           <div id="splitAmounts" class="split-amounts"></div>
         </div>
 
+        <p class="muted" style="margin:10px 0 6px">Tags (optional)</p>
+        <div class="chip-row" id="tagChips">
+          ${(S.tags || []).map(t => `<button type="button" class="chip tag-chip" data-tag="${t}">🏷️ ${t}</button>`).join("")}
+        </div>
+        <div class="btn-row" style="margin-bottom:10px">
+          <input id="newTagInput" placeholder="New tag..." style="flex:1" />
+          <button type="button" id="btnAddTagChip" class="secondary">Add</button>
+        </div>
+
         <button id="btnAddTx">Add</button>
       </div>
 
@@ -316,7 +326,7 @@ function renderLedgerDetail() {
       <div class="tx-list">
         ${txs.length ? txs.map(([id, t]) => `
           <div class="tx-row">
-            <span>${t.fromRecurringId ? "🔄 " : ""}${t.category}${t.description ? " — " + t.description : ""}</span>
+            <span>${t.fromRecurringId ? "🔄 " : ""}${t.category}${t.description ? " — " + t.description : ""}${t.tags?.length ? ` <span class="muted">${t.tags.map(x => "#" + x).join(" ")}</span>` : ""}</span>
             <span class="${t.type}">
               ${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}
               ${t.origCurrency && t.origCurrency !== t.currency ? `<span class="muted" style="font-weight:400"> (≈ ${t.currency} ${t.amount.toFixed(2)})</span>` : ""}
@@ -327,6 +337,7 @@ function renderLedgerDetail() {
 
       ${renderLedgerBudgetPanel(ledger, myMember, txs)}
       ${renderCategoriesPanel(myMember, txs, ledger)}
+      ${renderTagsPanel(myMember, txs)}
       ${renderRecurringPanel(myMember, ledger)}
       <button id="btnOpenSplits" class="secondary" style="width:100%;margin-bottom:16px">🤝 Splits & Settle</button>
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
@@ -428,6 +439,27 @@ function renderCategoriesPanel(myMember, txs, ledger) {
       ` : ""}
     </div>`;
 }
+
+function renderTagsPanel(myMember, txs) {
+  const canEdit = canManageTags(myMember);
+  const counts = tagUsageCounts(Object.fromEntries(txs));
+  const allTags = [...new Set([...(S.tags || []), ...Object.keys(counts)])].sort();
+
+  return `
+    <div class="panel">
+      <h3>🏷️ Tags</h3>
+      ${allTags.length ? allTags.map((tag) => `
+        <div class="cat-row">
+          ${canEdit
+            ? `<input class="cat-label-input" data-tag-rename-old="${tag}" value="${tag}" style="flex:2" />`
+            : `<span class="cat-label-static" style="flex:2">${tag}</span>`}
+          <span class="muted" style="flex:0 0 auto;margin-right:8px">${counts[tag] || 0} tx</span>
+          ${canEdit ? `<button class="link small" data-del-tag="${tag}">delete</button>` : ""}
+        </div>
+      `).join("") : `<p class="muted">No tags yet — add one while entering a transaction.</p>`}
+    </div>`;
+}
+
 
 function renderRecurringPanel(myMember, ledger) {
   const canEdit = can(myMember, "manageRecurring");
