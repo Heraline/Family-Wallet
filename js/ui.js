@@ -608,29 +608,60 @@ function renderPersonalBudget() {
 function renderPersonalCategoryBudgetsPanel(overview, homeCurrency) {
   const categorySpend = overview?.categorySpend || {};
   const catBudgets = S.personalCategoryBudgets || {};
+  const liveLabels = new Set((overview?.availableCategories || []).map((c) => c.label));
   const rows = {}; // label -> { spent, budget }
   Object.entries(categorySpend).forEach(([label, spent]) => { rows[label] = { spent, budget: null }; });
   Object.values(catBudgets).forEach((c) => {
     if (!rows[c.label]) rows[c.label] = { spent: 0, budget: c.budget };
     else rows[c.label].budget = c.budget;
   });
-  const entries = Object.entries(rows).sort((a, b) => b[1].spent - a[1].spent);
+
+  // A row is "stale" if it has a budget target set under a name that no
+  // longer matches any live category in your flagged ledgers — usually
+  // because that category got renamed in its ledger.
+  const active = [], stale = [];
+  Object.entries(rows).forEach(([label, r]) => {
+    if (r.budget && !liveLabels.has(label)) stale.push([label, r]);
+    else active.push([label, r]);
+  });
+  active.sort((a, b) => b[1].spent - a[1].spent);
+
+  const catRowHtml = ([label, r]) => {
+    const pct = r.budget ? Math.min(100, Math.round((r.spent / r.budget) * 100)) : null;
+    return `
+      <div class="cat-row">
+        <span class="cat-label-static" style="flex:2">${label}</span>
+        <input class="cat-budget-input" type="number" step="0.01" data-pcat-label="${label}" value="${r.budget || ""}" placeholder="Budget" />
+      </div>
+      <div class="cat-spend-line" style="margin-left:0">
+        ${pct !== null ? `<div class="budget-bar-track"><div class="budget-bar-fill ${pct >= 100 ? "over" : ""}" style="width:${pct}%"></div></div>` : ""}
+        <span class="muted">${homeCurrency} ${r.spent.toFixed(2)}${r.budget ? ` / ${r.budget.toFixed(2)}` : " spent this month"}</span>
+      </div>`;
+  };
 
   return `
     <div class="panel">
       <h3>Category budgets <span class="muted" style="font-weight:400">(combined, ${homeCurrency})</span></h3>
-      ${entries.length ? entries.map(([label, r]) => {
-        const pct = r.budget ? Math.min(100, Math.round((r.spent / r.budget) * 100)) : null;
-        return `
-          <div class="cat-row">
-            <span class="cat-label-static" style="flex:2">${label}</span>
-            <input class="cat-budget-input" type="number" step="0.01" data-pcat-label="${label}" value="${r.budget || ""}" placeholder="Budget" />
-          </div>
-          <div class="cat-spend-line" style="margin-left:0">
-            ${pct !== null ? `<div class="budget-bar-track"><div class="budget-bar-fill ${pct >= 100 ? "over" : ""}" style="width:${pct}%"></div></div>` : ""}
-            <span class="muted">${homeCurrency} ${r.spent.toFixed(2)}${r.budget ? ` / ${r.budget.toFixed(2)}` : " spent this month"}</span>
-          </div>`;
-      }).join("") : `<p class="muted">No category spending yet from your flagged ledgers this month.</p>`}
+      ${active.length ? active.map(catRowHtml).join("") : `<p class="muted">No category spending yet from your flagged ledgers this month.</p>`}
+
+      ${stale.length ? `
+        <div class="sub-panel" style="margin-top:10px;border:1px dashed #d9455c">
+          <h4>⚠️ Needs re-linking</h4>
+          <p class="muted" style="margin-bottom:8px">These targets don't match a current category name in your ledgers — probably renamed. Pick the new name to keep the same budget amount, or delete it.</p>
+          ${stale.map(([label, r]) => `
+            <div class="cat-row" style="flex-wrap:wrap">
+              <span class="cat-label-static" style="flex:2">${label} <span class="muted">(${homeCurrency} ${r.budget.toFixed(2)})</span></span>
+            </div>
+            <div class="btn-row" style="margin-bottom:10px">
+              <select class="relink-select" data-relink-old="${label}" style="flex:2">
+                <option value="">Pick new category name...</option>
+                ${(overview?.availableCategories || []).map(c => `<option value="${c.label}">${c.icon} ${c.label}</option>`).join("")}
+              </select>
+              <button class="secondary" data-relink-apply="${label}">Apply</button>
+              <button class="link small" data-del-pcat="${label}">delete</button>
+            </div>
+          `).join("")}
+        </div>` : ""}
 
       <div class="sub-panel" style="margin-top:10px">
         <h4>Add a category target</h4>

@@ -13,7 +13,7 @@ import { listenTransactions, addTransaction, deleteTransaction } from "./transac
 import {
   listenPersonalBudget, setPersonalBudget, listenIncludedLedgers, setLedgerIncluded,
   listenLedgerBudget, setLedgerBudget, refreshPersonalOverview,
-  listenPersonalCategoryBudgets, setPersonalCategoryBudget,
+  listenPersonalCategoryBudgets, setPersonalCategoryBudget, relinkPersonalCategoryBudget, deletePersonalCategoryBudget,
 } from "./budgets.js";
 import { setBudgetUnsub } from "./ledgers.js";
 import { getGeminiKey, setGeminiKey, clearGeminiKey, scanReceipt, fileToBase64 } from "./receipt.js";
@@ -203,6 +203,19 @@ document.getElementById("app").addEventListener("click", async (e) => {
       await setPersonalCategoryBudget(label, amount);
       document.getElementById("pcatName").value = "";
       document.getElementById("pcatAmount").value = "";
+    }
+    if (e.target.dataset.relinkApply) {
+      const oldLabel = e.target.dataset.relinkApply;
+      const select = document.querySelector(`.relink-select[data-relink-old="${oldLabel}"]`);
+      const newLabel = select?.value;
+      if (!newLabel) return showError("pcatError", "Pick a category name first.");
+      await relinkPersonalCategoryBudget(oldLabel, newLabel);
+      refreshHomeOverview();
+    }
+    if (e.target.dataset.delPcat) {
+      if (confirm("Delete this budget target?")) {
+        await deletePersonalCategoryBudget(e.target.dataset.delPcat);
+      }
     }
     if (id === "btnAddCategory") {
       const label = val("catName");

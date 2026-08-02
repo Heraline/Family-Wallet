@@ -5,7 +5,7 @@
 //      personal overview — this is a per-user preference, not shared data,
 //      since different members of the same ledger may want different views.
 
-import { readOnce, writeSet, writeUpdate, listen } from "./firebase.js";
+import { readOnce, writeSet, writeUpdate, writeRemove, listen } from "./firebase.js";
 import { S, notify } from "./state.js";
 import { convert } from "./currency.js";
 import { DEFAULT_CATEGORIES } from "./categories.js";
@@ -67,6 +67,21 @@ export async function setPersonalCategoryBudget(label, amount, ym = currentYM())
   await writeSet(`users/${S.user.uid}/personalCategoryBudgets/${ym}/${slug}`, {
     label, budget: amount ? Number(amount) : null,
   });
+}
+
+// Moves a budget target from an old (now-stale) category name to a
+// current one — used when a ledger category got renamed and the personal
+// target no longer matches anything live. Keeps the same budget amount.
+export async function relinkPersonalCategoryBudget(oldLabel, newLabel, ym = currentYM()) {
+  const oldSlug = slugifyCat(oldLabel);
+  const current = S.personalCategoryBudgets?.[oldSlug];
+  if (!current) return;
+  await setPersonalCategoryBudget(newLabel, current.budget, ym);
+  await writeRemove(`users/${S.user.uid}/personalCategoryBudgets/${ym}/${oldSlug}`);
+}
+
+export async function deletePersonalCategoryBudget(label, ym = currentYM()) {
+  await writeRemove(`users/${S.user.uid}/personalCategoryBudgets/${ym}/${slugifyCat(label)}`);
 }
 
 // ---------- Personal overview: spending this month across flagged ledgers ----------
