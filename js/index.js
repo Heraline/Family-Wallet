@@ -179,7 +179,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       await Promise.all(newTags.map((t) => ensureTagExists(S.activeLedgerId, t)));
     }
     if (id === "btnToggleSplit") document.getElementById("splitSection")?.classList.toggle("hidden");
-    const chip = e.target.closest?.(".chip");
+    const chip = e.target.closest?.(".chip[data-group]");
     if (chip) { chip.classList.toggle("active"); rebuildSplitAmounts(chip.dataset.group); }
     if (e.target.dataset.del) await deleteTransaction(e.target.dataset.del);
 
