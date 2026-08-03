@@ -69,13 +69,20 @@ export async function transferToLedger(ledgerId, ledgerName, amount, currency, m
 }
 
 // ---------- Recurring top-ups (e.g. fixed weekly pocket money) ----------
+// Uses UTC throughout (construction, math, and the final ISO string) so
+// this can never drift relative to `today` (also computed via toISOString,
+// which is UTC-based). Mixing local-time date math with UTC-based date
+// strings was the original bug — in timezones ahead of UTC, "+1 day" in
+// local time could round-trip to the SAME UTC calendar date, making the
+// due-date never actually advance and looping forever.
 function addInterval(dateStr, freq) {
-  const d = new Date(dateStr + "T00:00:00");
-  if (freq === "daily") d.setDate(d.getDate() + 1);
-  else if (freq === "weekly") d.setDate(d.getDate() + 7);
-  else if (freq === "yearly") d.setFullYear(d.getFullYear() + 1);
-  else d.setMonth(d.getMonth() + 1);
-  return d.toISOString().slice(0, 10);
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (freq === "daily") date.setUTCDate(date.getUTCDate() + 1);
+  else if (freq === "weekly") date.setUTCDate(date.getUTCDate() + 7);
+  else if (freq === "yearly") date.setUTCFullYear(date.getUTCFullYear() + 1);
+  else date.setUTCMonth(date.getUTCMonth() + 1);
+  return date.toISOString().slice(0, 10);
 }
 
 export async function addWalletRecurring({ name, amount, currency, freq, nextDate, endDate, maxOccurrences }) {
@@ -104,8 +111,14 @@ export async function processDueWalletRecurring() {
     let nextDate = r.nextDate;
     let occurrenceCount = r.occurrenceCount || 0;
     let stopped = false;
+    let postsThisPass = 0;
 
-    while (nextDate && nextDate <= today && !stopped) {
+    // Hard safety cap: no single recurring template should ever post more
+    // than this many times in one catch-up pass, no matter what — this is
+    // a backstop against any future date-math bug, not just the one just
+    // fixed above.
+    const MAX_CATCHUP_POSTS = 366;
+    while (nextDate && nextDate <= today && !stopped && postsThisPass < MAX_CATCHUP_POSTS) {
       if (r.endDate && nextDate > r.endDate) { stopped = true; break; }
       if (r.maxOccurrences && occurrenceCount >= r.maxOccurrences) { stopped = true; break; }
 
@@ -116,6 +129,7 @@ export async function processDueWalletRecurring() {
       });
 
       occurrenceCount++;
+      postsThisPass++;
       nextDate = addInterval(nextDate, r.freq);
       postedCount++;
     }

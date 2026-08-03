@@ -17,13 +17,17 @@ export const FREQUENCIES = [
   { key: "yearly", label: "Yearly" },
 ];
 
+// Uses UTC throughout — see the matching comment in wallet.js for why this
+// matters (local-time date math mixed with UTC-based date strings caused
+// due-dates to sometimes never advance, looping forever).
 function addInterval(dateStr, freq) {
-  const d = new Date(dateStr + "T00:00:00");
-  if (freq === "daily") d.setDate(d.getDate() + 1);
-  else if (freq === "weekly") d.setDate(d.getDate() + 7);
-  else if (freq === "yearly") d.setFullYear(d.getFullYear() + 1);
-  else d.setMonth(d.getMonth() + 1); // monthly default
-  return d.toISOString().slice(0, 10);
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (freq === "daily") date.setUTCDate(date.getUTCDate() + 1);
+  else if (freq === "weekly") date.setUTCDate(date.getUTCDate() + 7);
+  else if (freq === "yearly") date.setUTCFullYear(date.getUTCFullYear() + 1);
+  else date.setUTCMonth(date.getUTCMonth() + 1); // monthly default
+  return date.toISOString().slice(0, 10);
 }
 
 let unsubRecurring = null;
@@ -69,11 +73,15 @@ export async function processDueRecurring(lid) {
     let nextDate = r.nextDate;
     let occurrenceCount = r.occurrenceCount || 0;
     let stopped = false;
+    let postsThisPass = 0;
     const origCurrency = r.currency || ledgerCurrency;
 
     // A template can be overdue by more than one cycle if the app hasn't
     // been opened in a while — post each missed occurrence in turn.
-    while (nextDate && nextDate <= today && !stopped) {
+    // MAX_CATCHUP_POSTS is a hard safety backstop against any future
+    // date-math bug — no template should ever post 366+ times in one pass.
+    const MAX_CATCHUP_POSTS = 366;
+    while (nextDate && nextDate <= today && !stopped && postsThisPass < MAX_CATCHUP_POSTS) {
       if (r.endDate && nextDate > r.endDate) { stopped = true; break; }
       if (r.maxOccurrences && occurrenceCount >= r.maxOccurrences) { stopped = true; break; }
 
@@ -104,6 +112,7 @@ export async function processDueRecurring(lid) {
       });
 
       occurrenceCount++;
+      postsThisPass++;
       nextDate = addInterval(nextDate, r.freq);
       postedCount++;
     }
