@@ -27,6 +27,15 @@ async function adjustBalance(currency, delta) {
   await writeSet(`users/${uid}/wallet/balances/${currency}`, Math.round((current + delta) * 100) / 100);
 }
 
+// Validated withdrawal from the personal wallet — throws if insufficient
+// funds. Exported so other flows (like funding a ledger's own wallet) can
+// reuse the same check instead of duplicating it.
+export async function spendFromWallet(currency, amount) {
+  const bal = S.walletBalances?.[currency] || 0;
+  if (Number(amount) > bal) throw new Error(`You only have ${currency} ${bal.toFixed(2)} in your wallet.`);
+  await adjustBalance(currency, -Number(amount));
+}
+
 export async function addFunds(amount, currency, note) {
   const uid = S.user.uid;
   await adjustBalance(currency, Number(amount));
@@ -40,10 +49,7 @@ export async function addFunds(amount, currency, note) {
 // but flagged so it can be told apart from regular income later if needed).
 export async function transferToLedger(ledgerId, ledgerName, amount, currency, mode, note) {
   const uid = S.user.uid;
-  const bal = S.walletBalances?.[currency] || 0;
-  if (Number(amount) > bal) throw new Error(`You only have ${currency} ${bal.toFixed(2)} in your wallet.`);
-
-  await adjustBalance(currency, -Number(amount));
+  await spendFromWallet(currency, amount);
   await writePush(`users/${uid}/wallet/transactions`, {
     type: "transfer", amount: Number(amount), currency, note: note || "",
     toLedgerId: ledgerId, toLedgerName: ledgerName, mode,
