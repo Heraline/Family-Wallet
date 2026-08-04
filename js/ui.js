@@ -310,6 +310,12 @@ function renderLedgerDetail() {
         <select id="txCategory">${categoryOptionsHtml()}</select>
         <input id="txDesc" placeholder="Description (optional)" />
 
+        <p class="muted" style="margin:6px 0 4px">Pay from (expenses only)</p>
+        <select id="txAccount">
+          <option value="">No account / Pending</option>
+          <option value="wallet">🏦 Ledger Wallet (${ledger.currency || "USD"} ${(S.ledgerWalletBalance || 0).toFixed(2)} available)</option>
+        </select>
+
         <button type="button" id="btnToggleSplit" class="secondary" style="margin-bottom:10px">➕ Split this expense (optional)</button>
         <div id="splitSection" class="sub-panel hidden">
           <p class="muted" style="margin-bottom:6px">Paid by <span class="muted">(none selected = you)</span></p>
@@ -337,7 +343,7 @@ function renderLedgerDetail() {
       <div class="tx-list">
         ${txs.length ? txs.map(([id, t]) => `
           <div class="tx-row">
-            <span>${t.fromRecurringId ? "🔄 " : ""}${t.category}${t.description ? " — " + t.description : ""}${t.tags?.length ? ` <span class="muted">${t.tags.map(x => "#" + x).join(" ")}</span>` : ""}</span>
+            <span>${t.fromRecurringId ? "🔄 " : ""}${t.account === "wallet" ? "🏦 " : ""}${t.category}${t.description ? " — " + t.description : ""}${t.tags?.length ? ` <span class="muted">${t.tags.map(x => "#" + x).join(" ")}</span>` : ""}</span>
             <span class="${t.type}">
               ${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}
               ${t.origCurrency && t.origCurrency !== t.currency ? `<span class="muted" style="font-weight:400"> (≈ ${t.currency} ${t.amount.toFixed(2)})</span>` : ""}
@@ -346,6 +352,7 @@ function renderLedgerDetail() {
           </div>`).join("") : `<p class="muted">No transactions yet.</p>`}
       </div>
 
+      ${renderLedgerWalletPanel(ledger)}
       ${renderLedgerBudgetPanel(ledger, myMember, txs)}
       ${renderCategoriesPanel(myMember, txs, ledger)}
       ${renderTagsPanel(myMember, txs)}
@@ -356,6 +363,26 @@ function renderLedgerDetail() {
     </div>
   `;
 }
+
+function renderLedgerWalletPanel(ledger) {
+  const balance = S.ledgerWalletBalance || 0;
+  const currency = ledger.currency || "USD";
+
+  return `
+    <div class="panel">
+      <h3>🏦 Ledger Wallet</h3>
+      <p class="muted" style="margin-bottom:8px">Pooled money members fund in for this ledger's purpose — anyone can add to it, and expenses can be paid straight from it. Fund-ins show up in the activity feed above too.</p>
+      <div class="balance" style="font-size:22px">${currency} ${balance.toFixed(2)}</div>
+
+      <div id="ledgerFundError" class="error"></div>
+      <div class="btn-row">
+        <input id="ledgerFundAmount" type="number" step="0.01" placeholder="Amount (${currency})" style="flex:2" />
+        <button id="btnFundLedgerWallet" style="flex:1">Fund it</button>
+      </div>
+      <input id="ledgerFundNote" placeholder="Note (optional)" />
+    </div>`;
+}
+
 
 function renderLedgerBudgetPanel(ledger, myMember, txs) {
   const canEdit = can(myMember, "manageBudget");

@@ -23,6 +23,7 @@ import { listenSettlements, addSettlement, deleteSettlement, computeHomeSplitsOv
 import { listenCategories, addCategory, updateCategory, deleteCategory, setCategoryBudget, moveCategory } from "./categories.js";
 import { listenTags, ensureTagExists, renameTag, deleteTag } from "./tags.js";
 import { listenWallet, addFunds, transferToLedger, addWalletRecurring, deleteWalletRecurring, processDueWalletRecurring } from "./wallet.js";
+import { listenLedgerWallet, fundLedgerWallet, spendFromLedgerWallet, refundToLedgerWallet } from "./ledgerWallet.js";
 import { render, splitAmountRowsHtml } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
@@ -137,6 +138,19 @@ document.getElementById("app").addEventListener("click", async (e) => {
       listenSettlements(e.target.dataset.lid);
       listenCategories(e.target.dataset.lid);
       listenTags(e.target.dataset.lid);
+      listenLedgerWallet(e.target.dataset.lid);
+    }
+    if (id === "btnFundLedgerWallet") {
+      const amount = val("ledgerFundAmount"), note = val("ledgerFundNote");
+      if (!amount || Number(amount) <= 0) return showError("ledgerFundError", "Enter a valid amount.");
+      const ledgerCurrency = S.activeLedgerDetail?.currency || "USD";
+      try {
+        await fundLedgerWallet(S.activeLedgerId, ledgerCurrency, amount, note, S.profile?.displayName || "Someone");
+        document.getElementById("ledgerFundAmount").value = "";
+        document.getElementById("ledgerFundNote").value = "";
+      } catch (err) {
+        return showError("ledgerFundError", err.message);
+      }
     }
     if (id === "btnBack") { S.activeLedgerId = null; S.view = "ledgers"; render(); }
     if (id === "btnBackFromBudget") goTo("home");
@@ -181,7 +195,19 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnAddTx") {
       const type = val("txType"), amount = val("txAmount"), category = val("txCategory"), description = val("txDesc"), currency = val("txCurrency");
+      const account = val("txAccount");
       if (!amount || !category) return showError("txError", "Amount and category are required.");
+
+      const ledgerCurrency = S.activeLedgerDetail?.currency || "USD";
+      if (account === "wallet") {
+        if (type !== "expense") return showError("txError", "Paying from the Ledger Wallet only applies to expenses.");
+        if (currency !== ledgerCurrency) return showError("txError", `Paying from the Ledger Wallet requires the ${ledgerCurrency} currency (v1 doesn't convert) — switch currency or choose "No account".`);
+        try {
+          await spendFromLedgerWallet(S.activeLedgerId, amount);
+        } catch (err) {
+          return showError("txError", err.message);
+        }
+      }
 
       const payerUids = Array.from(document.querySelectorAll('.chip[data-group="payer"].active')).map((c) => c.dataset.uid);
       const splitUids = Array.from(document.querySelectorAll('.chip[data-group="split"].active')).map((c) => c.dataset.uid);
@@ -213,14 +239,20 @@ document.getElementById("app").addEventListener("click", async (e) => {
 
       const selectedTags = Array.from(document.querySelectorAll(".tag-chip.active")).map((c) => c.dataset.tag);
 
-      await addTransaction({ type, amount, category, description, currency, payers, splitAmounts, tags: selectedTags });
+      await addTransaction({ type, amount, category, description, currency, payers, splitAmounts, tags: selectedTags, account: account || undefined });
       const newTags = selectedTags.filter((t) => !(S.tags || []).some((existing) => existing.toLowerCase() === t.toLowerCase()));
       await Promise.all(newTags.map((t) => ensureTagExists(S.activeLedgerId, t)));
     }
     if (id === "btnToggleSplit") document.getElementById("splitSection")?.classList.toggle("hidden");
     const chip = e.target.closest?.(".chip[data-group]");
     if (chip) { chip.classList.toggle("active"); rebuildSplitAmounts(chip.dataset.group); }
-    if (e.target.dataset.del) await deleteTransaction(e.target.dataset.del);
+    if (e.target.dataset.del) {
+      const tx = S.txs[e.target.dataset.del];
+      await deleteTransaction(e.target.dataset.del);
+      if (tx?.account === "wallet" && tx.type === "expense") {
+        await refundToLedgerWallet(S.activeLedgerId, tx.amount);
+      }
+    }
 
     if (id === "btnAddRecurring") {
       const name = val("recurName"), type = val("recurType"), amount = val("recurAmount"),
@@ -375,7 +407,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
       showError("recurringError", err.message) || showError("guestError", err.message) ||
       showError("settleError", err.message) || showError("catError", err.message) ||
       showError("pcatError", err.message) || showError("walletAddError", err.message) ||
-      showError("walletTransferError", err.message) || showError("walletRecurError", err.message);
+      showError("walletTransferError", err.message) || showError("walletRecurError", err.message) ||
+      showError("ledgerFundError", err.message);
   }
 });
 
