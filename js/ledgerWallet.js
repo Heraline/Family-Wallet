@@ -9,10 +9,15 @@
 // that same currency in your personal wallet. Keeps this first version
 // simple; multi-currency ledger wallets can come later if needed.
 
-import { readOnce, writeSet, listen } from "./firebase.js";
+import { readOnce, writeSet, writePush, listen } from "./firebase.js";
 import { S, notify } from "./state.js";
 import { spendFromWallet } from "./wallet.js";
 import { addTransaction } from "./transactions.js";
+
+export async function getLedgerCurrency(lid) {
+  const snap = await readOnce(`ledgers/${lid}`);
+  return snap.exists() ? (snap.val().currency || "USD") : "USD";
+}
 
 export function listenLedgerWallet(lid) {
   return listen(`ledgers/${lid}/wallet/balance`, (data) => {
@@ -28,10 +33,18 @@ async function adjustLedgerWalletBalance(lid, delta) {
 }
 
 // Any member funds the ledger's shared wallet from their own personal
-// wallet. Deducts their personal balance, adds to the ledger's pool, and
-// creates a visible entry in that ledger's own activity feed.
-export async function fundLedgerWallet(lid, ledgerCurrency, amount, note, funderName) {
+// wallet. Deducts their personal balance, adds to the ledger's pool,
+// creates a visible entry in that ledger's own activity feed, AND logs
+// the outgoing transfer in the funder's own personal Wallet history too
+// (so "where did my money go" is answerable from the Wallet page alone,
+// not just by digging into the ledger).
+export async function fundLedgerWallet(lid, ledgerName, ledgerCurrency, amount, note, funderName) {
   await spendFromWallet(ledgerCurrency, amount); // throws if they don't have enough
+  await writePush(`users/${S.user.uid}/wallet/transactions`, {
+    type: "transfer", amount: Number(amount), currency: ledgerCurrency, note: note || "",
+    toLedgerId: lid, toLedgerName: ledgerName,
+    date: new Date().toISOString().slice(0, 10), ts: Date.now(),
+  });
   await adjustLedgerWalletBalance(lid, Number(amount));
   await addTransaction({
     type: "income",

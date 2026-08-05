@@ -1,16 +1,15 @@
 // wallet.js — a real personal balance the user tops up themselves (manually
 // or on a recurring schedule, e.g. fixed pocket money for kids), separate
-// from ledger tracking. Transferring from the Wallet into a ledger reuses
-// transactions.js's own addTransaction() so it gets the same currency
-// conversion / dual-amount handling for free — the Wallet just also
-// deducts its own balance and logs the transfer in its own history.
+// from ledger tracking. Sending money into a specific ledger's own wallet
+// is handled by ledgerWallet.js's fundLedgerWallet() — used from both the
+// Wallet page and from inside the ledger itself, so it's one consistent
+// path either way.
 //
 // Multi-currency: the wallet holds a separate balance per currency
 // (e.g. USD 500 + MYR 200 at the same time), not one blended number.
 
 import { readOnce, writeSet, writeUpdate, writeRemove, writePush, listen } from "./firebase.js";
 import { S, notify } from "./state.js";
-import { addTransaction } from "./transactions.js";
 
 export function listenWallet() {
   const uid = S.user.uid;
@@ -45,34 +44,10 @@ export async function addFunds(amount, currency, note) {
   });
 }
 
-// mode: "income" (a plain income entry in the ledger) or "transfer" (same,
-// but flagged so it can be told apart from regular income later if needed).
-export async function transferToLedger(ledgerId, ledgerName, amount, currency, mode, note) {
-  const uid = S.user.uid;
-  await spendFromWallet(currency, amount);
-  await writePush(`users/${uid}/wallet/transactions`, {
-    type: "transfer", amount: Number(amount), currency, note: note || "",
-    toLedgerId: ledgerId, toLedgerName: ledgerName, mode,
-    date: new Date().toISOString().slice(0, 10), ts: Date.now(),
-  });
-
-  // Switches into the target ledger's context just long enough to create
-  // the entry — addTransaction() reads S.activeLedgerId/S.activeLedgerDetail.
-  const prevLedgerId = S.activeLedgerId, prevLedgerDetail = S.activeLedgerDetail;
-  const ledgerSnap = await readOnce(`ledgers/${ledgerId}`);
-  S.activeLedgerId = ledgerId;
-  S.activeLedgerDetail = ledgerSnap.exists() ? ledgerSnap.val() : { currency };
-  try {
-    await addTransaction({
-      type: "income", amount, currency,
-      category: "Wallet Transfer",
-      description: mode === "transfer" ? `Wallet transfer${note ? " — " + note : ""}` : (note || "From wallet"),
-    });
-  } finally {
-    S.activeLedgerId = prevLedgerId;
-    S.activeLedgerDetail = prevLedgerDetail;
-  }
-}
+// ---------- Transferring into a ledger now lives in ledgerWallet.js's
+// fundLedgerWallet() — used from both the Wallet page and from inside a
+// ledger's own Ledger Wallet panel, so there's exactly one code path
+// instead of two inconsistent ones. ----------
 
 // ---------- Recurring top-ups (e.g. fixed weekly pocket money) ----------
 // Uses UTC throughout (construction, math, and the final ISO string) so

@@ -22,8 +22,8 @@ import { listenRecurring, addRecurring, deleteRecurring, processDueRecurring } f
 import { listenSettlements, addSettlement, deleteSettlement, computeHomeSplitsOverview } from "./splits.js";
 import { listenCategories, addCategory, updateCategory, deleteCategory, setCategoryBudget, moveCategory } from "./categories.js";
 import { listenTags, ensureTagExists, renameTag, deleteTag } from "./tags.js";
-import { listenWallet, addFunds, transferToLedger, addWalletRecurring, deleteWalletRecurring, processDueWalletRecurring } from "./wallet.js";
-import { listenLedgerWallet, fundLedgerWallet, spendFromLedgerWallet, refundToLedgerWallet } from "./ledgerWallet.js";
+import { listenWallet, addFunds, addWalletRecurring, deleteWalletRecurring, processDueWalletRecurring } from "./wallet.js";
+import { listenLedgerWallet, fundLedgerWallet, spendFromLedgerWallet, refundToLedgerWallet, getLedgerCurrency } from "./ledgerWallet.js";
 import { render, splitAmountRowsHtml } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
@@ -107,11 +107,11 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnWalletTransfer") {
       const ledgerId = val("walletTransferLedger");
       const ledgerName = document.getElementById("walletTransferLedger")?.selectedOptions[0]?.textContent.trim();
-      const amount = val("walletTransferAmount"), currency = val("walletTransferCurrency"),
-        mode = val("walletTransferMode"), note = val("walletTransferNote");
+      const amount = val("walletTransferAmount"), note = val("walletTransferNote");
       if (!amount || Number(amount) <= 0) return showError("walletTransferError", "Enter a valid amount.");
       try {
-        await transferToLedger(ledgerId, ledgerName, amount, currency, mode, note);
+        const ledgerCurrency = await getLedgerCurrency(ledgerId);
+        await fundLedgerWallet(ledgerId, ledgerName, ledgerCurrency, amount, note, S.profile?.displayName || "Someone");
         document.getElementById("walletTransferAmount").value = "";
         document.getElementById("walletTransferNote").value = "";
       } catch (err) {
@@ -144,8 +144,9 @@ document.getElementById("app").addEventListener("click", async (e) => {
       const amount = val("ledgerFundAmount"), note = val("ledgerFundNote");
       if (!amount || Number(amount) <= 0) return showError("ledgerFundError", "Enter a valid amount.");
       const ledgerCurrency = S.activeLedgerDetail?.currency || "USD";
+      const ledgerName = S.activeLedgerDetail?.name || "this ledger";
       try {
-        await fundLedgerWallet(S.activeLedgerId, ledgerCurrency, amount, note, S.profile?.displayName || "Someone");
+        await fundLedgerWallet(S.activeLedgerId, ledgerName, ledgerCurrency, amount, note, S.profile?.displayName || "Someone");
         document.getElementById("ledgerFundAmount").value = "";
         document.getElementById("ledgerFundNote").value = "";
       } catch (err) {

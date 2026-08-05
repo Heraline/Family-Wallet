@@ -581,20 +581,14 @@ function renderWalletPage() {
     </div>
 
     <div class="panel">
-      <h3>Transfer to a ledger</h3>
+      <h3>Fund a ledger's wallet</h3>
+      <p class="muted" style="margin-bottom:8px">Same as funding it from inside that ledger — sends money in the ledger's own currency (no conversion yet).</p>
       <div id="walletTransferError" class="error"></div>
       ${ledgerOptions ? `
         <select id="walletTransferLedger">${ledgerOptions}</select>
-        <div class="btn-row">
-          <input id="walletTransferAmount" type="number" step="0.01" placeholder="Amount" style="flex:2" />
-          <select id="walletTransferCurrency" style="flex:1">${currencyOptions("USD")}</select>
-        </div>
-        <select id="walletTransferMode">
-          <option value="income">As regular income</option>
-          <option value="transfer">As a wallet transfer (flagged separately)</option>
-        </select>
+        <input id="walletTransferAmount" type="number" step="0.01" placeholder="Amount (in that ledger's currency)" />
         <input id="walletTransferNote" placeholder="Note (optional)" />
-        <button id="btnWalletTransfer">Transfer</button>
+        <button id="btnWalletTransfer">Fund it</button>
       ` : `<p class="muted">No ledgers yet — create one in the Ledgers tab first.</p>`}
     </div>
 
