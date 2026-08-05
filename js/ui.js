@@ -371,15 +371,17 @@ function renderLedgerWalletPanel(ledger) {
   return `
     <div class="panel">
       <h3>🏦 Ledger Wallet</h3>
-      <p class="muted" style="margin-bottom:8px">Pooled money members fund in for this ledger's purpose — anyone can add to it, and expenses can be paid straight from it. Fund-ins show up in the activity feed above too.</p>
+      <p class="muted" style="margin-bottom:8px">Pooled money for this ledger's purpose. Fund-ins show up in the activity feed above too.</p>
       <div class="balance" style="font-size:22px">${currency} ${balance.toFixed(2)}</div>
 
       <div id="ledgerFundError" class="error"></div>
-      <div class="btn-row">
-        <input id="ledgerFundAmount" type="number" step="0.01" placeholder="Amount (${currency})" style="flex:2" />
-        <button id="btnFundLedgerWallet" style="flex:1">Fund it</button>
-      </div>
+      <input id="ledgerFundAmount" type="number" step="0.01" placeholder="Amount (${currency})" />
       <input id="ledgerFundNote" placeholder="Note (optional)" />
+      <div class="btn-row">
+        <button id="btnAddLedgerWallet" style="flex:1">➕ Add directly</button>
+        <button id="btnFundLedgerWallet" class="secondary" style="flex:1">↔️ Transfer from my wallet</button>
+      </div>
+      <p class="muted" style="margin-top:6px">Add = cash or outside money not tracked in anyone's personal wallet. Transfer = comes out of your own tracked wallet balance.</p>
     </div>`;
 }
 
@@ -582,13 +584,16 @@ function renderWalletPage() {
 
     <div class="panel">
       <h3>Fund a ledger's wallet</h3>
-      <p class="muted" style="margin-bottom:8px">Same as funding it from inside that ledger — sends money in the ledger's own currency (no conversion yet).</p>
+      <p class="muted" style="margin-bottom:8px">Sends money in that ledger's own currency (no conversion yet). Add = outside money not tracked in your personal wallet. Transfer = comes out of your own wallet balance below.</p>
       <div id="walletTransferError" class="error"></div>
       ${ledgerOptions ? `
         <select id="walletTransferLedger">${ledgerOptions}</select>
         <input id="walletTransferAmount" type="number" step="0.01" placeholder="Amount (in that ledger's currency)" />
         <input id="walletTransferNote" placeholder="Note (optional)" />
-        <button id="btnWalletTransfer">Fund it</button>
+        <div class="btn-row">
+          <button id="btnWalletAddToLedger" style="flex:1">➕ Add directly</button>
+          <button id="btnWalletTransfer" class="secondary" style="flex:1">↔️ Transfer from my wallet</button>
+        </div>
       ` : `<p class="muted">No ledgers yet — create one in the Ledgers tab first.</p>`}
     </div>
 

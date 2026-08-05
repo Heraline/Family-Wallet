@@ -32,12 +32,10 @@ async function adjustLedgerWalletBalance(lid, delta) {
   await writeSet(`ledgers/${lid}/wallet/balance`, Math.round((current + delta) * 100) / 100);
 }
 
-// Any member funds the ledger's shared wallet from their own personal
-// wallet. Deducts their personal balance, adds to the ledger's pool,
-// creates a visible entry in that ledger's own activity feed, AND logs
+// "Transfer" — money moves from the funder's own personal Wallet into
+// this ledger's pool. Deducts their personal balance for real, and logs
 // the outgoing transfer in the funder's own personal Wallet history too
-// (so "where did my money go" is answerable from the Wallet page alone,
-// not just by digging into the ledger).
+// (so "where did my money go" is answerable from the Wallet page alone).
 export async function fundLedgerWallet(lid, ledgerName, ledgerCurrency, amount, note, funderName) {
   await spendFromWallet(ledgerCurrency, amount); // throws if they don't have enough
   await writePush(`users/${S.user.uid}/wallet/transactions`, {
@@ -50,7 +48,21 @@ export async function fundLedgerWallet(lid, ledgerName, ledgerCurrency, amount, 
     type: "income",
     amount, currency: ledgerCurrency,
     category: "Wallet Funding",
-    description: `${funderName} funded the ledger wallet${note ? " — " + note : ""}`,
+    description: `${funderName} transferred from their wallet${note ? " — " + note : ""}`,
+  });
+}
+
+// "Add" — money goes straight into the ledger's pool without coming out
+// of anyone's personal Wallet. For real-world cases like cash collected
+// in person, or contributions from people who aren't even using the app
+// (e.g. a charity collection). No balance is deducted anywhere else.
+export async function addToLedgerWallet(lid, ledgerCurrency, amount, note, addedByName) {
+  await adjustLedgerWalletBalance(lid, Number(amount));
+  await addTransaction({
+    type: "income",
+    amount, currency: ledgerCurrency,
+    category: "Wallet Funding",
+    description: `${addedByName} added funds directly${note ? " — " + note : ""}`,
   });
 }
 
