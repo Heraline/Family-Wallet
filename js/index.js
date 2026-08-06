@@ -9,7 +9,7 @@ import {
   renameLedger, regenerateInviteCode, addGuest, removeGuest,
   setMemberRole, setModeratorPermissions, removeMember, leaveLedger, deleteLedger,
 } from "./ledgers.js";
-import { listenTransactions, addTransaction, deleteTransaction } from "./transactions.js";
+import { listenTransactions, addTransaction, deleteTransaction, toggleBookmark } from "./transactions.js";
 import {
   listenPersonalBudget, setPersonalBudget, listenIncludedLedgers, setLedgerIncluded,
   listenLedgerBudget, setLedgerBudget, refreshPersonalOverview,
@@ -182,6 +182,12 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnBackFromBudget") goTo("home");
     if (id === "btnOpenSplits") { S.view = "splits"; render(); }
     if (id === "btnBackFromSplits") { S.view = null; render(); }
+    if (id === "btnOpenBookmarked") { S.view = "bookmarked"; render(); }
+    if (id === "btnBackFromBookmarked") { S.view = null; render(); }
+    if (e.target.dataset.toggleBookmark) {
+      const currentlyBookmarked = e.target.dataset.bookmarked === "true";
+      await toggleBookmark(e.target.dataset.toggleBookmark, currentlyBookmarked);
+    }
     if (id === "btnAddSettlement") {
       const from = val("settleFrom"), to = val("settleTo"), amount = val("settleAmount"), note = val("settleNote");
       if (from === to) return showError("settleError", "Pick two different people.");
