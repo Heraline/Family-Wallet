@@ -3,7 +3,7 @@
 // display correctly (extra old fields like splitWith/tags are simply
 // ignored here for now — they'll be reintroduced in a later phase).
 
-import { writePush, writeRemove, listen } from "./firebase.js";
+import { writePush, writeRemove, writeUpdate, listen } from "./firebase.js";
 import { S, notify } from "./state.js";
 import { setTxUnsub } from "./ledgers.js";
 import { convert } from "./currency.js";
@@ -72,4 +72,9 @@ export async function addTransaction({ type, amount, category, description, curr
 
 export async function deleteTransaction(txId) {
   await writeRemove(`ledgerTransactions/${S.activeLedgerId}/${txId}`);
+}
+
+// Shared, not personal — any member can star/unstar, everyone sees it.
+export async function toggleBookmark(txId, currentlyBookmarked) {
+  await writeUpdate(`ledgerTransactions/${S.activeLedgerId}/${txId}`, { bookmarked: !currentlyBookmarked });
 }
