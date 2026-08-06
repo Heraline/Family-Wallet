@@ -18,6 +18,7 @@ export function render() {
   if (!S.user) return renderLogin();
   if (S.activeLedgerId) {
     if (S.view === "splits") return renderSplitsPage();
+    if (S.view === "bookmarked") return renderBookmarkedPage();
     return renderLedgerDetail();
   }
   if (S.view === "personalBudget") return renderPersonalBudget();
@@ -343,6 +344,7 @@ function renderLedgerDetail() {
       <div class="tx-list">
         ${txs.length ? txs.map(([id, t]) => `
           <div class="tx-row">
+            <button type="button" class="link small star-btn" data-toggle-bookmark="${id}" data-bookmarked="${t.bookmarked ? "true" : "false"}" title="${t.bookmarked ? "Remove bookmark" : "Bookmark"}">${t.bookmarked ? "⭐" : "☆"}</button>
             <span>${t.fromRecurringId ? "🔄 " : ""}${t.account === "wallet" ? "🏦 " : ""}${t.category}${t.description ? " — " + t.description : ""}${t.tags?.length ? ` <span class="muted">${t.tags.map(x => "#" + x).join(" ")}</span>` : ""}</span>
             <span class="${t.type}">
               ${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}
@@ -357,7 +359,10 @@ function renderLedgerDetail() {
       ${renderCategoriesPanel(myMember, txs, ledger)}
       ${renderTagsPanel(myMember, txs)}
       ${renderRecurringPanel(myMember, ledger)}
-      <button id="btnOpenSplits" class="secondary" style="width:100%;margin-bottom:16px">🤝 Splits & Settle</button>
+      <div class="btn-row" style="margin-bottom:16px">
+        <button id="btnOpenSplits" class="secondary" style="flex:1">🤝 Splits & Settle</button>
+        <button id="btnOpenBookmarked" class="secondary" style="flex:1">⭐ Bookmarked</button>
+      </div>
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
       ${renderSettingsPanel(ledger, myMember, iAmOwner)}
     </div>
@@ -722,6 +727,35 @@ function renderSplitsPage() {
           <button class="link small" data-del-settlement="${id}">delete</button>
         </div>
       `).join("") : `<p class="muted">No settlements recorded yet.</p>`}
+    </div>`;
+}
+
+function renderBookmarkedPage() {
+  const ledger = S.activeLedgerDetail || {};
+  const myMember = S.members[S.user.uid];
+  const bookmarked = Object.entries(S.txs || {})
+    .filter(([, t]) => t.bookmarked)
+    .sort((a, b) => b[1].ts - a[1].ts);
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromBookmarked" class="link">&larr; ${ledger.name || "Ledger"}</button>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+    <h2>⭐ Bookmarked</h2>
+    <p class="muted" style="margin-bottom:12px">Transactions anyone in this ledger has starred — visible to everyone, not just you.</p>
+
+    <div class="tx-list">
+      ${bookmarked.length ? bookmarked.map(([id, t]) => `
+        <div class="tx-row">
+          <button type="button" class="link small star-btn" data-toggle-bookmark="${id}" data-bookmarked="true" title="Remove bookmark">⭐</button>
+          <span>${t.category}${t.description ? " — " + t.description : ""}</span>
+          <span class="${t.type}">
+            ${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}
+          </span>
+          ${canDeleteTx(myMember, t, S.user.uid) ? `<button class="link small" data-del="${id}">delete</button>` : ""}
+        </div>
+      `).join("") : `<p class="muted">Nothing bookmarked yet — tap the ☆ next to any transaction to star it.</p>`}
     </div>`;
 }
 
