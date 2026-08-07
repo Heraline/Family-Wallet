@@ -16,9 +16,14 @@ export const THEMES = {
   ],
 };
 
+export const ICON_STYLES = [
+  { key: "plain", label: "Minimalist" },
+  { key: "badge", label: "Colorful" },
+];
+
 export function listenThemePrefs() {
   return listen(`users/${S.user.uid}/uiPrefs`, (data) => {
-    S.uiPrefs = { theme: "teal", cardStyle: "glass", chartStyle: "donut", ...(data || {}) };
+    S.uiPrefs = { theme: "teal", cardStyle: "glass", chartStyle: "donut", iconStyle: "plain", ...(data || {}) };
     applyTheme();
     notify();
   });

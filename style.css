@@ -84,6 +84,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .opt-btn { border: 1.5px solid var(--card-border-flat); background: var(--card-bg-flat); color: var(--card-text); font-family: inherit; font-size: 12px; font-weight: 600; padding: 8px 12px; border-radius: 10px; cursor: pointer; }
 .opt-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+.sys-icon { font-size: 18px; vertical-align: -3px; margin-right: 6px; color: var(--card-text); }
+.sys-icon-badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 15%, transparent); margin-right: 8px; vertical-align: -8px; }
+.sys-icon-badge .ti { font-size: 15px; color: var(--accent); }
+.nav-icon-badge { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 15%, transparent); }
+.nav-icon-badge .ti { font-size: 15px; color: var(--accent); }
+
 .hidden { display: none !important; }
 .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .chip { padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--card-border-flat); background: var(--card-bg-flat); color: var(--card-text); font-size: 12px; font-weight: 600; cursor: pointer; }

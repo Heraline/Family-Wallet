@@ -26,7 +26,7 @@ export const S = {
   categories: {},      // active ledger's custom categories (empty = use DEFAULT_CATEGORIES)
   settlements: {},     // active ledger's recorded settlements
   homeSplitsOverview: null, // cross-ledger combined splits overview for Home
-  uiPrefs: { theme: "teal", cardStyle: "glass", chartStyle: "donut" }, // synced appearance settings
+  uiPrefs: { theme: "teal", cardStyle: "glass", chartStyle: "donut", iconStyle: "plain" }, // synced appearance settings
 };
 
 // Very small pub/sub so ui.js can re-render whenever state changes,

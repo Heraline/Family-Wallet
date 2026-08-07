@@ -14,6 +14,21 @@ import { THEMES } from "./theme.js";
 
 const app = document.getElementById("app");
 
+// System icons (nav, panel headers, buttons) use the Tabler icon font,
+// rendered plain or inside a small colored badge depending on the user's
+// "Icon style" preference. Category icons stay user-picked emoji — this
+// only applies to fixed/system UI chrome.
+function sysIcon(name) {
+  const style = S.uiPrefs?.iconStyle || "plain";
+  if (style === "badge") return `<span class="sys-icon-badge"><i class="ti ti-${name}" aria-hidden="true"></i></span>`;
+  return `<i class="ti ti-${name} sys-icon" aria-hidden="true"></i>`;
+}
+function navIcon(name) {
+  const style = S.uiPrefs?.iconStyle || "plain";
+  if (style === "badge") return `<span class="nav-icon-badge"><i class="ti ti-${name}" aria-hidden="true"></i></span>`;
+  return `<i class="ti ti-${name}" aria-hidden="true"></i>`;
+}
+
 export function render() {
   if (!S.user) return renderLogin();
   if (S.activeLedgerId) {
@@ -69,15 +84,15 @@ export function splitAmountRowsHtml(uids, totalAmount, group) {
 }
 
 function bottomNav(active) {
-  const tab = (key, icon, label) => `
+  const tab = (key, iconName, label) => `
     <button class="nav-btn ${active === key ? "active" : ""}" data-nav="${key}">
-      <span class="nav-icon">${icon}</span><span class="nav-label">${label}</span>
+      <span class="nav-icon">${navIcon(iconName)}</span><span class="nav-label">${label}</span>
     </button>`;
   return `
     <div class="bottom-nav">
-      ${tab("home", "🏠", "Home")}
-      ${tab("ledgers", "📒", "Ledgers")}
-      ${tab("aiSettings", "⚙️", "Settings")}
+      ${tab("home", "home", "Home")}
+      ${tab("ledgers", "notebook", "Ledgers")}
+      ${tab("aiSettings", "settings", "Settings")}
     </div>`;
 }
 
@@ -129,7 +144,7 @@ function renderHome() {
     </div>
 
     <div id="btnHomeBudgetCard" class="panel card-button" role="button" tabindex="0">
-      <h3>📊 This month's budget</h3>
+      <h3>${sysIcon("chart-bar")}This month's budget</h3>
       ${overview ? `
         <div class="balance" style="font-size:22px">${homeCurrency} ${spent.toFixed(2)} <span class="muted" style="font-size:13px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
         ${target > 0 ? budgetProgress(pct, over) : ""}
@@ -138,7 +153,7 @@ function renderHome() {
     </div>
 
     <div id="btnHomeWalletCard" class="panel card-button" role="button" tabindex="0" style="margin-top:14px">
-      <h3>💰 Wallet</h3>
+      <h3>${sysIcon("wallet")}Wallet</h3>
       ${Object.keys(S.walletBalances || {}).length ? `
         <div class="btn-row" style="flex-wrap:wrap;gap:14px">
           ${Object.entries(S.walletBalances).map(([cur, amt]) => `<span class="balance" style="font-size:18px">${cur} ${amt.toFixed(2)}</span>`).join("")}
@@ -166,7 +181,7 @@ function renderHome() {
     </div>
 
     <div class="btn-row" style="margin-top:16px">
-      <button id="btnHomeSplits" class="secondary" style="width:100%">🤝 Splits & Settle (all ledgers)</button>
+      <button id="btnHomeSplits" class="secondary" style="width:100%">${sysIcon("users-group")}Splits & Settle (all ledgers)</button>
     </div>
 
     ${bottomNav("home")}`;
@@ -220,7 +235,7 @@ function renderAiSettings() {
     </div>
 
     <div class="panel">
-      <h3>🎨 Appearance</h3>
+      <h3>${sysIcon("palette")}Appearance</h3>
       <p class="muted" style="margin-bottom:8px">Dark themes</p>
       <div class="btn-row" style="flex-wrap:wrap;margin-bottom:10px">${THEMES.dark.map(themeBtn).join("")}</div>
       <p class="muted" style="margin-bottom:8px">Light themes</p>
@@ -235,10 +250,15 @@ function renderAiSettings() {
         <button class="opt-btn ${prefs.chartStyle === "donut" ? "active" : ""}" data-set-chart="donut">Ring</button>
         <button class="opt-btn ${prefs.chartStyle === "bar" ? "active" : ""}" data-set-chart="bar">Bar</button>
       </div>
+      <p class="muted" style="margin:10px 0 8px">Icon style</p>
+      <div class="btn-row">
+        <button class="opt-btn ${(prefs.iconStyle || "plain") === "plain" ? "active" : ""}" data-set-icon-style="plain">Minimal</button>
+        <button class="opt-btn ${prefs.iconStyle === "badge" ? "active" : ""}" data-set-icon-style="badge">Bold</button>
+      </div>
     </div>
 
     <div class="panel">
-      <h3>🔑 AI Settings</h3>
+      <h3>${sysIcon("key")}AI Settings</h3>
       <p class="muted" style="margin-bottom:10px">Used for scanning receipt photos. Get a free key at <strong>aistudio.google.com/apikey</strong>. It's stored only in this browser — never sent anywhere except directly to Google when you scan a receipt.</p>
       <div id="aiKeyError" class="error"></div>
       <input id="geminiKeyInput" type="password" placeholder="Paste Gemini API key..." value="${getGeminiKey()}" />
@@ -298,7 +318,7 @@ function renderLedgerDetail() {
       <div class="panel">
         <h3>Add entry</h3>
         <div id="txError" class="error"></div>
-        <button id="btnScanReceipt" class="secondary" style="margin-bottom:10px">📷 Scan receipt (optional)</button>
+        <button id="btnScanReceipt" class="secondary" style="margin-bottom:10px">${sysIcon("camera")}Scan receipt (optional)</button>
         <input type="file" id="receiptFileInput" accept="image/*" capture="environment" style="display:none" />
         <p id="scanStatus" class="muted" style="display:none;margin-bottom:8px">Reading receipt with AI...</p>
         <select id="txType"><option value="expense">Expense</option><option value="income">Income</option></select>
@@ -317,7 +337,7 @@ function renderLedgerDetail() {
           <option value="wallet">🏦 Ledger Wallet (${ledger.currency || "USD"} ${(S.ledgerWalletBalance || 0).toFixed(2)} available)</option>
         </select>
 
-        <button type="button" id="btnToggleSplit" class="secondary" style="margin-bottom:10px">➕ Split this expense (optional)</button>
+        <button type="button" id="btnToggleSplit" class="secondary" style="margin-bottom:10px">${sysIcon("plus")}Split this expense (optional)</button>
         <div id="splitSection" class="sub-panel hidden">
           <p class="muted" style="margin-bottom:6px">Paid by <span class="muted">(none selected = you)</span></p>
           <div class="chip-row" id="payerChips">${memberChips(memberEntries, "payer")}</div>
@@ -360,8 +380,8 @@ function renderLedgerDetail() {
       ${renderTagsPanel(myMember, txs)}
       ${renderRecurringPanel(myMember, ledger)}
       <div class="btn-row" style="margin-bottom:16px">
-        <button id="btnOpenSplits" class="secondary" style="flex:1">🤝 Splits & Settle</button>
-        <button id="btnOpenBookmarked" class="secondary" style="flex:1">⭐ Bookmarked</button>
+        <button id="btnOpenSplits" class="secondary" style="flex:1">${sysIcon("users-group")}Splits & Settle</button>
+        <button id="btnOpenBookmarked" class="secondary" style="flex:1">${sysIcon("star")}Bookmarked</button>
       </div>
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
       ${renderSettingsPanel(ledger, myMember, iAmOwner)}
@@ -375,7 +395,7 @@ function renderLedgerWalletPanel(ledger) {
 
   return `
     <div class="panel">
-      <h3>🏦 Ledger Wallet</h3>
+      <h3>${sysIcon("building-bank")}Ledger Wallet</h3>
       <p class="muted" style="margin-bottom:8px">Pooled money for this ledger's purpose. Fund-ins show up in the activity feed above too.</p>
       <div class="balance" style="font-size:22px">${currency} ${balance.toFixed(2)}</div>
 
@@ -383,7 +403,7 @@ function renderLedgerWalletPanel(ledger) {
       <input id="ledgerFundAmount" type="number" step="0.01" placeholder="Amount (${currency})" />
       <input id="ledgerFundNote" placeholder="Note (optional)" />
       <div class="btn-row">
-        <button id="btnAddLedgerWallet" style="flex:1">➕ Add directly</button>
+        <button id="btnAddLedgerWallet" style="flex:1">${sysIcon("plus")}Add directly</button>
         <button id="btnFundLedgerWallet" class="secondary" style="flex:1">↔️ Transfer from my wallet</button>
       </div>
       <p class="muted" style="margin-top:6px">Add = cash or outside money not tracked in anyone's personal wallet. Transfer = comes out of your own tracked wallet balance.</p>
@@ -451,7 +471,7 @@ function renderCategoriesPanel(myMember, txs, ledger) {
 
   return `
     <div class="panel">
-      <h3>🏷️ Categories</h3>
+      <h3>${sysIcon("tag")}Categories</h3>
 
       <p class="muted" style="margin:6px 0 4px">Expense</p>
       <div class="cat-manage-list">
@@ -492,7 +512,7 @@ function renderTagsPanel(myMember, txs) {
 
   return `
     <div class="panel">
-      <h3>🏷️ Tags</h3>
+      <h3>${sysIcon("tag")}Tags</h3>
       ${allTags.length ? allTags.map((tag) => `
         <div class="cat-row">
           ${canEdit
@@ -512,7 +532,7 @@ function renderRecurringPanel(myMember, ledger) {
   const ledgerCurrency = ledger?.currency || "USD";
   return `
     <div class="panel">
-      <h3>🔄 Recurring transactions</h3>
+      <h3>${sysIcon("refresh")}Recurring transactions</h3>
       ${items.length ? items.map(([id, r]) => `
         <div class="tx-row">
           <span>${r.name} <span class="muted">(${FREQUENCIES.find(f => f.key === r.freq)?.label || r.freq})</span></span>
@@ -565,7 +585,7 @@ function renderWalletPage() {
       <button id="btnBackFromWallet" class="link">&larr; Home</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
-    <h2>💰 Wallet</h2>
+    <h2>${sysIcon("wallet")}Wallet</h2>
     <p class="muted" style="margin-bottom:12px">Real money you top up yourself — separate from ledger spending. Transfer some into a ledger whenever you want it available to spend.</p>
 
     <div class="panel">
@@ -596,14 +616,14 @@ function renderWalletPage() {
         <input id="walletTransferAmount" type="number" step="0.01" placeholder="Amount (in that ledger's currency)" />
         <input id="walletTransferNote" placeholder="Note (optional)" />
         <div class="btn-row">
-          <button id="btnWalletAddToLedger" style="flex:1">➕ Add directly</button>
+          <button id="btnWalletAddToLedger" style="flex:1">${sysIcon("plus")}Add directly</button>
           <button id="btnWalletTransfer" class="secondary" style="flex:1">↔️ Transfer from my wallet</button>
         </div>
       ` : `<p class="muted">No ledgers yet — create one in the Ledgers tab first.</p>`}
     </div>
 
     <div class="panel">
-      <h3>🔄 Recurring top-up <span class="muted" style="font-weight:400">(e.g. fixed pocket money)</span></h3>
+      <h3>${sysIcon("refresh")}Recurring top-up <span class="muted" style="font-weight:400">(e.g. fixed pocket money)</span></h3>
       ${recurring.length ? recurring.map(([id, r]) => `
         <div class="tx-row">
           <span>${r.name} <span class="muted">(${r.freq})</span></span>
@@ -657,7 +677,7 @@ function renderHomeSplitsPage() {
       <button id="btnBackFromHomeSplits" class="link">&larr; Home</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
-    <h2>🤝 Splits & Settle</h2>
+    <h2>${sysIcon("users-group")}Splits & Settle</h2>
 
     ${overview ? `
       <div class="panel">
@@ -697,7 +717,7 @@ function renderSplitsPage() {
       <button id="btnBackFromSplits" class="link">&larr; ${ledger.name || "Ledger"}</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
-    <h2>🤝 Splits & Settle</h2>
+    <h2>${sysIcon("users-group")}Splits & Settle</h2>
 
     <div class="panel">
       <h3>Balances</h3>
@@ -742,7 +762,7 @@ function renderBookmarkedPage() {
       <button id="btnBackFromBookmarked" class="link">&larr; ${ledger.name || "Ledger"}</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
-    <h2>⭐ Bookmarked</h2>
+    <h2>${sysIcon("star")}Bookmarked</h2>
     <p class="muted" style="margin-bottom:12px">Transactions anyone in this ledger has starred — visible to everyone, not just you.</p>
 
     <div class="tx-list">
@@ -774,7 +794,7 @@ function renderPersonalBudget() {
       <button id="btnBackFromBudget" class="link">&larr; Home</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
-    <h2>📊 My Budget — ${ym}</h2>
+    <h2>${sysIcon("chart-bar")}My Budget — ${ym}</h2>
 
     <div class="panel">
       <h3>Target</h3>

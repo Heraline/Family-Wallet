@@ -213,6 +213,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (cardBtn) await setThemePref("cardStyle", cardBtn.dataset.setCard);
     const chartBtn = e.target.closest?.("[data-set-chart]");
     if (chartBtn) await setThemePref("chartStyle", chartBtn.dataset.setChart);
+    const iconStyleBtn = e.target.closest?.("[data-set-icon-style]");
+    if (iconStyleBtn) await setThemePref("iconStyle", iconStyleBtn.dataset.setIconStyle);
 
     if (id === "btnCreateLedger") {
       const name = val("newLedgerName");
