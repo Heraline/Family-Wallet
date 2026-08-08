@@ -97,6 +97,10 @@ document.getElementById("app").addEventListener("click", async (e) => {
       processDueWalletRecurring().catch((err) => console.error("Wallet recurring processing failed:", err));
     }
     if (id === "btnBackFromWallet") goTo("home");
+    if (id === "btnHomeSettings") goTo("aiSettings");
+    if (id === "btnBackFromSettings") goTo("home");
+    if (id === "btnManageLedgers") goTo("ledgers");
+    if (id === "btnBackFromLedgers") goTo("home");
     if (id === "btnWalletAddFunds") {
       const amount = val("walletAddAmount"), currency = val("walletAddCurrency"), note = val("walletAddNote");
       if (!amount || Number(amount) <= 0) return showError("walletAddError", "Enter a valid amount.");
@@ -178,7 +182,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
         return showError("ledgerFundError", err.message);
       }
     }
-    if (id === "btnBack") { S.activeLedgerId = null; S.view = "ledgers"; render(); }
+    if (id === "btnBack") goTo("home");
     if (id === "btnBackFromBudget") goTo("home");
     if (id === "btnOpenSplits") { S.view = "splits"; render(); }
     if (id === "btnBackFromSplits") { S.view = null; render(); }

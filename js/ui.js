@@ -83,19 +83,6 @@ export function splitAmountRowsHtml(uids, totalAmount, group) {
   }).join("");
 }
 
-function bottomNav(active) {
-  const tab = (key, iconName, label) => `
-    <button class="nav-btn ${active === key ? "active" : ""}" data-nav="${key}">
-      <span class="nav-icon">${navIcon(iconName)}</span><span class="nav-label">${label}</span>
-    </button>`;
-  return `
-    <div class="bottom-nav">
-      ${tab("home", "home", "Home")}
-      ${tab("ledgers", "notebook", "Ledgers")}
-      ${tab("aiSettings", "settings", "Settings")}
-    </div>`;
-}
-
 function renderLogin() {
   app.innerHTML = `
     <div class="auth-box">
@@ -140,7 +127,11 @@ function renderHome() {
   app.innerHTML = `
     <div class="topbar">
       <span>Hi, ${S.profile?.displayName || "there"} 👋</span>
-      <button id="btnLogout" class="link">Log out</button>
+      <div class="topbar-icons">
+        <button id="btnHomeSearch" class="icon-btn" aria-label="Search" title="Search (coming soon)" disabled>${navIcon("search")}</button>
+        <button id="btnHomeNotifications" class="icon-btn" aria-label="Notifications" title="Notifications (coming soon)" disabled>${navIcon("bell")}</button>
+        <button id="btnHomeSettings" class="icon-btn" aria-label="Settings">${navIcon("settings")}</button>
+      </div>
     </div>
 
     <div id="btnHomeBudgetCard" class="panel card-button" role="button" tabindex="0">
@@ -173,25 +164,29 @@ function renderHome() {
 
     <h3 style="margin-top:16px">Your ledgers</h3>
     <div class="ledger-scroll-row">
-      ${ledgerEntries.length ? ledgerEntries.map(([lid, l]) => `
+      ${ledgerEntries.map(([lid, l]) => `
         <button class="ledger-scroll-card" data-lid="${lid}">
           ${ledgerIcon(l.icon)}
           <span>${l.name || "Untitled"}</span>
-        </button>`).join("") : `<p class="muted">No ledgers yet — head to the Ledgers tab to create one.</p>`}
+        </button>`).join("")}
+      <button class="ledger-scroll-card ledger-scroll-add" id="btnManageLedgers" aria-label="Create or join a ledger">
+        ${navIcon("plus")}
+        <span>${ledgerEntries.length ? "Manage" : "Add ledger"}</span>
+      </button>
     </div>
 
-    <div class="btn-row" style="margin-top:16px">
-      <button id="btnHomeSplits" class="secondary" style="width:100%">${sysIcon("users-group")}Splits & Settle (all ledgers)</button>
-    </div>
-
-    ${bottomNav("home")}`;
+    <div class="btn-row" style="margin-top:16px;flex-wrap:wrap">
+      <button id="btnHomeSplits" class="secondary" style="flex:1 1 100%">${sysIcon("users-group")}Splits & Settle (all ledgers)</button>
+      <button class="secondary" style="flex:1" disabled title="Coming soon">${sysIcon("star")}Bookmarked</button>
+      <button class="secondary" style="flex:1" disabled title="Coming soon">${sysIcon("pig-money")}Saving Jar</button>
+    </div>`;
 }
 
 function renderLedgerList() {
   const ledgers = Object.entries(S.ledgers || {});
   app.innerHTML = `
     <div class="topbar">
-      <span>Hi, ${S.profile?.displayName || "there"}</span>
+      <button id="btnBackFromLedgers" class="link">&larr; Home</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
     <h2>Your ledgers</h2>
@@ -220,8 +215,7 @@ function renderLedgerList() {
       <div id="joinError" class="error"></div>
       <input id="joinCode" placeholder="6-character code" />
       <button id="btnJoinLedger">Join</button>
-    </div>
-    ${bottomNav("ledgers")}`;
+    </div>`;
 }
 
 function renderAiSettings() {
@@ -230,9 +224,10 @@ function renderAiSettings() {
   const themeBtn = (t) => `<button class="opt-btn ${prefs.theme === t.key ? "active" : ""}" data-set-theme="${t.key}">${t.label}</button>`;
   app.innerHTML = `
     <div class="topbar">
-      <span>Settings</span>
+      <button id="btnBackFromSettings" class="link">&larr; Home</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
+    <h2>Settings</h2>
 
     <div class="panel">
       <h3>${sysIcon("palette")}Appearance</h3>
@@ -268,7 +263,7 @@ function renderAiSettings() {
       </div>
       ${hasKey ? `<p class="muted" style="margin-top:8px">✓ Key saved</p>` : ""}
     </div>
-    ${bottomNav("aiSettings")}`;
+    `;
 }
 
 function fakePreviewMember(role) {
@@ -295,7 +290,7 @@ function renderLedgerDetail() {
 
   app.innerHTML = `
     <div class="topbar">
-      <button id="btnBack" class="link">&larr; All ledgers</button>
+      <button id="btnBack" class="link">&larr; Home</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
 
@@ -666,7 +661,7 @@ function renderWalletPage() {
         </div>
       `).join("") : `<p class="muted">No wallet activity yet.</p>`}
     </div>
-    ${bottomNav("home")}`;
+    `;
 }
 
 
@@ -703,7 +698,7 @@ function renderHomeSplitsPage() {
         </div>
       `).join("") : ""}
     ` : `<p class="muted">Loading...</p>`}
-    ${bottomNav("home")}`;
+    `;
 }
 
 function renderSplitsPage() {
@@ -825,7 +820,7 @@ function renderPersonalBudget() {
     </div>
 
     ${renderPersonalCategoryBudgetsPanel(overview, homeCurrency)}
-    ${bottomNav("home")}`;
+    `;
 }
 
 function renderPersonalCategoryBudgetsPanel(overview, homeCurrency) {
