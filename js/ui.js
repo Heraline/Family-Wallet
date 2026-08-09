@@ -128,9 +128,9 @@ function renderHome() {
     <div class="topbar">
       <span>Hi, ${S.profile?.displayName || "there"} 👋</span>
       <div class="topbar-icons">
-        <button id="btnHomeSearch" class="icon-btn" aria-label="Search" title="Search (coming soon)" disabled>${navIcon("search")}</button>
-        <button id="btnHomeNotifications" class="icon-btn" aria-label="Notifications" title="Notifications (coming soon)" disabled>${navIcon("bell")}</button>
-        <button id="btnHomeSettings" class="icon-btn" aria-label="Settings">${navIcon("settings")}</button>
+        <button id="btnHomeSearch" class="icon-btn" aria-label="Search" title="Search (coming soon)" disabled><i class="ti ti-search" aria-hidden="true"></i></button>
+        <button id="btnHomeNotifications" class="icon-btn" aria-label="Notifications" title="Notifications (coming soon)" disabled><i class="ti ti-bell" aria-hidden="true"></i></button>
+        <button id="btnHomeSettings" class="icon-btn" aria-label="Settings"><i class="ti ti-settings" aria-hidden="true"></i></button>
       </div>
     </div>
 

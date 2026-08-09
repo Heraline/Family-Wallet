@@ -37,8 +37,9 @@ export async function setThemePref(key, value) {
 // style.css reads to pick the right CSS variables. Safe to call anytime —
 // falls back to defaults if prefs haven't loaded yet.
 export function applyTheme() {
-  const prefs = S.uiPrefs || { theme: "teal", cardStyle: "glass", chartStyle: "donut" };
+  const prefs = S.uiPrefs || { theme: "teal", cardStyle: "glass", chartStyle: "donut", iconStyle: "plain" };
   document.body.dataset.theme = prefs.theme;
   document.body.dataset.card = prefs.cardStyle;
   document.body.dataset.chart = prefs.chartStyle;
+  document.body.dataset.icon = prefs.iconStyle || "plain";
 }
