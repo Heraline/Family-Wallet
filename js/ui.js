@@ -29,6 +29,16 @@ function navIcon(name) {
   return `<i class="ti ti-${name}" aria-hidden="true"></i>`;
 }
 
+function todayFormatted() {
+  return new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+}
+function timeBasedGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 export function render() {
   if (!S.user) return renderLogin();
   if (S.activeLedgerId) {
@@ -126,7 +136,10 @@ function renderHome() {
 
   app.innerHTML = `
     <div class="topbar">
-      <span>Hi, ${S.profile?.displayName || "there"} 👋</span>
+      <div class="home-greeting">
+        <div class="date-line">${todayFormatted()}</div>
+        <div class="greeting-line">${timeBasedGreeting()}, ${S.profile?.displayName || "there"}!</div>
+      </div>
       <div class="topbar-icons">
         <button id="btnHomeSearch" class="icon-btn" aria-label="Search" title="Search (coming soon)" disabled><i class="ti ti-search" aria-hidden="true"></i></button>
         <button id="btnHomeNotifications" class="icon-btn" aria-label="Notifications" title="Notifications (coming soon)" disabled><i class="ti ti-bell" aria-hidden="true"></i></button>
