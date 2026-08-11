@@ -90,8 +90,12 @@ export async function deletePersonalCategoryBudget(label, ym = currentYM()) {
 // person taps "Refresh".
 export async function refreshPersonalOverview(homeCurrency) {
   const ym = currentYM();
+  const today = new Date().toISOString().slice(0, 10);
   const includedIds = Object.keys(S.includedLedgers || {}).filter((lid) => S.includedLedgers[lid]);
   let total = 0;
+  let spentToday = 0;
+  let ledgersBalanceTotal = 0;
+  let receivedThisMonth = 0;
   const perLedger = {};
   const categorySpend = {}; // { label: amountInHomeCurrency }
   const availableCatMap = {}; // { label: icon } — deduped across every flagged ledger's category list
@@ -112,8 +116,22 @@ export async function refreshPersonalOverview(homeCurrency) {
     Object.values(ledgerCats).forEach((c) => { if (!(c.label in availableCatMap)) availableCatMap[c.label] = c.icon; });
 
     let ledgerSpend = 0;
+    let ledgerBalance = 0; // all-time, this ledger's own currency
     for (const [txId, t] of Object.entries(txs)) {
       allTx.push({ ...t, txId, ledgerId: lid, ledgerName: ledger.name, ledgerIcon: ledger.icon });
+
+      ledgerBalance += t.type === "income" ? t.amount : -t.amount;
+
+      if (t.type === "expense" && t.date === today) {
+        const c = ledgerCurrency !== homeCurrency ? await convert(t.amount, ledgerCurrency, homeCurrency) : t.amount;
+        spentToday += c != null ? c : t.amount;
+      }
+
+      if (t.type === "income" && t.date?.startsWith(ym)) {
+        const c = ledgerCurrency !== homeCurrency ? await convert(t.amount, ledgerCurrency, homeCurrency) : t.amount;
+        receivedThisMonth += c != null ? c : t.amount;
+      }
+
       if (t.type !== "expense" || !t.date?.startsWith(ym)) continue;
       ledgerSpend += t.amount;
 
@@ -129,11 +147,22 @@ export async function refreshPersonalOverview(homeCurrency) {
     const spendInHomeCurrency = converted != null ? converted : ledgerSpend;
     perLedger[lid] = { name: ledger.name, spend: ledgerSpend, currency: ledgerCurrency, spendInHomeCurrency };
     total += spendInHomeCurrency;
+
+    const balanceConverted = await convert(ledgerBalance, ledgerCurrency, homeCurrency);
+    ledgersBalanceTotal += balanceConverted != null ? balanceConverted : ledgerBalance;
   }
+
+  // Total Balance = flagged ledgers' all-time balance + your personal Wallet, all converted to home currency.
+  let walletTotal = 0;
+  for (const [currency, amount] of Object.entries(S.walletBalances || {})) {
+    const c = currency !== homeCurrency ? await convert(amount, currency, homeCurrency) : amount;
+    walletTotal += c != null ? c : amount;
+  }
+  const totalBalance = ledgersBalanceTotal + walletTotal;
 
   allTx.sort((a, b) => b.ts - a.ts);
   S.recentTx = allTx.slice(0, 5);
   const availableCategories = Object.entries(availableCatMap).map(([label, icon]) => ({ label, icon })).sort((a, b) => a.label.localeCompare(b.label));
-  S.personalOverview = { ym, total, perLedger, categorySpend, availableCategories, homeCurrency };
+  S.personalOverview = { ym, total, spentToday, totalBalance, receivedThisMonth, perLedger, categorySpend, availableCategories, homeCurrency };
   notify();
 }

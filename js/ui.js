@@ -130,8 +130,13 @@ function renderHome() {
   const overview = S.personalOverview;
   const target = pb.total || 0;
   const spent = overview?.total || 0;
+  const received = overview?.receivedThisMonth || 0;
+  const remaining = target - spent;
   const pct = target > 0 ? Math.min(100, Math.round((spent / target) * 100)) : 0;
   const over = target > 0 && spent > target;
+  const today = new Date();
+  const daysLeft = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() - today.getDate() + 1;
+  const dailySafe = target > 0 ? Math.max(0, remaining) / daysLeft : 0;
   const ledgerEntries = Object.entries(S.ledgers || {});
 
   app.innerHTML = `
@@ -167,8 +172,17 @@ function renderHome() {
         </div>
       </div>
       ${overview ? `
-        <div class="balance" style="font-size:22px">${homeCurrency} ${spent.toFixed(2)} <span class="muted" style="font-size:13px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
-        ${target > 0 ? budgetProgress(pct, over) : ""}
+        <div class="budget-stat-row">
+          <div><span class="date-line">EXPENSE</span><div class="expense" style="font-size:18px;font-weight:700">${homeCurrency} ${spent.toFixed(2)}</div></div>
+          <div style="text-align:right"><span class="date-line">RECEIVING</span><div class="income" style="font-size:18px;font-weight:700">${homeCurrency} ${received.toFixed(2)}</div></div>
+        </div>
+        ${target > 0 ? budgetProgress(pct, over) : `<p class="muted">Set a personal budget target to see your progress here.</p>`}
+        ${target > 0 ? `
+          <div class="budget-stat-row" style="margin-top:8px">
+            <div><span class="muted" style="font-size:11px">Remaining</span><div style="font-size:13px;font-weight:600">${homeCurrency} ${remaining.toFixed(2)}</div></div>
+            <div style="text-align:right"><span class="muted" style="font-size:11px">Daily Safe Spend</span><div style="font-size:13px;font-weight:600">${homeCurrency} ${dailySafe.toFixed(2)}</div></div>
+          </div>
+        ` : ""}
       ` : `<p class="muted">Set a personal budget target to see your overview here.</p>`}
       <p class="muted" style="margin-top:6px">Tap for details →</p>
     </div>
