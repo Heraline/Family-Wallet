@@ -159,7 +159,13 @@ function renderHome() {
     </div>
 
     <div id="btnHomeBudgetCard" class="panel card-button" role="button" tabindex="0">
-      <h3>${sysIcon("chart-bar")}This month's budget</h3>
+      <div class="card-header-row">
+        <h3 style="margin:0">${sysIcon("chart-bar")}This month's budget</h3>
+        <div class="card-mini-icons">
+          <button class="mini-icon-btn" disabled title="Calendar (coming soon)"><i class="ti ti-calendar" aria-hidden="true"></i></button>
+          <button class="mini-icon-btn" disabled title="Stats (coming soon)"><i class="ti ti-chart-bar" aria-hidden="true"></i></button>
+        </div>
+      </div>
       ${overview ? `
         <div class="balance" style="font-size:22px">${homeCurrency} ${spent.toFixed(2)} <span class="muted" style="font-size:13px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
         ${target > 0 ? budgetProgress(pct, over) : ""}
