@@ -147,6 +147,17 @@ function renderHome() {
       </div>
     </div>
 
+    <div class="spent-balance-row">
+      <div>
+        <div class="date-line" style="text-transform:uppercase;letter-spacing:0.04em">Spent Today</div>
+        <div class="spent-today-amount">${homeCurrency} ${(overview?.spentToday || 0).toFixed(2)}</div>
+      </div>
+      <div class="total-balance-pill">
+        <span class="muted" style="font-size:11px">Total Balance</span>
+        <span style="font-weight:700">${homeCurrency} ${(overview?.totalBalance || 0).toFixed(2)}</span>
+      </div>
+    </div>
+
     <div id="btnHomeBudgetCard" class="panel card-button" role="button" tabindex="0">
       <h3>${sysIcon("chart-bar")}This month's budget</h3>
       ${overview ? `
