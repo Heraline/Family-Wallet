@@ -7,7 +7,7 @@ import { can, isOwner, canDeleteTx, canRemoveMembers, canManageRoles, canDeleteL
 import { currentYM } from "./budgets.js";
 import { FREQUENCIES } from "./recurring.js";
 import { computeBalances } from "./splits.js";
-import { groupedCategories, EMOJI_PALETTE } from "./categories.js";
+import { groupedCategories, EMOJI_PALETTE, DEFAULT_CATEGORIES } from "./categories.js";
 import { tagUsageCounts } from "./tags.js";
 import { getGeminiKey } from "./receipt.js";
 import { THEMES } from "./theme.js";
@@ -37,6 +37,63 @@ function timeBasedGreeting() {
   if (h < 12) return "Good morning";
   if (h < 18) return "Good afternoon";
   return "Good evening";
+}
+
+// Best-effort emoji for a transaction's category label. Recent Transactions
+// spans multiple ledgers, each with its own (possibly custom) category list,
+// so we don't always have the exact icon on hand — fall back to the shared
+// default set, then a generic icon.
+function categoryEmoji(label) {
+  const found = Object.values(DEFAULT_CATEGORIES).find((c) => c.label === label);
+  return found?.icon || "💳";
+}
+
+// Groups a list of transactions (already sorted newest-first) into
+// {label, items} buckets by day — "Today", "Yesterday", then a short date.
+function groupTxByDay(txs) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const yestStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const groups = [];
+  const byLabel = {};
+  txs.forEach((t) => {
+    let label;
+    if (t.date === todayStr) label = "Today";
+    else if (t.date === yestStr) label = "Yesterday";
+    else label = t.date ? new Date(t.date).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "Earlier";
+    if (!byLabel[label]) { byLabel[label] = []; groups.push(label); }
+    byLabel[label].push(t);
+  });
+  return groups.map((label) => ({ label, items: byLabel[label] }));
+}
+
+// Net "you are owed / you owe" for one ledger, from the cross-ledger splits
+// overview computed on Home load (S.homeSplitsOverview). Returns null while
+// that data hasn't loaded yet, so the caller can show a neutral state.
+function myLedgerSplitLine(lid) {
+  const entry = S.homeSplitsOverview?.perLedger?.find((p) => p.lid === lid);
+  if (!entry) return null;
+  let owed = 0, owe = 0;
+  entry.balances.forEach((b) => {
+    if (b.to === S.user.uid) owed += b.amount;
+    if (b.from === S.user.uid) owe += b.amount;
+  });
+  const net = owed - owe;
+  if (Math.abs(net) < 0.01) return { text: "All settled", cls: "muted" };
+  if (net > 0) return { text: `You're owed ${entry.currency} ${net.toFixed(2)}`, cls: "income" };
+  return { text: `You owe ${entry.currency} ${Math.abs(net).toFixed(2)}`, cls: "expense" };
+}
+
+// Re-attaches the scroll listener that keeps the swipe-card dots in sync.
+// Needed after every render() because ui.js rebuilds app.innerHTML from
+// scratch each time, which discards any previously attached listeners.
+function wireHomeCardSwipe() {
+  const track = document.getElementById("homeCardTrack");
+  const dots = document.querySelectorAll("#homeCardDots .card-dot");
+  if (!track || !dots.length) return;
+  track.addEventListener("scroll", () => {
+    const idx = Math.round(track.scrollLeft / track.clientWidth);
+    dots.forEach((d, i) => d.classList.toggle("active", i === idx));
+  });
 }
 
 export function render() {
@@ -163,66 +220,120 @@ function renderHome() {
       </div>
     </div>
 
-    <div id="btnHomeBudgetCard" class="panel card-button" role="button" tabindex="0">
-      <div class="card-header-row">
-        <h3 style="margin:0">${sysIcon("chart-bar")}This month's budget</h3>
-        <div class="card-mini-icons">
-          <button class="mini-icon-btn" disabled title="Calendar (coming soon)"><i class="ti ti-calendar" aria-hidden="true"></i></button>
-          <button class="mini-icon-btn" disabled title="Stats (coming soon)"><i class="ti ti-chart-bar" aria-hidden="true"></i></button>
+    <div class="card-swipe-wrap">
+      <div class="card-swipe-track" id="homeCardTrack">
+        <div class="card-swipe-slide">
+          <div id="btnHomeBudgetCard" class="panel card-button" role="button" tabindex="0">
+            <div class="card-header-row">
+              <h3 style="margin:0">${sysIcon("chart-bar")}${new Date().toLocaleDateString(undefined, { month: "long" })} Expenses</h3>
+              <div class="card-mini-icons">
+                <button class="mini-icon-btn" disabled title="Calendar (coming soon)"><i class="ti ti-calendar" aria-hidden="true"></i></button>
+                <button class="mini-icon-btn" disabled title="Stats (coming soon)"><i class="ti ti-chart-bar" aria-hidden="true"></i></button>
+              </div>
+            </div>
+            ${overview ? `
+              <div class="budget-stat-row">
+                <div><span class="date-line">EXPENSE</span><div class="expense" style="font-size:18px;font-weight:700">${homeCurrency} ${spent.toFixed(2)}</div></div>
+                <div style="text-align:right"><span class="date-line">RECEIVING</span><div class="income" style="font-size:18px;font-weight:700">${homeCurrency} ${received.toFixed(2)}</div></div>
+              </div>
+              ${target > 0 ? budgetProgress(pct, over) : `<p class="muted">Set a personal budget target to see your progress here.</p>`}
+              ${target > 0 ? `
+                <div class="budget-stat-row" style="margin-top:8px">
+                  <div><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Remaining</span><div style="font-size:16px;font-weight:700">${homeCurrency} ${remaining.toFixed(2)} <span class="muted" style="font-size:11px;font-weight:500">/ ${target.toFixed(2)}</span></div></div>
+                  <div style="text-align:right"><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Daily Safe Spend</span><div style="font-size:16px;font-weight:700">${homeCurrency} ${dailySafe.toFixed(2)}</div></div>
+                </div>
+              ` : ""}
+            ` : `<p class="muted">Set a personal budget target to see your overview here.</p>`}
+            <p class="muted" style="margin-top:6px">Tap for details →</p>
+          </div>
+        </div>
+        <div class="card-swipe-slide">
+          <div id="btnHomeWalletCard" class="panel card-button" role="button" tabindex="0">
+            <h3>${sysIcon("wallet")}Wallet</h3>
+            ${Object.keys(S.walletBalances || {}).length ? `
+              <div class="btn-row" style="flex-wrap:wrap;gap:14px">
+                ${Object.entries(S.walletBalances).map(([cur, amt]) => `<span class="balance" style="font-size:18px">${cur} ${amt.toFixed(2)}</span>`).join("")}
+              </div>
+            ` : `<p class="muted">No funds yet — tap to add some.</p>`}
+            <p class="muted" style="margin-top:6px">Tap to manage →</p>
+          </div>
         </div>
       </div>
-      ${overview ? `
-        <div class="budget-stat-row">
-          <div><span class="date-line">EXPENSE</span><div class="expense" style="font-size:18px;font-weight:700">${homeCurrency} ${spent.toFixed(2)}</div></div>
-          <div style="text-align:right"><span class="date-line">RECEIVING</span><div class="income" style="font-size:18px;font-weight:700">${homeCurrency} ${received.toFixed(2)}</div></div>
-        </div>
-        ${target > 0 ? budgetProgress(pct, over) : `<p class="muted">Set a personal budget target to see your progress here.</p>`}
-        ${target > 0 ? `
-          <div class="budget-stat-row" style="margin-top:8px">
-            <div><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Remaining</span><div style="font-size:16px;font-weight:700">${homeCurrency} ${remaining.toFixed(2)} <span class="muted" style="font-size:11px;font-weight:500">/ ${target.toFixed(2)}</span></div></div>
-            <div style="text-align:right"><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Daily Safe Spend</span><div style="font-size:16px;font-weight:700">${homeCurrency} ${dailySafe.toFixed(2)}</div></div>
-          </div>
-        ` : ""}
-      ` : `<p class="muted">Set a personal budget target to see your overview here.</p>`}
-      <p class="muted" style="margin-top:6px">Tap for details →</p>
+      <div class="card-dots" id="homeCardDots">
+        <span class="card-dot active" data-dot="0"></span>
+        <span class="card-dot" data-dot="1"></span>
+      </div>
     </div>
 
-    <div id="btnHomeWalletCard" class="panel card-button" role="button" tabindex="0" style="margin-top:14px">
-      <h3>${sysIcon("wallet")}Wallet</h3>
-      ${Object.keys(S.walletBalances || {}).length ? `
-        <div class="btn-row" style="flex-wrap:wrap;gap:14px">
-          ${Object.entries(S.walletBalances).map(([cur, amt]) => `<span class="balance" style="font-size:18px">${cur} ${amt.toFixed(2)}</span>`).join("")}
-        </div>
-      ` : `<p class="muted">No funds yet — tap to add some.</p>`}
-      <p class="muted" style="margin-top:6px">Tap to manage →</p>
-    </div>
+    ${renderRecentTransactionsSection()}
 
-    <h3 style="margin-top:16px">Latest activity</h3>
+    ${renderGroupsSection(ledgerEntries)}
+
+    <div class="quick-tile-row">
+      <button id="btnHomeSplits" class="quick-tile">${sysIcon("users-group")}<span>Splits & Settle</span></button>
+      <button class="quick-tile" disabled title="Coming soon">${sysIcon("star")}<span>Bookmarked</span></button>
+      <button class="quick-tile" disabled title="Coming soon">${sysIcon("pig-money")}<span>Saving Jar</span></button>
+    </div>`;
+
+  wireHomeCardSwipe();
+}
+
+function renderRecentTransactionsSection() {
+  const all = S.recentTx || [];
+  const expanded = S.recentTxExpanded;
+  const visible = expanded ? all : all.slice(0, 5);
+  const remaining = all.length - visible.length;
+  const groups = groupTxByDay(visible);
+
+  const txRowHtml = (t) => {
+    const isShared = !!(t.splitWith?.length || (t.splitAmounts && Object.keys(t.splitAmounts).length));
+    const subtitle = isShared ? "Shared" : (t.ledgerName || "");
+    return `
+      <div class="tx-row">
+        <span class="tx-emoji">${categoryEmoji(t.category)}</span>
+        <span class="tx-main">
+          <span class="tx-title">${t.category}${t.description ? " — " + t.description : ""}</span>
+          ${subtitle ? `<span class="tx-sub muted">${subtitle}</span>` : ""}
+        </span>
+        <span class="${t.type}">${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)}</span>
+      </div>`;
+  };
+
+  return `
+    <div class="section-header-row">
+      <h3 style="margin:0">Recent Transactions</h3>
+      <button class="link small" disabled title="Coming soon">View All</button>
+    </div>
     <div class="tx-list">
-      ${S.recentTx?.length ? S.recentTx.map((t) => `
-        <div class="tx-row">
-          <span>${t.ledgerIcon || "💼"} ${t.category}${t.description ? " — " + t.description : ""}</span>
-          <span class="${t.type}">${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}</span>
-        </div>`).join("") : `<p class="muted">No recent activity yet — flag a ledger to include in your budget to see it here.</p>`}
+      ${all.length ? groups.map((g) => `
+        <div class="tx-day-label muted">${g.label}</div>
+        ${g.items.map(txRowHtml).join("")}
+      `).join("") : `<p class="muted">No recent activity yet — flag a ledger to include in your budget to see it here.</p>`}
     </div>
+    ${remaining > 0 ? `<button id="btnToggleRecentTx" class="link">Show ${remaining} more transaction${remaining > 1 ? "s" : ""}</button>` : ""}
+    ${expanded && all.length > 5 ? `<button id="btnToggleRecentTx" class="link">Show less</button>` : ""}`;
+}
 
-    <h3 style="margin-top:16px">Your ledgers</h3>
+function renderGroupsSection(ledgerEntries) {
+  return `
+    <div class="section-header-row" style="margin-top:20px">
+      <h3 style="margin:0">Groups</h3>
+      <button class="link small" data-nav="ledgers">View All</button>
+    </div>
     <div class="ledger-scroll-row">
-      ${ledgerEntries.map(([lid, l]) => `
-        <button class="ledger-scroll-card" data-lid="${lid}">
+      ${ledgerEntries.map(([lid, l]) => {
+        const line = myLedgerSplitLine(lid);
+        return `
+        <button class="ledger-scroll-card group-card" data-lid="${lid}">
           ${ledgerIcon(l.icon)}
           <span>${l.name || "Untitled"}</span>
-        </button>`).join("")}
+          <span class="group-split-line ${line?.cls || "muted"}">${line?.text || "\u00A0"}</span>
+        </button>`;
+      }).join("")}
       <button class="ledger-scroll-card ledger-scroll-add" id="btnManageLedgers" aria-label="Create or join a ledger">
         ${navIcon("plus")}
         <span>${ledgerEntries.length ? "Manage" : "Add ledger"}</span>
       </button>
-    </div>
-
-    <div class="btn-row" style="margin-top:16px;flex-wrap:wrap">
-      <button id="btnHomeSplits" class="secondary" style="flex:1 1 100%">${sysIcon("users-group")}Splits & Settle (all ledgers)</button>
-      <button class="secondary" style="flex:1" disabled title="Coming soon">${sysIcon("star")}Bookmarked</button>
-      <button class="secondary" style="flex:1" disabled title="Coming soon">${sysIcon("pig-money")}Saving Jar</button>
     </div>`;
 }
 

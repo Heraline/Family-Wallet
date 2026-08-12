@@ -53,6 +53,16 @@ initAuthWatcher((user) => {
 function refreshHomeOverview() {
   const homeCurrency = S.personalBudget?.homeCurrency || "USD";
   refreshPersonalOverview(homeCurrency).catch((err) => console.error("Overview refresh failed:", err));
+
+  // Also refresh each ledger's split balances so the Home "Groups" cards
+  // can show "You are owed / You owe" without waiting for the person to
+  // open the dedicated Splits & Settle page first.
+  const ledgerIds = Object.keys(S.ledgers || {});
+  if (ledgerIds.length) {
+    computeHomeSplitsOverview(ledgerIds, homeCurrency)
+      .then((overview) => { S.homeSplitsOverview = overview; render(); })
+      .catch((err) => console.error("Home splits overview failed:", err));
+  }
 }
 
 function goTo(view) {
@@ -92,6 +102,10 @@ document.getElementById("app").addEventListener("click", async (e) => {
         .catch((err) => console.error("Home splits overview failed:", err));
     }
     if (id === "btnBackFromHomeSplits") goTo("home");
+    if (id === "btnToggleRecentTx") {
+      S.recentTxExpanded = !S.recentTxExpanded;
+      render();
+    }
     if (e.target.closest?.("#btnHomeWalletCard")) {
       goTo("wallet");
       processDueWalletRecurring().catch((err) => console.error("Wallet recurring processing failed:", err));

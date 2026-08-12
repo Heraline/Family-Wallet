@@ -161,7 +161,9 @@ export async function refreshPersonalOverview(homeCurrency) {
   const totalBalance = ledgersBalanceTotal + walletTotal;
 
   allTx.sort((a, b) => b.ts - a.ts);
-  S.recentTx = allTx.slice(0, 5);
+  // Keep a larger pool than we show at first — Home shows 5 and lets the
+  // person tap "Show more" to reveal the rest, up to this cap.
+  S.recentTx = allTx.slice(0, 20);
   const availableCategories = Object.entries(availableCatMap).map(([label, icon]) => ({ label, icon })).sort((a, b) => a.label.localeCompare(b.label));
   S.personalOverview = { ym, total, spentToday, totalBalance, receivedThisMonth, perLedger, categorySpend, availableCategories, homeCurrency };
   notify();
