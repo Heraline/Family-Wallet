@@ -179,8 +179,8 @@ function renderHome() {
         ${target > 0 ? budgetProgress(pct, over) : `<p class="muted">Set a personal budget target to see your progress here.</p>`}
         ${target > 0 ? `
           <div class="budget-stat-row" style="margin-top:8px">
-            <div><span class="muted" style="font-size:11px">Remaining</span><div style="font-size:13px;font-weight:600">${homeCurrency} ${remaining.toFixed(2)}</div></div>
-            <div style="text-align:right"><span class="muted" style="font-size:11px">Daily Safe Spend</span><div style="font-size:13px;font-weight:600">${homeCurrency} ${dailySafe.toFixed(2)}</div></div>
+            <div><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Remaining</span><div style="font-size:16px;font-weight:700">${homeCurrency} ${remaining.toFixed(2)} <span class="muted" style="font-size:11px;font-weight:500">/ ${target.toFixed(2)}</span></div></div>
+            <div style="text-align:right"><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Daily Safe Spend</span><div style="font-size:16px;font-weight:700">${homeCurrency} ${dailySafe.toFixed(2)}</div></div>
           </div>
         ` : ""}
       ` : `<p class="muted">Set a personal budget target to see your overview here.</p>`}
