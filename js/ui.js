@@ -225,7 +225,7 @@ function renderHome() {
         <div class="card-swipe-slide">
           <div id="btnHomeBudgetCard" class="panel card-button" role="button" tabindex="0">
             <div class="card-header-row">
-              <h3 style="margin:0">${sysIcon("chart-bar")}${new Date().toLocaleDateString(undefined, { month: "long" })} Expenses</h3>
+              <h3 style="margin:0">${sysIcon("chart-bar")}This Month's Budget</h3>
               <div class="card-mini-icons">
                 <button class="mini-icon-btn" disabled title="Calendar (coming soon)"><i class="ti ti-calendar" aria-hidden="true"></i></button>
                 <button class="mini-icon-btn" disabled title="Stats (coming soon)"><i class="ti ti-chart-bar" aria-hidden="true"></i></button>
@@ -233,7 +233,7 @@ function renderHome() {
             </div>
             ${overview ? `
               <div class="budget-stat-row">
-                <div><span class="date-line">EXPENSE</span><div class="expense" style="font-size:18px;font-weight:700">${homeCurrency} ${spent.toFixed(2)}</div></div>
+                <div><span class="date-line">SPENDING</span><div class="expense" style="font-size:18px;font-weight:700">${homeCurrency} ${spent.toFixed(2)}</div></div>
                 <div style="text-align:right"><span class="date-line">RECEIVING</span><div class="income" style="font-size:18px;font-weight:700">${homeCurrency} ${received.toFixed(2)}</div></div>
               </div>
               ${target > 0 ? budgetProgress(pct, over) : `<p class="muted">Set a personal budget target to see your progress here.</p>`}
@@ -280,8 +280,8 @@ function renderHome() {
 
 function renderRecentTransactionsSection() {
   const all = S.recentTx || [];
-  const expanded = S.recentTxExpanded;
-  const visible = expanded ? all : all.slice(0, 5);
+  const visibleCount = S.recentTxVisibleCount || 5;
+  const visible = all.slice(0, visibleCount);
   const remaining = all.length - visible.length;
   const groups = groupTxByDay(visible);
 
@@ -310,18 +310,18 @@ function renderRecentTransactionsSection() {
         ${g.items.map(txRowHtml).join("")}
       `).join("") : `<p class="muted">No recent activity yet — flag a ledger to include in your budget to see it here.</p>`}
     </div>
-    ${remaining > 0 ? `<button id="btnToggleRecentTx" class="link">Show ${remaining} more transaction${remaining > 1 ? "s" : ""}</button>` : ""}
-    ${expanded && all.length > 5 ? `<button id="btnToggleRecentTx" class="link">Show less</button>` : ""}`;
+    ${remaining > 0 ? `<button id="btnToggleRecentTx" class="link">Show ${Math.min(5, remaining)} more transaction${Math.min(5, remaining) > 1 ? "s" : ""}</button>` : ""}`;
 }
 
 function renderGroupsSection(ledgerEntries) {
+  const visibleLedgers = ledgerEntries.slice(0, 3);
   return `
     <div class="section-header-row" style="margin-top:20px">
-      <h3 style="margin:0">Groups</h3>
+      <h3 style="margin:0">Ledgers</h3>
       <button class="link small" data-nav="ledgers">View All</button>
     </div>
     <div class="ledger-scroll-row">
-      ${ledgerEntries.map(([lid, l]) => {
+      ${visibleLedgers.map(([lid, l]) => {
         const line = myLedgerSplitLine(lid);
         return `
         <button class="ledger-scroll-card group-card" data-lid="${lid}">

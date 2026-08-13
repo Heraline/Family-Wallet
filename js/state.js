@@ -16,7 +16,7 @@ export const S = {
   includedLedgers: {}, // { lid: true } — which ledgers count toward the personal overview
   personalOverview: null, // computed on demand by budgets.js refreshPersonalOverview()
   recentTx: [],        // latest transactions across flagged ledgers, for the Home screen
-  recentTxExpanded: false, // whether the Home "Recent Transactions" list is showing more than the first 5
+  recentTxVisibleCount: 5, // how many of S.recentTx are currently shown on Home (grows by 5 per tap)
   ledgerBudget: {},    // active ledger's monthly target, from ledgers/{lid}/budgets/{ym}
   recurring: {},       // active ledger's recurring transaction templates
   tags: [],            // active ledger's shared tag list

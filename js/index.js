@@ -103,7 +103,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnBackFromHomeSplits") goTo("home");
     if (id === "btnToggleRecentTx") {
-      S.recentTxExpanded = !S.recentTxExpanded;
+      S.recentTxVisibleCount = Math.min((S.recentTx || []).length, (S.recentTxVisibleCount || 5) + 5);
       render();
     }
     if (e.target.closest?.("#btnHomeWalletCard")) {
