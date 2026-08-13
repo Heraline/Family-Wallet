@@ -250,17 +250,18 @@ function renderHome() {
         </div>
         <div class="card-swipe-slide">
           <div id="btnHomeWalletCard" class="panel card-button" role="button" tabindex="0">
-            <h3>${sysIcon("wallet")}Wallet</h3>
+            <h3 style="margin:0">${sysIcon("wallet")}Pocket</h3>
             ${netWorth ? `
-              <div class="date-line">NET</div>
-              <div class="balance" style="margin-bottom:10px">${netWorth.homeCurrency} ${netWorth.net.toFixed(2)}</div>
-              <div class="net-worth-divider"></div>
-              <div class="budget-stat-row" style="margin-top:10px">
-                <div><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Assets</span><div style="font-size:16px;font-weight:700">${netWorth.homeCurrency} ${netWorth.assets.toFixed(2)}</div></div>
-                <div style="text-align:right"><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Liabilities</span><div style="font-size:16px;font-weight:700">${netWorth.homeCurrency} ${netWorth.liabilities.toFixed(2)}</div></div>
+              <div class="budget-stat-row" style="margin-top:8px">
+                <div><span class="date-line">NET</span><div style="font-size:18px;font-weight:700">${netWorth.homeCurrency} ${netWorth.net.toFixed(2)}</div></div>
+              </div>
+              <div class="net-worth-divider" style="margin:8px 0"></div>
+              <div class="budget-stat-row">
+                <div><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Wallet</span><div style="font-size:16px;font-weight:700">${netWorth.homeCurrency} ${netWorth.assets.toFixed(2)}</div></div>
+                <div style="text-align:right"><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Debt</span><div style="font-size:16px;font-weight:700">${netWorth.homeCurrency} ${netWorth.liabilities.toFixed(2)}</div></div>
               </div>
             ` : `<p class="muted">No funds yet — tap to add some.</p>`}
-            <p class="muted" style="margin-top:10px">Tap to manage →</p>
+            <p class="muted" style="margin-top:6px">Tap to manage →</p>
           </div>
         </div>
       </div>
@@ -561,7 +562,7 @@ function renderLedgerWalletPanel(ledger) {
         <button id="btnAddLedgerWallet" style="flex:1">${sysIcon("plus")}Add directly</button>
         <button id="btnFundLedgerWallet" class="secondary" style="flex:1">↔️ Transfer from my wallet</button>
       </div>
-      <p class="muted" style="margin-top:6px">Add = cash or outside money not tracked in anyone's personal wallet. Transfer = comes out of your own tracked wallet balance.</p>
+      <p class="muted" style="margin-top:6px">Add = cash or outside money not tracked in anyone's Pocket. Transfer = comes out of your own tracked Pocket balance.</p>
     </div>`;
 }
 
@@ -741,7 +742,7 @@ function renderWalletPage() {
       <button id="btnBackFromWallet" class="link">&larr; Home</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
-    <h2>${sysIcon("wallet")}Wallet</h2>
+    <h2>${sysIcon("wallet")}Pocket</h2>
     <p class="muted" style="margin-bottom:12px">Real money you top up yourself — separate from ledger spending. Transfer some into a ledger whenever you want it available to spend.</p>
 
     <div class="panel">
@@ -753,7 +754,7 @@ function renderWalletPage() {
     </div>
 
     <div class="panel">
-      <h3>Liabilities</h3>
+      <h3>Debt</h3>
       <p class="muted" style="margin-bottom:8px">Debts you owe — loans, credit cards, IOUs. Subtracted from the Net figure on Home.</p>
       ${liabilityEntries.length ? liabilityEntries.map(([id, l]) => `
         <div class="tx-row">
@@ -761,16 +762,16 @@ function renderWalletPage() {
           <span class="expense">${l.currency} ${l.amount.toFixed(2)}</span>
           <button class="link small" data-del-liability="${id}">delete</button>
         </div>
-      `).join("") : `<p class="muted">No liabilities added.</p>`}
+      `).join("") : `<p class="muted">No debts added.</p>`}
       <div class="sub-panel">
-        <h4>Add a liability</h4>
+        <h4>Add a debt</h4>
         <div id="liabilityError" class="error"></div>
         <input id="liabilityName" placeholder="Name (e.g. Car loan, Credit card)" />
         <div class="btn-row">
           <input id="liabilityAmount" type="number" step="0.01" placeholder="Amount" style="flex:2" />
           <select id="liabilityCurrency" style="flex:1">${currencyOptions("USD")}</select>
         </div>
-        <button id="btnAddLiability" style="margin-top:8px">Add liability</button>
+        <button id="btnAddLiability" style="margin-top:8px">Add debt</button>
       </div>
     </div>
 
@@ -787,7 +788,7 @@ function renderWalletPage() {
 
     <div class="panel">
       <h3>Fund a ledger's wallet</h3>
-      <p class="muted" style="margin-bottom:8px">Sends money in that ledger's own currency (no conversion yet). Add = outside money not tracked in your personal wallet. Transfer = comes out of your own wallet balance below.</p>
+      <p class="muted" style="margin-bottom:8px">Sends money in that ledger's own currency (no conversion yet). Add = outside money not tracked in your Pocket. Transfer = comes out of your own Pocket balance below.</p>
       <div id="walletTransferError" class="error"></div>
       ${ledgerOptions ? `
         <select id="walletTransferLedger">${ledgerOptions}</select>
@@ -842,7 +843,7 @@ function renderWalletPage() {
           <span>${t.type === "topup" ? "💰" : "➡️"} ${t.type === "topup" ? (t.note || "Top-up") : `To ${t.toLedgerName}${t.note ? " — " + t.note : ""}`}</span>
           <span class="${t.type === "topup" ? "income" : "expense"}">${t.type === "topup" ? "+" : "-"}${t.amount.toFixed(2)} ${t.currency}</span>
         </div>
-      `).join("") : `<p class="muted">No wallet activity yet.</p>`}
+      `).join("") : `<p class="muted">No Pocket activity yet.</p>`}
     </div>
     `;
 }
