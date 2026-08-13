@@ -108,6 +108,7 @@ export function render() {
   if (S.view === "ledgers") return renderLedgerList();
   if (S.view === "homeSplits") return renderHomeSplitsPage();
   if (S.view === "wallet") return renderWalletPage();
+  if (S.view === "quickAdd") return renderQuickAddPage();
   return renderHome();
 }
 
@@ -852,6 +853,80 @@ function renderWalletPage() {
     `;
 }
 
+
+// The floating "+" quick-add screen. Draft state lives in S.quickAdd (see
+// state.js) and is initialized by index.js when the "+" button is tapped —
+// this function just renders whatever's currently in it, falling back to
+// sensible defaults so a stray render() call before init doesn't crash.
+function renderQuickAddPage() {
+  const qa = S.quickAdd || { type: "expense", ledgerId: null, amount: "", runningTotal: 0, pendingSign: "+", category: null, date: new Date().toISOString().slice(0, 10), account: "", reimburse: false };
+  const ledgerEntries = Object.entries(S.ledgers || {});
+  const activeLedger = ledgerEntries.find(([lid]) => lid === qa.ledgerId)?.[1];
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const dateLabel = qa.date === todayStr ? "Today" : new Date(qa.date).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  const { expense, income } = groupedCategories();
+  const cats = qa.type === "income" ? income : expense;
+  const displayAmount = qa.amount !== "" ? qa.amount : (qa.runningTotal ? qa.runningTotal.toFixed(2).replace(/\.00$/, "") : "0");
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromQuickAdd" class="link" aria-label="Close">&larr;</button>
+      <div class="qa-tabs">
+        <button type="button" class="qa-tab ${qa.type === "expense" ? "active" : ""}" data-qa-type="expense">Spending</button>
+        <button type="button" class="qa-tab ${qa.type === "income" ? "active" : ""}" data-qa-type="income">Receiving</button>
+      </div>
+      <span style="width:24px"></span>
+    </div>
+
+    ${!ledgerEntries.length ? `<p class="muted" style="margin:20px 0">Create a ledger first before adding a transaction.</p>` : `
+      <div class="qa-cat-grid">
+        ${cats.map((c) => `
+          <button type="button" class="qa-cat-tile ${qa.category === c.label ? "active" : ""}" data-qa-cat="${c.label}">
+            <span class="qa-cat-icon">${c.icon}</span>
+            <span>${c.label}</span>
+          </button>
+        `).join("")}
+      </div>
+
+      <input id="qaRemark" class="qa-remark" placeholder="Remark" value="${(qa.remark || "").replace(/"/g, "&quot;")}" />
+
+      <div id="qaError" class="error" style="text-align:center"></div>
+      <div class="qa-amount-row ${qa.type}">${qa.pendingSign === "-" && qa.runningTotal !== 0 ? "− " : ""}${displayAmount}</div>
+
+      ${qa.showDatePicker ? `<input type="date" id="qaDateInput" class="qa-inline-picker" value="${qa.date}" />` : ""}
+      ${qa.showLedgerPicker ? `
+        <select id="qaLedgerSelect" class="qa-inline-picker">
+          ${ledgerEntries.map(([lid, l]) => `<option value="${lid}" ${lid === qa.ledgerId ? "selected" : ""}>${l.icon || "💼"} ${l.name}</option>`).join("")}
+        </select>` : ""}
+
+      <div class="qa-keypad">
+        <button type="button" class="qa-key" data-qa-key="1">1</button>
+        <button type="button" class="qa-key" data-qa-key="2">2</button>
+        <button type="button" class="qa-key" data-qa-key="3">3</button>
+        <button type="button" class="qa-key qa-key-op" data-qa-key="+">+</button>
+        <button type="button" class="qa-key qa-tool" id="btnQaDate">${sysIcon("calendar")}<span>${dateLabel}</span></button>
+
+        <button type="button" class="qa-key" data-qa-key="4">4</button>
+        <button type="button" class="qa-key" data-qa-key="5">5</button>
+        <button type="button" class="qa-key" data-qa-key="6">6</button>
+        <button type="button" class="qa-key qa-key-op" data-qa-key="-">−</button>
+        <button type="button" class="qa-key qa-tool" id="btnQaLedger">${ledgerIcon(activeLedger?.icon)}<span>${activeLedger?.name || "Select"}</span></button>
+
+        <button type="button" class="qa-key" data-qa-key="7">7</button>
+        <button type="button" class="qa-key" data-qa-key="8">8</button>
+        <button type="button" class="qa-key" data-qa-key="9">9</button>
+        <button type="button" class="qa-key qa-key-op" data-qa-key="back">⌫</button>
+        <button type="button" class="qa-key qa-tool ${qa.account === "wallet" ? "active" : ""}" id="btnQaAccount">${sysIcon("wallet")}<span>${qa.account === "wallet" ? "Wallet" : "Cash"}</span></button>
+
+        <button type="button" class="qa-key" data-qa-key="0">0</button>
+        <button type="button" class="qa-key" data-qa-key=".">.</button>
+        <button type="button" class="qa-key qa-key-op" data-qa-key="clear">C</button>
+        <button type="button" class="qa-key qa-submit" id="btnQaSubmit">${sysIcon("check")}</button>
+        <button type="button" class="qa-key qa-tool ${qa.reimburse ? "active" : ""}" id="btnQaReimburse">${sysIcon("refresh")}<span>Reimburse</span></button>
+      </div>
+    `}
+  `;
+}
 
 function renderHomeSplitsPage() {
   const overview = S.homeSplitsOverview;

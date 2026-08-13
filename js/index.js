@@ -118,7 +118,75 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnHomeSettings") goTo("aiSettings");
     if (id === "btnBackFromSettings") goTo("home");
     if (id === "btnManageLedgers") goTo("ledgers");
-    if (e.target.closest?.("#btnHomeQuickAdd")) goTo("ledgers");
+    if (e.target.closest?.("#btnHomeQuickAdd")) {
+      const lastLedgerId = S.quickAdd?.ledgerId;
+      const stillValid = lastLedgerId && S.ledgers?.[lastLedgerId];
+      S.quickAdd = {
+        type: "expense",
+        ledgerId: stillValid ? lastLedgerId : Object.keys(S.ledgers || {})[0] || null,
+        amount: "", runningTotal: 0, pendingSign: "+",
+        category: null, remark: "",
+        date: new Date().toISOString().slice(0, 10),
+        account: "", reimburse: false,
+        showDatePicker: false, showLedgerPicker: false,
+      };
+      S.view = "quickAdd";
+      render();
+    }
+    if (id === "btnBackFromQuickAdd") { S.quickAdd = null; goTo("home"); }
+
+    if (e.target.dataset.qaType) {
+      S.quickAdd.type = e.target.dataset.qaType;
+      S.quickAdd.category = null; // expense/income have different category lists
+      render();
+    }
+    if (e.target.dataset.qaCat) {
+      S.quickAdd.category = e.target.dataset.qaCat;
+      render();
+    }
+    if (e.target.dataset.qaKey) {
+      const key = e.target.dataset.qaKey;
+      const qa = S.quickAdd;
+      if (key === "back") {
+        qa.amount = qa.amount.slice(0, -1);
+      } else if (key === "clear") {
+        qa.amount = ""; qa.runningTotal = 0; qa.pendingSign = "+";
+      } else if (key === "+" || key === "-") {
+        // Commits whatever's been typed into the running total, using the
+        // sign that was pending, then starts a new segment with this sign —
+        // lets you tap "12" "+" "5" "=" to add two amounts together.
+        const val = parseFloat(qa.amount || "0") || 0;
+        qa.runningTotal += qa.pendingSign === "-" ? -val : val;
+        qa.pendingSign = key;
+        qa.amount = "";
+      } else if (key === ".") {
+        if (!qa.amount.includes(".")) qa.amount += ".";
+      } else {
+        // digit
+        if (qa.amount === "0") qa.amount = key;
+        else qa.amount += key;
+      }
+      render();
+    }
+    if (id === "btnQaDate") { S.quickAdd.showDatePicker = !S.quickAdd.showDatePicker; S.quickAdd.showLedgerPicker = false; render(); }
+    if (id === "btnQaLedger") { S.quickAdd.showLedgerPicker = !S.quickAdd.showLedgerPicker; S.quickAdd.showDatePicker = false; render(); }
+    if (id === "btnQaAccount") { S.quickAdd.account = S.quickAdd.account === "wallet" ? "" : "wallet"; render(); }
+    if (id === "btnQaReimburse") { S.quickAdd.reimburse = !S.quickAdd.reimburse; render(); }
+    if (id === "btnQaSubmit") {
+      const qa = S.quickAdd;
+      if (!qa.ledgerId) return showError("qaError", "Create or select a ledger first.");
+      if (!qa.category) return showError("qaError", "Pick a category.");
+      const pending = parseFloat(qa.amount || "0") || 0;
+      const amount = qa.runningTotal + (qa.pendingSign === "-" ? -pending : pending);
+      if (!amount || amount <= 0) return showError("qaError", "Enter an amount.");
+      await addTransaction({
+        type: qa.type, amount, category: qa.category, description: qa.remark,
+        ledgerId: qa.ledgerId, date: qa.date,
+        account: qa.account || undefined, reimburse: qa.reimburse,
+      });
+      S.quickAdd = null;
+      goTo("home");
+    }
     if (id === "btnBackFromLedgers") goTo("home");
     if (id === "btnWalletAddFunds") {
       const amount = val("walletAddAmount"), currency = val("walletAddCurrency"), note = val("walletAddNote");
@@ -481,6 +549,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       showError("pcatError", err.message) || showError("walletAddError", err.message) ||
       showError("walletTransferError", err.message) || showError("walletRecurError", err.message) ||
       showError("liabilityError", err.message) ||
+      showError("qaError", err.message) ||
       showError("ledgerFundError", err.message);
   }
 });
@@ -527,6 +596,9 @@ document.getElementById("app").addEventListener("change", async (e) => {
       render();
     }
     if (id === "txAmount") { rebuildSplitAmounts("payer"); rebuildSplitAmounts("split"); }
+    if (id === "qaRemark") { S.quickAdd.remark = e.target.value; }
+    if (id === "qaDateInput") { S.quickAdd.date = e.target.value; S.quickAdd.showDatePicker = false; render(); }
+    if (id === "qaLedgerSelect") { S.quickAdd.ledgerId = e.target.value; S.quickAdd.showLedgerPicker = false; render(); }
     if (e.target.dataset.catField && e.target.dataset.catKey) {
       const field = e.target.dataset.catField, key = e.target.dataset.catKey;
       if (field === "budget") await setCategoryBudget(S.activeLedgerId, key, e.target.value);

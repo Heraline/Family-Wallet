@@ -30,6 +30,7 @@ export const S = {
   settlements: {},     // active ledger's recorded settlements
   homeSplitsOverview: null, // cross-ledger combined splits overview for Home
   uiPrefs: { theme: "teal", cardStyle: "glass", chartStyle: "donut", iconStyle: "plain" }, // synced appearance settings
+  quickAdd: null, // ephemeral draft for the floating "+" quick-add screen — never saved to Firebase directly, just used to build one transaction
 };
 
 // Very small pub/sub so ui.js can re-render whenever state changes,

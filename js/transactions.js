@@ -3,7 +3,7 @@
 // display correctly (extra old fields like splitWith/tags are simply
 // ignored here for now — they'll be reintroduced in a later phase).
 
-import { writePush, writeRemove, writeUpdate, listen } from "./firebase.js";
+import { writePush, writeRemove, writeUpdate, readOnce, listen } from "./firebase.js";
 import { S, notify } from "./state.js";
 import { setTxUnsub } from "./ledgers.js";
 import { convert } from "./currency.js";
@@ -17,10 +17,22 @@ export function listenTransactions(lid) {
   return unsub;
 }
 
-export async function addTransaction({ type, amount, category, description, currency, payers, splitWith, splitAmounts, tags, account }) {
-  if (!S.activeLedgerId) throw new Error("No active ledger.");
+export async function addTransaction({ type, amount, category, description, currency, payers, splitWith, splitAmounts, tags, account, reimburse, ledgerId, date }) {
+  // Defaults to the currently active ledger (the normal case, when you're
+  // inside a ledger's own page). The quick-add flow can instead pass an
+  // explicit ledgerId to post directly to any ledger without navigating
+  // into it first — in that case we look its currency up fresh rather than
+  // trusting S.activeLedgerDetail, which may belong to a different ledger.
+  const targetLedgerId = ledgerId || S.activeLedgerId;
+  if (!targetLedgerId) throw new Error("No active ledger.");
   const now = new Date();
-  const ledgerCurrency = S.activeLedgerDetail?.currency || "USD";
+  let ledgerCurrency;
+  if (targetLedgerId === S.activeLedgerId) {
+    ledgerCurrency = S.activeLedgerDetail?.currency || "USD";
+  } else {
+    const snap = await readOnce(`ledgers/${targetLedgerId}`);
+    ledgerCurrency = snap.exists() ? (snap.val().currency || "USD") : "USD";
+  }
   const origCurrency = currency || ledgerCurrency;
   const origAmount = Number(amount);
 
@@ -57,7 +69,7 @@ export async function addTransaction({ type, amount, category, description, curr
     fxRate,                                 // rate used at entry time (null = conversion unavailable)
     category: type === "income" ? "income" : category,
     description: description?.trim() || category,
-    date: now.toISOString().slice(0, 10),
+    date: date || now.toISOString().slice(0, 10),
     time: now.toTimeString().slice(0, 5),
     ts: Date.now(),
     addedBy: S.user.uid,
@@ -66,8 +78,9 @@ export async function addTransaction({ type, amount, category, description, curr
     ...(splitAmounts ? { splitAmounts: scaleToLedgerCurrency(splitAmounts) } : {}),
     ...(tags?.length ? { tags } : {}),
     ...(account ? { account } : {}),
+    ...(reimburse ? { reimburse: true } : {}),
   };
-  await writePush(`ledgerTransactions/${S.activeLedgerId}`, data);
+  await writePush(`ledgerTransactions/${targetLedgerId}`, data);
 }
 
 export async function deleteTransaction(txId) {
