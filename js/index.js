@@ -22,7 +22,8 @@ import { listenRecurring, addRecurring, deleteRecurring, processDueRecurring } f
 import { listenSettlements, addSettlement, deleteSettlement, computeHomeSplitsOverview } from "./splits.js";
 import { listenCategories, addCategory, updateCategory, deleteCategory, setCategoryBudget, moveCategory } from "./categories.js";
 import { listenTags, ensureTagExists, renameTag, deleteTag } from "./tags.js";
-import { listenWallet, addFunds, addWalletRecurring, deleteWalletRecurring, processDueWalletRecurring } from "./wallet.js";
+import { listenWallet, addFunds, addWalletRecurring, deleteWalletRecurring, processDueWalletRecurring, refreshWalletNetWorth } from "./wallet.js";
+import { listenLiabilities, addLiability, deleteLiability } from "./liabilities.js";
 import { listenLedgerWallet, fundLedgerWallet, addToLedgerWallet, spendFromLedgerWallet, refundToLedgerWallet, getLedgerCurrency } from "./ledgerWallet.js";
 import { render, splitAmountRowsHtml } from "./ui.js";
 
@@ -34,9 +35,10 @@ let unsubIncluded = null;
 let unsubTheme = null;
 let unsubPersonalCatBudgets = null;
 let unsubWallet = null;
+let unsubLiabilities = null;
 
 initAuthWatcher((user) => {
-  unsubUserLedgers?.(); unsubPersonalBudget?.(); unsubIncluded?.(); unsubTheme?.(); unsubPersonalCatBudgets?.(); unsubWallet?.();
+  unsubUserLedgers?.(); unsubPersonalBudget?.(); unsubIncluded?.(); unsubTheme?.(); unsubPersonalCatBudgets?.(); unsubWallet?.(); unsubLiabilities?.();
   if (user) {
     unsubUserLedgers = listenUserLedgers();
     unsubPersonalBudget = listenPersonalBudget();
@@ -44,6 +46,7 @@ initAuthWatcher((user) => {
     unsubTheme = listenThemePrefs();
     unsubPersonalCatBudgets = listenPersonalCategoryBudgets();
     unsubWallet = listenWallet();
+    unsubLiabilities = listenLiabilities();
     refreshHomeOverview();
   }
   applyTheme();
@@ -53,6 +56,7 @@ initAuthWatcher((user) => {
 function refreshHomeOverview() {
   const homeCurrency = S.personalBudget?.homeCurrency || "USD";
   refreshPersonalOverview(homeCurrency).catch((err) => console.error("Overview refresh failed:", err));
+  refreshWalletNetWorth(homeCurrency).catch((err) => console.error("Wallet net worth refresh failed:", err));
 
   // Also refresh each ledger's split balances so the Home "Groups" cards
   // can show "You are owed / You owe" without waiting for the person to
@@ -121,6 +125,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       await addFunds(amount, currency, note);
       document.getElementById("walletAddAmount").value = "";
       document.getElementById("walletAddNote").value = "";
+      refreshWalletNetWorth(S.personalBudget?.homeCurrency || "USD").catch((err) => console.error("Wallet net worth refresh failed:", err));
     }
     if (id === "btnWalletAddToLedger") {
       const ledgerId = val("walletTransferLedger");
@@ -158,6 +163,20 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (e.target.dataset.delWalletRecurring) {
       if (confirm("Delete this recurring top-up?")) await deleteWalletRecurring(e.target.dataset.delWalletRecurring);
+    }
+    if (id === "btnAddLiability") {
+      const name = val("liabilityName"), amount = val("liabilityAmount"), currency = val("liabilityCurrency");
+      if (!name || !amount || Number(amount) <= 0) return showError("liabilityError", "Enter a name and a valid amount.");
+      await addLiability(name, amount, currency);
+      document.getElementById("liabilityName").value = "";
+      document.getElementById("liabilityAmount").value = "";
+      refreshWalletNetWorth(S.personalBudget?.homeCurrency || "USD").catch((err) => console.error("Wallet net worth refresh failed:", err));
+    }
+    if (e.target.dataset.delLiability) {
+      if (confirm("Delete this liability?")) {
+        await deleteLiability(e.target.dataset.delLiability);
+        refreshWalletNetWorth(S.personalBudget?.homeCurrency || "USD").catch((err) => console.error("Wallet net worth refresh failed:", err));
+      }
     }
 
     if (e.target.dataset.lid) {
@@ -460,6 +479,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       showError("settleError", err.message) || showError("catError", err.message) ||
       showError("pcatError", err.message) || showError("walletAddError", err.message) ||
       showError("walletTransferError", err.message) || showError("walletRecurError", err.message) ||
+      showError("liabilityError", err.message) ||
       showError("ledgerFundError", err.message);
   }
 });

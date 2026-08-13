@@ -41,6 +41,8 @@ export function initAuthWatcher(onReady) {
       S.walletBalances = {};
       S.walletTx = {};
       S.walletRecurring = {};
+      S.liabilities = {};
+      S.walletNetWorth = null;
     }
     notify();
     onReady?.(user);

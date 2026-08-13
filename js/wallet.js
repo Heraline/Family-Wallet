@@ -10,6 +10,7 @@
 
 import { readOnce, writeSet, writeUpdate, writeRemove, writePush, listen } from "./firebase.js";
 import { S, notify } from "./state.js";
+import { convert } from "./currency.js";
 
 export function listenWallet() {
   const uid = S.user.uid;
@@ -17,6 +18,27 @@ export function listenWallet() {
   const unsubTx = listen(`users/${uid}/wallet/transactions`, (data) => { S.walletTx = data || {}; notify(); });
   const unsubRec = listen(`users/${uid}/wallet/recurring`, (data) => { S.walletRecurring = data || {}; notify(); });
   return () => { unsubBal(); unsubTx(); unsubRec(); };
+}
+
+// Converts wallet balances (assets) and manually-entered liabilities into
+// one home-currency summary for the Home Wallet card — same "standardize
+// to one currency, detail on tap" treatment as the Budget card. Computed
+// on demand (not a live listener) since it needs async currency conversion;
+// call whenever Home loads or wallet/liabilities data changes.
+export async function refreshWalletNetWorth(homeCurrency) {
+  let assets = 0;
+  for (const [currency, amount] of Object.entries(S.walletBalances || {})) {
+    const c = currency !== homeCurrency ? await convert(amount, currency, homeCurrency) : amount;
+    assets += c != null ? c : amount;
+  }
+  let liabilities = 0;
+  for (const l of Object.values(S.liabilities || {})) {
+    const cur = l.currency || homeCurrency;
+    const c = cur !== homeCurrency ? await convert(l.amount, cur, homeCurrency) : l.amount;
+    liabilities += c != null ? c : l.amount;
+  }
+  S.walletNetWorth = { assets, liabilities, net: assets - liabilities, homeCurrency };
+  notify();
 }
 
 async function adjustBalance(currency, delta) {

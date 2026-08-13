@@ -195,6 +195,7 @@ function renderHome() {
   const daysLeft = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() - today.getDate() + 1;
   const dailySafe = target > 0 ? Math.max(0, remaining) / daysLeft : 0;
   const ledgerEntries = Object.entries(S.ledgers || {});
+  const netWorth = S.walletNetWorth;
 
   app.innerHTML = `
     <div class="topbar">
@@ -250,12 +251,16 @@ function renderHome() {
         <div class="card-swipe-slide">
           <div id="btnHomeWalletCard" class="panel card-button" role="button" tabindex="0">
             <h3>${sysIcon("wallet")}Wallet</h3>
-            ${Object.keys(S.walletBalances || {}).length ? `
-              <div class="btn-row" style="flex-wrap:wrap;gap:14px">
-                ${Object.entries(S.walletBalances).map(([cur, amt]) => `<span class="balance" style="font-size:18px">${cur} ${amt.toFixed(2)}</span>`).join("")}
+            ${netWorth ? `
+              <div class="date-line">NET</div>
+              <div class="balance" style="margin-bottom:10px">${netWorth.homeCurrency} ${netWorth.net.toFixed(2)}</div>
+              <div class="net-worth-divider"></div>
+              <div class="budget-stat-row" style="margin-top:10px">
+                <div><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Assets</span><div style="font-size:16px;font-weight:700">${netWorth.homeCurrency} ${netWorth.assets.toFixed(2)}</div></div>
+                <div style="text-align:right"><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Liabilities</span><div style="font-size:16px;font-weight:700">${netWorth.homeCurrency} ${netWorth.liabilities.toFixed(2)}</div></div>
               </div>
             ` : `<p class="muted">No funds yet — tap to add some.</p>`}
-            <p class="muted" style="margin-top:6px">Tap to manage →</p>
+            <p class="muted" style="margin-top:10px">Tap to manage →</p>
           </div>
         </div>
       </div>
@@ -725,6 +730,7 @@ function nameFrom(namesMap, uid) { return namesMap[uid] ? `${namesMap[uid].avata
 
 function renderWalletPage() {
   const balances = S.walletBalances || {};
+  const liabilityEntries = Object.entries(S.liabilities || {});
   const txList = Object.entries(S.walletTx || {}).sort((a, b) => b[1].ts - a[1].ts).slice(0, 15);
   const recurring = Object.entries(S.walletRecurring || {});
   const ledgerOptions = Object.entries(S.ledgers || {}).map(([lid, l]) => `<option value="${lid}">${l.icon || "💼"} ${l.name}</option>`).join("");
@@ -744,6 +750,28 @@ function renderWalletPage() {
         <div class="btn-row" style="flex-wrap:wrap;gap:18px;margin-bottom:4px">
           ${Object.entries(balances).map(([cur, amt]) => `<span class="balance" style="font-size:22px">${cur} ${amt.toFixed(2)}</span>`).join("")}
         </div>` : `<p class="muted">No funds yet.</p>`}
+    </div>
+
+    <div class="panel">
+      <h3>Liabilities</h3>
+      <p class="muted" style="margin-bottom:8px">Debts you owe — loans, credit cards, IOUs. Subtracted from the Net figure on Home.</p>
+      ${liabilityEntries.length ? liabilityEntries.map(([id, l]) => `
+        <div class="tx-row">
+          <span>${l.name}</span>
+          <span class="expense">${l.currency} ${l.amount.toFixed(2)}</span>
+          <button class="link small" data-del-liability="${id}">delete</button>
+        </div>
+      `).join("") : `<p class="muted">No liabilities added.</p>`}
+      <div class="sub-panel">
+        <h4>Add a liability</h4>
+        <div id="liabilityError" class="error"></div>
+        <input id="liabilityName" placeholder="Name (e.g. Car loan, Credit card)" />
+        <div class="btn-row">
+          <input id="liabilityAmount" type="number" step="0.01" placeholder="Amount" style="flex:2" />
+          <select id="liabilityCurrency" style="flex:1">${currencyOptions("USD")}</select>
+        </div>
+        <button id="btnAddLiability" style="margin-top:8px">Add liability</button>
+      </div>
     </div>
 
     <div class="panel">

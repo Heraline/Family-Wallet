@@ -23,6 +23,8 @@ export const S = {
   walletBalances: {},  // { currency: amount } — your real wallet balance, per currency
   walletTx: {},        // wallet top-up/transfer history
   walletRecurring: {}, // wallet recurring top-up templates (e.g. fixed pocket money)
+  liabilities: {},     // { id: {name, amount, currency, createdAt} } — manually-entered debts
+  walletNetWorth: null, // computed by wallet.js refreshWalletNetWorth(): { assets, liabilities, net, homeCurrency }
   ledgerWalletBalance: 0, // active ledger's own shared/pooled wallet balance (in the ledger's currency)
   categories: {},      // active ledger's custom categories (empty = use DEFAULT_CATEGORIES)
   settlements: {},     // active ledger's recorded settlements

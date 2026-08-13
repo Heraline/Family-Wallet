@@ -117,6 +117,7 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .card-dots { display: flex; justify-content: center; gap: 6px; margin: 8px 0 2px; }
 .card-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--page-muted); opacity: .4; transition: opacity .2s ease; }
 .card-dot.active { opacity: 1; background: var(--accent); }
+.net-worth-divider { border-top: 1px dashed var(--card-border-flat); }
 
 /* ===== Home: section headers (Recent Transactions / Groups) ===== */
 .section-header-row { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px; color: var(--page-text); }
