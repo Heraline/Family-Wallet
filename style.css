@@ -110,6 +110,41 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .ledger-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
 .ledger-scroll-card { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; border-radius: 14px; padding: 12px 16px; min-width: 84px; font-size: 12px; font-weight: 600; color: var(--card-text); }
 
+/* ===== Home: swipeable budget/wallet card ===== */
+.card-swipe-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; }
+.card-swipe-track::-webkit-scrollbar { display: none; }
+.card-swipe-slide { flex: 0 0 100%; scroll-snap-align: start; }
+.card-dots { display: flex; justify-content: center; gap: 6px; margin: 8px 0 2px; }
+.card-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--page-muted); opacity: .4; transition: opacity .2s ease; }
+.card-dot.active { opacity: 1; background: var(--accent); }
+
+/* ===== Home: section headers (Recent Transactions / Groups) ===== */
+.section-header-row { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px; color: var(--page-text); }
+.section-header-row button.link.small { color: var(--accent); }
+.section-header-row button.link.small:disabled { color: var(--page-muted); opacity: 1; cursor: not-allowed; }
+
+/* ===== Home: grouped Recent Transactions ===== */
+.tx-day-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 10px 0 2px; }
+.tx-list .tx-row .tx-emoji { flex: 0 0 auto; width: 28px; font-size: 16px; text-align: center; }
+.tx-list .tx-row .tx-main { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.tx-row .tx-title { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-row .tx-sub { font-size: 11px; }
+#btnToggleRecentTx { display: block; margin: 8px auto 0; }
+
+/* ===== Home: Groups cards (extends .ledger-scroll-card) ===== */
+.group-card { min-width: 104px; }
+.group-split-line { font-size: 10px; font-weight: 600; text-align: center; }
+
+/* ===== Home: quick-action tiles ===== */
+.quick-tile-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+.quick-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px 6px; border-radius: 14px; background: var(--card-bg-flat);
+  border: 1px solid var(--card-border-flat); color: var(--card-text);
+  font-size: 11px; font-weight: 600;
+}
+.quick-tile:disabled { opacity: .5; cursor: not-allowed; }
+
 .opt-btn { border: 1.5px solid var(--card-border-flat); background: var(--card-bg-flat); color: var(--card-text); font-family: inherit; font-size: 12px; font-weight: 600; padding: 8px 12px; border-radius: 10px; cursor: pointer; }
 .opt-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
