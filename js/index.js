@@ -118,6 +118,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnHomeSettings") goTo("aiSettings");
     if (id === "btnBackFromSettings") goTo("home");
     if (id === "btnManageLedgers") goTo("ledgers");
+    if (e.target.closest?.("#btnHomeQuickAdd")) goTo("ledgers");
     if (id === "btnBackFromLedgers") goTo("home");
     if (id === "btnWalletAddFunds") {
       const amount = val("walletAddAmount"), currency = val("walletAddCurrency"), note = val("walletAddNote");

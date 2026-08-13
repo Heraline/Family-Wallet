@@ -146,6 +146,19 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 }
 .quick-tile:disabled { opacity: .5; cursor: not-allowed; }
 
+/* ===== Home: floating '+' add-transaction button ===== */
+.fab-add {
+  position: fixed;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  right: max(20px, calc((100vw - 480px) / 2 + 20px));
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--accent); color: #fff; border: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  cursor: pointer; z-index: 30;
+}
+.fab-add:active { transform: scale(0.96); }
+
 .opt-btn { border: 1.5px solid var(--card-border-flat); background: var(--card-bg-flat); color: var(--card-text); font-family: inherit; font-size: 12px; font-weight: 600; padding: 8px 12px; border-radius: 10px; cursor: pointer; }
 .opt-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 

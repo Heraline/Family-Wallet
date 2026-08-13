@@ -226,7 +226,7 @@ function renderHome() {
         <div class="card-swipe-slide">
           <div id="btnHomeBudgetCard" class="panel card-button" role="button" tabindex="0">
             <div class="card-header-row">
-              <h3 style="margin:0">${sysIcon("chart-bar")}This Month's Budget</h3>
+              <h3 style="margin:0">This Month's Budget</h3>
               <div class="card-mini-icons">
                 <button class="mini-icon-btn" disabled title="Calendar (coming soon)"><i class="ti ti-calendar" aria-hidden="true"></i></button>
                 <button class="mini-icon-btn" disabled title="Stats (coming soon)"><i class="ti ti-chart-bar" aria-hidden="true"></i></button>
@@ -250,7 +250,7 @@ function renderHome() {
         </div>
         <div class="card-swipe-slide">
           <div id="btnHomeWalletCard" class="panel card-button" role="button" tabindex="0">
-            <h3 style="margin:0">${sysIcon("wallet")}Pocket</h3>
+            <h3 style="margin:0">Pocket</h3>
             ${netWorth ? `
               <div class="budget-stat-row" style="margin-top:8px">
                 <div><span class="date-line">NET</span><div style="font-size:18px;font-weight:700">${netWorth.homeCurrency} ${netWorth.net.toFixed(2)}</div></div>
@@ -279,7 +279,11 @@ function renderHome() {
       <button id="btnHomeSplits" class="quick-tile">${sysIcon("users-group")}<span>Splits & Settle</span></button>
       <button class="quick-tile" disabled title="Coming soon">${sysIcon("star")}<span>Bookmarked</span></button>
       <button class="quick-tile" disabled title="Coming soon">${sysIcon("pig-money")}<span>Saving Jar</span></button>
-    </div>`;
+    </div>
+
+    <button id="btnHomeQuickAdd" class="fab-add" aria-label="Add a transaction">
+      <i class="ti ti-plus" aria-hidden="true"></i>
+    </button>`;
 
   wireHomeCardSwipe();
 }
