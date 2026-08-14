@@ -1012,34 +1012,37 @@ function renderQuickAddPage() {
           ${ledgerEntries.map(([lid, l]) => `<option value="${lid}" ${lid === qa.ledgerId ? "selected" : ""}>${l.icon || "💼"} ${l.name}</option>`).join("")}
         </select>` : ""}
 
-      <div class="qa-keypad">
-        <button type="button" class="qa-key" data-qa-key="1">1</button>
-        <button type="button" class="qa-key" data-qa-key="2">2</button>
-        <button type="button" class="qa-key" data-qa-key="3">3</button>
-        <button type="button" class="qa-key qa-key-op" data-qa-key="+">+</button>
-        <button type="button" class="qa-key qa-tool" id="btnQaLedger">${ledgerIcon(activeLedger?.icon)}<span>${activeLedger?.name || "Select"}</span></button>
+      <div class="qa-keypad-wrap">
+        <div class="qa-keypad-numbers">
+          <button type="button" class="qa-key" data-qa-key="1">1</button>
+          <button type="button" class="qa-key" data-qa-key="2">2</button>
+          <button type="button" class="qa-key" data-qa-key="3">3</button>
+          <button type="button" class="qa-key qa-key-op" data-qa-key="+">+</button>
 
-        <button type="button" class="qa-key" data-qa-key="4">4</button>
-        <button type="button" class="qa-key" data-qa-key="5">5</button>
-        <button type="button" class="qa-key" data-qa-key="6">6</button>
-        <button type="button" class="qa-key qa-key-op" data-qa-key="-">−</button>
-        <button type="button" class="qa-key qa-tool ${qa.account === "wallet" ? "active" : ""}" id="btnQaAccount">${sysIcon("wallet")}<span>${qa.account === "wallet" ? "Wallet" : "Cash"}</span></button>
+          <button type="button" class="qa-key" data-qa-key="4">4</button>
+          <button type="button" class="qa-key" data-qa-key="5">5</button>
+          <button type="button" class="qa-key" data-qa-key="6">6</button>
+          <button type="button" class="qa-key qa-key-op" data-qa-key="-">−</button>
 
-        <button type="button" class="qa-key" data-qa-key="7">7</button>
-        <button type="button" class="qa-key" data-qa-key="8">8</button>
-        <button type="button" class="qa-key" data-qa-key="9">9</button>
-        <button type="button" class="qa-key qa-key-op" data-qa-key="×">×</button>
-        <button type="button" class="qa-key qa-tool ${qa.showSplit ? "active" : ""}" id="btnQaSplitToggle">${sysIcon("users-group")}<span>Split</span></button>
+          <button type="button" class="qa-key" data-qa-key="7">7</button>
+          <button type="button" class="qa-key" data-qa-key="8">8</button>
+          <button type="button" class="qa-key" data-qa-key="9">9</button>
+          <button type="button" class="qa-key qa-key-op" data-qa-key="×">×</button>
 
-        <button type="button" class="qa-key" data-qa-key="0">0</button>
-        <button type="button" class="qa-key" data-qa-key=".">.</button>
-        <button type="button" class="qa-key qa-key-op" data-qa-key="back">⌫</button>
-        <button type="button" class="qa-key qa-key-op" data-qa-key="÷">÷</button>
-        <span></span>
-      </div>
-      <div class="qa-action-row">
-        <button type="button" class="qa-key qa-key-ac" data-qa-key="clear">AC</button>
-        <button type="button" class="qa-key qa-submit" id="btnQaSubmit">${sysIcon("check")}</button>
+          <button type="button" class="qa-key" data-qa-key="0">0</button>
+          <button type="button" class="qa-key" data-qa-key=".">.</button>
+          <button type="button" class="qa-key qa-key-op" data-qa-key="back">⌫</button>
+          <button type="button" class="qa-key qa-key-op" data-qa-key="÷">÷</button>
+        </div>
+        <div class="qa-keypad-tools">
+          <button type="button" class="qa-tool" id="btnQaLedger">${ledgerIcon(activeLedger?.icon)}<span>${activeLedger?.name || "Select"}</span></button>
+          <button type="button" class="qa-tool ${qa.account === "wallet" ? "active" : ""}" id="btnQaAccount">${sysIcon("wallet")}<span>${qa.account === "wallet" ? "Wallet" : "Cash"}</span></button>
+          <button type="button" class="qa-tool ${qa.showSplit ? "active" : ""}" id="btnQaSplitToggle">${sysIcon("users-group")}<span>Split</span></button>
+          <div class="qa-action-row">
+            <button type="button" class="qa-key qa-key-ac" data-qa-key="clear">AC</button>
+            <button type="button" class="qa-key qa-submit" id="btnQaSubmit">${sysIcon("check")}</button>
+          </div>
+        </div>
       </div>
 
       ${qa.showSplit ? `
