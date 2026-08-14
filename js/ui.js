@@ -858,6 +858,15 @@ function renderWalletPage() {
 // state.js) and is initialized by index.js when the "+" button is tapped —
 // this function just renders whatever's currently in it, falling back to
 // sensible defaults so a stray render() call before init doesn't crash.
+// Shifts a "YYYY-MM" string by N months, rolling the year over correctly.
+export function shiftMonthStr(monthStr, delta) {
+  let [y, m] = monthStr.split("-").map(Number);
+  m += delta;
+  while (m < 1) { m += 12; y--; }
+  while (m > 12) { m -= 12; y++; }
+  return `${y}-${String(m).padStart(2, "0")}`;
+}
+
 // Shifts a YYYY-MM-DD string by N days, using UTC throughout so it never
 // drifts relative to the UTC-based date strings the rest of the app uses
 // (same reasoning as the UTC date math in wallet.js/recurring.js).
@@ -893,6 +902,38 @@ export function qaComputeAmount(qa) {
     return qaApplyOp(qa.runningTotal, qa.pendingOp, parseFloat(qa.amount) || 0);
   }
   return qa.runningTotal;
+}
+
+// Renders a tap-to-pick month calendar for the Quick Add date bar.
+// qa.calendarMonth ("YYYY-MM") is the month currently being browsed —
+// separate from qa.date (the actual selected day) so navigating months
+// doesn't change the selection until a day is actually tapped.
+function renderQaCalendar(qa) {
+  const viewMonth = qa.calendarMonth || qa.date.slice(0, 7);
+  const [vy, vm] = viewMonth.split("-").map(Number);
+  const firstOfMonth = new Date(Date.UTC(vy, vm - 1, 1));
+  const startWeekday = firstOfMonth.getUTCDay();
+  const daysInMonth = new Date(Date.UTC(vy, vm, 0)).getUTCDate();
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const monthLabel = firstOfMonth.toLocaleDateString(undefined, { month: "long", year: "numeric", timeZone: "UTC" });
+
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(`<span></span>`);
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${vy}-${String(vm).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    cells.push(`<button type="button" class="qa-cal-day ${dateStr === qa.date ? "selected" : ""} ${dateStr === todayStr ? "today" : ""}" data-qa-cal-day="${dateStr}">${d}</button>`);
+  }
+
+  return `
+    <div class="qa-calendar">
+      <div class="qa-cal-header">
+        <button type="button" id="btnQaCalPrev" aria-label="Previous month">${sysIcon("chevron-left")}</button>
+        <span>${monthLabel}</span>
+        <button type="button" id="btnQaCalNext" aria-label="Next month">${sysIcon("chevron-right")}</button>
+      </div>
+      <div class="qa-cal-weekdays">${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => `<span>${d}</span>`).join("")}</div>
+      <div class="qa-cal-grid">${cells.join("")}</div>
+    </div>`;
 }
 
 function renderQuickAddPage() {
@@ -945,9 +986,9 @@ function renderQuickAddPage() {
         </div>
       </div>
       ${qa.showCurrencyPicker ? `
-        <select id="qaCurrencySelect" class="qa-inline-picker">
-          ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map((c) => `<option value="${c}" ${c === currency ? "selected" : ""}>${c}</option>`).join("")}
-        </select>` : ""}
+        <div class="chip-row" style="margin:2px 0 8px">
+          ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map((c) => `<button type="button" class="chip" data-qa-currency="${c}" style="${c === currency ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${c}</button>`).join("")}
+        </div>` : ""}
       ${qa.showTagPicker ? `
         <div class="chip-row" style="margin:2px 0 2px">
           ${(S.tags || []).map((t) => `<button type="button" class="chip" data-qa-tag="${t}" style="${qa.tags?.includes(t) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">🏷️ ${t}</button>`).join("")}
@@ -965,7 +1006,7 @@ function renderQuickAddPage() {
         <button type="button" id="btnQaDateToggle" class="qa-date-label">${sysIcon("calendar")}<span>${dateLabel}</span></button>
         <button type="button" id="btnQaDateNext" aria-label="Next day">${sysIcon("chevron-right")}</button>
       </div>
-      ${qa.showDatePicker ? `<input type="date" id="qaDateInput" class="qa-inline-picker" value="${qa.date}" />` : ""}
+      ${qa.showDatePicker ? renderQaCalendar(qa) : ""}
       ${qa.showLedgerPicker ? `
         <select id="qaLedgerSelect" class="qa-inline-picker">
           ${ledgerEntries.map(([lid, l]) => `<option value="${lid}" ${lid === qa.ledgerId ? "selected" : ""}>${l.icon || "💼"} ${l.name}</option>`).join("")}
@@ -995,8 +1036,8 @@ function renderQuickAddPage() {
         <button type="button" class="qa-key qa-key-op" data-qa-key="back">⌫</button>
         <button type="button" class="qa-key qa-key-op" data-qa-key="÷">÷</button>
         <span></span>
-
-        <span></span><span></span><span></span>
+      </div>
+      <div class="qa-action-row">
         <button type="button" class="qa-key qa-key-ac" data-qa-key="clear">AC</button>
         <button type="button" class="qa-key qa-submit" id="btnQaSubmit">${sysIcon("check")}</button>
       </div>

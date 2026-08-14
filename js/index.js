@@ -26,7 +26,7 @@ import { listenTags, ensureTagExists, renameTag, deleteTag } from "./tags.js";
 import { listenWallet, addFunds, addWalletRecurring, deleteWalletRecurring, processDueWalletRecurring, refreshWalletNetWorth } from "./wallet.js";
 import { listenLiabilities, addLiability, deleteLiability } from "./liabilities.js";
 import { listenLedgerWallet, fundLedgerWallet, addToLedgerWallet, spendFromLedgerWallet, refundToLedgerWallet, getLedgerCurrency } from "./ledgerWallet.js";
-import { render, splitAmountRowsHtml, qaComputeAmount, qaApplyOp, shiftDateStr } from "./ui.js";
+import { render, splitAmountRowsHtml, qaComputeAmount, qaApplyOp, shiftDateStr, shiftMonthStr } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
 
@@ -147,7 +147,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
         ledgerId,
         amount: "", runningTotal: null, pendingOp: null,
         category: null, remark: "", tags: [],
-        date: new Date().toISOString().slice(0, 10),
+        date: new Date().toISOString().slice(0, 10), calendarMonth: new Date().toISOString().slice(0, 7),
         account: "", showSplit: false, payerUids: [], splitUids: [],
         showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false, showTagPicker: false,
       };
@@ -195,12 +195,18 @@ document.getElementById("app").addEventListener("click", async (e) => {
       render();
     }
     if (id === "btnQaDateToggle") {
-      S.quickAdd.showDatePicker = !S.quickAdd.showDatePicker;
+      const opening = !S.quickAdd.showDatePicker;
+      S.quickAdd.showDatePicker = opening;
+      if (opening) S.quickAdd.calendarMonth = S.quickAdd.date.slice(0, 7);
       S.quickAdd.showLedgerPicker = false; S.quickAdd.showCurrencyPicker = false; S.quickAdd.showTagPicker = false;
       render();
     }
     if (id === "btnQaDatePrev") { S.quickAdd.date = shiftDateStr(S.quickAdd.date, -1); render(); }
     if (id === "btnQaDateNext") { S.quickAdd.date = shiftDateStr(S.quickAdd.date, 1); render(); }
+    if (id === "btnQaCalPrev") { S.quickAdd.calendarMonth = shiftMonthStr(S.quickAdd.calendarMonth || S.quickAdd.date.slice(0, 7), -1); render(); }
+    if (id === "btnQaCalNext") { S.quickAdd.calendarMonth = shiftMonthStr(S.quickAdd.calendarMonth || S.quickAdd.date.slice(0, 7), 1); render(); }
+    if (e.target.dataset.qaCalDay) { S.quickAdd.date = e.target.dataset.qaCalDay; S.quickAdd.showDatePicker = false; render(); }
+    if (e.target.dataset.qaCurrency) { S.quickAdd.currency = e.target.dataset.qaCurrency; S.quickAdd.showCurrencyPicker = false; render(); }
     if (id === "btnQaLedger") {
       S.quickAdd.showLedgerPicker = !S.quickAdd.showLedgerPicker;
       S.quickAdd.showDatePicker = false; S.quickAdd.showCurrencyPicker = false; S.quickAdd.showTagPicker = false;
@@ -694,8 +700,6 @@ document.getElementById("app").addEventListener("change", async (e) => {
     }
     if (id === "txAmount") { rebuildSplitAmounts("payer"); rebuildSplitAmounts("split"); }
     if (id === "qaRemark") { S.quickAdd.remark = e.target.value; }
-    if (id === "qaDateInput") { S.quickAdd.date = e.target.value; S.quickAdd.showDatePicker = false; render(); }
-    if (id === "qaCurrencySelect") { S.quickAdd.currency = e.target.value; S.quickAdd.showCurrencyPicker = false; render(); }
     if (id === "qaLedgerSelect") {
       const qa = S.quickAdd;
       qa.ledgerId = e.target.value;
