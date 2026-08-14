@@ -26,7 +26,7 @@ import { listenTags, ensureTagExists, renameTag, deleteTag } from "./tags.js";
 import { listenWallet, addFunds, addWalletRecurring, deleteWalletRecurring, processDueWalletRecurring, refreshWalletNetWorth } from "./wallet.js";
 import { listenLiabilities, addLiability, deleteLiability } from "./liabilities.js";
 import { listenLedgerWallet, fundLedgerWallet, addToLedgerWallet, spendFromLedgerWallet, refundToLedgerWallet, getLedgerCurrency } from "./ledgerWallet.js";
-import { render, splitAmountRowsHtml, qaComputeAmount } from "./ui.js";
+import { render, splitAmountRowsHtml, qaComputeAmount, qaApplyOp, shiftDateStr } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
 
@@ -145,11 +145,11 @@ document.getElementById("app").addEventListener("click", async (e) => {
       S.quickAdd = {
         type: "expense",
         ledgerId,
-        amount: "", runningTotal: 0, pendingSign: "+",
+        amount: "", runningTotal: null, pendingOp: null,
         category: null, remark: "", tags: [],
         date: new Date().toISOString().slice(0, 10),
         account: "", showSplit: false, payerUids: [], splitUids: [],
-        showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false,
+        showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false, showTagPicker: false,
       };
       S.view = "quickAdd";
       render();
@@ -172,14 +172,18 @@ document.getElementById("app").addEventListener("click", async (e) => {
       if (key === "back") {
         qa.amount = qa.amount.slice(0, -1);
       } else if (key === "clear") {
-        qa.amount = ""; qa.runningTotal = 0; qa.pendingSign = "+";
-      } else if (key === "+" || key === "-") {
-        // Commits whatever's been typed into the running total, using the
-        // sign that was pending, then starts a new segment with this sign —
-        // lets you tap "12" "+" "5" "=" to add two amounts together.
+        qa.amount = ""; qa.runningTotal = null; qa.pendingOp = null;
+      } else if (key === "+" || key === "-" || key === "×" || key === "÷") {
+        // Commits whatever's been typed into the running total (applying
+        // whichever operator was pending), then starts a new segment with
+        // this operator — lets you tap "12" "+" "5" "✓" to add two amounts,
+        // or "3" "×" "4" "✓" to multiply, etc. The first number typed just
+        // becomes the base rather than being combined against an assumed 0
+        // (which works for +/- but silently breaks × and ÷).
         const val = parseFloat(qa.amount || "0") || 0;
-        qa.runningTotal += qa.pendingSign === "-" ? -val : val;
-        qa.pendingSign = key;
+        if (qa.runningTotal === null) qa.runningTotal = val;
+        else if (qa.pendingOp) qa.runningTotal = qaApplyOp(qa.runningTotal, qa.pendingOp, val);
+        qa.pendingOp = key;
         qa.amount = "";
       } else if (key === ".") {
         if (!qa.amount.includes(".")) qa.amount += ".";
@@ -190,19 +194,26 @@ document.getElementById("app").addEventListener("click", async (e) => {
       }
       render();
     }
-    if (id === "btnQaDate") {
+    if (id === "btnQaDateToggle") {
       S.quickAdd.showDatePicker = !S.quickAdd.showDatePicker;
-      S.quickAdd.showLedgerPicker = false; S.quickAdd.showCurrencyPicker = false;
+      S.quickAdd.showLedgerPicker = false; S.quickAdd.showCurrencyPicker = false; S.quickAdd.showTagPicker = false;
       render();
     }
+    if (id === "btnQaDatePrev") { S.quickAdd.date = shiftDateStr(S.quickAdd.date, -1); render(); }
+    if (id === "btnQaDateNext") { S.quickAdd.date = shiftDateStr(S.quickAdd.date, 1); render(); }
     if (id === "btnQaLedger") {
       S.quickAdd.showLedgerPicker = !S.quickAdd.showLedgerPicker;
-      S.quickAdd.showDatePicker = false; S.quickAdd.showCurrencyPicker = false;
+      S.quickAdd.showDatePicker = false; S.quickAdd.showCurrencyPicker = false; S.quickAdd.showTagPicker = false;
       render();
     }
     if (id === "btnQaCurrency") {
       S.quickAdd.showCurrencyPicker = !S.quickAdd.showCurrencyPicker;
-      S.quickAdd.showDatePicker = false; S.quickAdd.showLedgerPicker = false;
+      S.quickAdd.showDatePicker = false; S.quickAdd.showLedgerPicker = false; S.quickAdd.showTagPicker = false;
+      render();
+    }
+    if (id === "btnQaTagToggle") {
+      S.quickAdd.showTagPicker = !S.quickAdd.showTagPicker;
+      S.quickAdd.showDatePicker = false; S.quickAdd.showLedgerPicker = false; S.quickAdd.showCurrencyPicker = false;
       render();
     }
     if (id === "btnQaAccount") { S.quickAdd.account = S.quickAdd.account === "wallet" ? "" : "wallet"; render(); }

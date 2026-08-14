@@ -858,27 +858,58 @@ function renderWalletPage() {
 // state.js) and is initialized by index.js when the "+" button is tapped —
 // this function just renders whatever's currently in it, falling back to
 // sensible defaults so a stray render() call before init doesn't crash.
+// Shifts a YYYY-MM-DD string by N days, using UTC throughout so it never
+// drifts relative to the UTC-based date strings the rest of the app uses
+// (same reasoning as the UTC date math in wallet.js/recurring.js).
+export function shiftDateStr(dateStr, days) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
+// Applies one calculator operator between two numbers. Division by zero
+// just returns the total unchanged rather than throwing/NaN-ing the UI.
+export function qaApplyOp(total, op, val) {
+  if (op === "-") return total - val;
+  if (op === "×") return total * val;
+  if (op === "÷") return val !== 0 ? total / val : total;
+  return total + val; // "+"
+}
+
 // Resolves the quick-add draft's running-total calculator into one final
 // number — shared between rendering (the live display) and index.js
 // (validating/submitting), so the math only lives in one place.
+// qa.runningTotal is null until the first operator is pressed (so the
+// first number typed becomes the base, rather than being combined against
+// an assumed starting value of 0 — which works fine for +/- but silently
+// breaks × and ÷, e.g. "5 ×" would otherwise compute 0 × 5 = 0).
 export function qaComputeAmount(qa) {
   if (!qa) return 0;
-  const pending = parseFloat(qa.amount || "0") || 0;
-  return (qa.runningTotal || 0) + (qa.pendingSign === "-" ? -pending : pending);
+  if (qa.runningTotal === null || qa.runningTotal === undefined) {
+    return parseFloat(qa.amount || "0") || 0;
+  }
+  if (qa.pendingOp && qa.amount !== "") {
+    return qaApplyOp(qa.runningTotal, qa.pendingOp, parseFloat(qa.amount) || 0);
+  }
+  return qa.runningTotal;
 }
 
 function renderQuickAddPage() {
-  const qa = S.quickAdd || { type: "expense", ledgerId: null, amount: "", runningTotal: 0, pendingSign: "+", category: null, date: new Date().toISOString().slice(0, 10), account: "" };
+  const qa = S.quickAdd || { type: "expense", ledgerId: null, amount: "", runningTotal: null, pendingOp: null, category: null, date: new Date().toISOString().slice(0, 10), account: "" };
   const ledgerEntries = Object.entries(S.ledgers || {});
   const activeLedger = ledgerEntries.find(([lid]) => lid === qa.ledgerId)?.[1];
   const todayStr = new Date().toISOString().slice(0, 10);
-  const dateLabel = qa.date === todayStr ? "Today" : new Date(qa.date).toLocaleDateString(undefined, { day: "numeric", month: "short" });
   const { expense, income } = groupedCategories();
   const cats = qa.type === "income" ? income : expense;
-  const displayAmount = qa.amount !== "" ? qa.amount : (qa.runningTotal ? qa.runningTotal.toFixed(2).replace(/\.00$/, "") : "0");
+  const rawDisplay = qa.amount !== "" ? qa.amount : String(qa.runningTotal ?? 0);
   const currency = qa.currency || qa.ledgerCurrency || "USD";
   const memberEntries = Object.entries(S.members || {});
   const amountSoFar = qaComputeAmount(qa);
+
+  const dateObj = new Date(qa.date + "T00:00:00");
+  const relLabel = qa.date === todayStr ? "Today " : (qa.date === shiftDateStr(todayStr, -1) ? "Yesterday " : "");
+  const dateLabel = relLabel + dateObj.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 
   app.innerHTML = `
     <div class="topbar">
@@ -900,28 +931,40 @@ function renderQuickAddPage() {
         `).join("")}
       </div>
 
-      <input id="qaRemark" class="qa-remark" placeholder="Remark" value="${(qa.remark || "").replace(/"/g, "&quot;")}" />
-
-      <div class="chip-row" style="margin-bottom:2px">
-        ${(S.tags || []).map((t) => `<button type="button" class="chip" data-qa-tag="${t}" style="${qa.tags?.includes(t) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">🏷️ ${t}</button>`).join("")}
-        <button type="button" class="chip" id="btnQaNewTagToggle">${qa.showNewTag ? "✕ cancel" : "+ Tag"}</button>
-      </div>
-      ${qa.showNewTag ? `
-        <div class="btn-row" style="margin-bottom:8px">
-          <input id="qaNewTag" placeholder="New tag..." style="flex:1" />
-          <button type="button" id="btnQaAddTag" class="secondary">Add</button>
-        </div>` : ""}
-
       <div id="qaError" class="error" style="text-align:center"></div>
-      <div class="qa-amount-wrap">
-        <button type="button" class="qa-currency-pill" id="btnQaCurrency">${currency} ▾</button>
-        <div class="qa-amount-row ${qa.type}">${qa.pendingSign === "-" && qa.runningTotal !== 0 ? "− " : ""}${displayAmount}</div>
-      </div>
 
+      <div class="qa-topline">
+        <button type="button" class="qa-topline-pill ${qa.type}" id="btnQaCurrency">
+          <span class="qa-topline-icon">${qa.type === "income" ? "💰" : "🧾"}</span>
+          <span>${currency}</span>
+          <span class="qa-topline-amount">$${rawDisplay}</span>
+        </button>
+        <div class="qa-remark-wrap">
+          <input id="qaRemark" placeholder="Tap here to write" value="${(qa.remark || "").replace(/"/g, "&quot;")}" />
+          <button type="button" id="btnQaTagToggle" class="qa-tag-btn ${qa.tags?.length ? "active" : ""}" aria-label="Tags">#</button>
+        </div>
+      </div>
       ${qa.showCurrencyPicker ? `
         <select id="qaCurrencySelect" class="qa-inline-picker">
           ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map((c) => `<option value="${c}" ${c === currency ? "selected" : ""}>${c}</option>`).join("")}
         </select>` : ""}
+      ${qa.showTagPicker ? `
+        <div class="chip-row" style="margin:2px 0 2px">
+          ${(S.tags || []).map((t) => `<button type="button" class="chip" data-qa-tag="${t}" style="${qa.tags?.includes(t) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">🏷️ ${t}</button>`).join("")}
+          <button type="button" class="chip" id="btnQaNewTagToggle">${qa.showNewTag ? "✕ cancel" : "+ New"}</button>
+        </div>
+        ${qa.showNewTag ? `
+          <div class="btn-row" style="margin-bottom:8px">
+            <input id="qaNewTag" placeholder="New tag..." style="flex:1" />
+            <button type="button" id="btnQaAddTag" class="secondary">Add</button>
+          </div>` : ""}
+      ` : ""}
+
+      <div class="qa-date-bar">
+        <button type="button" id="btnQaDatePrev" aria-label="Previous day">${sysIcon("chevron-left")}</button>
+        <button type="button" id="btnQaDateToggle" class="qa-date-label">${sysIcon("calendar")}<span>${dateLabel}</span></button>
+        <button type="button" id="btnQaDateNext" aria-label="Next day">${sysIcon("chevron-right")}</button>
+      </div>
       ${qa.showDatePicker ? `<input type="date" id="qaDateInput" class="qa-inline-picker" value="${qa.date}" />` : ""}
       ${qa.showLedgerPicker ? `
         <select id="qaLedgerSelect" class="qa-inline-picker">
@@ -933,25 +976,29 @@ function renderQuickAddPage() {
         <button type="button" class="qa-key" data-qa-key="2">2</button>
         <button type="button" class="qa-key" data-qa-key="3">3</button>
         <button type="button" class="qa-key qa-key-op" data-qa-key="+">+</button>
-        <button type="button" class="qa-key qa-tool" id="btnQaDate">${sysIcon("calendar")}<span>${dateLabel}</span></button>
+        <button type="button" class="qa-key qa-tool" id="btnQaLedger">${ledgerIcon(activeLedger?.icon)}<span>${activeLedger?.name || "Select"}</span></button>
 
         <button type="button" class="qa-key" data-qa-key="4">4</button>
         <button type="button" class="qa-key" data-qa-key="5">5</button>
         <button type="button" class="qa-key" data-qa-key="6">6</button>
         <button type="button" class="qa-key qa-key-op" data-qa-key="-">−</button>
-        <button type="button" class="qa-key qa-tool" id="btnQaLedger">${ledgerIcon(activeLedger?.icon)}<span>${activeLedger?.name || "Select"}</span></button>
+        <button type="button" class="qa-key qa-tool ${qa.account === "wallet" ? "active" : ""}" id="btnQaAccount">${sysIcon("wallet")}<span>${qa.account === "wallet" ? "Wallet" : "Cash"}</span></button>
 
         <button type="button" class="qa-key" data-qa-key="7">7</button>
         <button type="button" class="qa-key" data-qa-key="8">8</button>
         <button type="button" class="qa-key" data-qa-key="9">9</button>
-        <button type="button" class="qa-key qa-key-op" data-qa-key="back">⌫</button>
-        <button type="button" class="qa-key qa-tool ${qa.account === "wallet" ? "active" : ""}" id="btnQaAccount">${sysIcon("wallet")}<span>${qa.account === "wallet" ? "Wallet" : "Cash"}</span></button>
+        <button type="button" class="qa-key qa-key-op" data-qa-key="×">×</button>
+        <button type="button" class="qa-key qa-tool ${qa.showSplit ? "active" : ""}" id="btnQaSplitToggle">${sysIcon("users-group")}<span>Split</span></button>
 
         <button type="button" class="qa-key" data-qa-key="0">0</button>
         <button type="button" class="qa-key" data-qa-key=".">.</button>
-        <button type="button" class="qa-key qa-key-op" data-qa-key="clear">C</button>
+        <button type="button" class="qa-key qa-key-op" data-qa-key="back">⌫</button>
+        <button type="button" class="qa-key qa-key-op" data-qa-key="÷">÷</button>
+        <span></span>
+
+        <span></span><span></span><span></span>
+        <button type="button" class="qa-key qa-key-ac" data-qa-key="clear">AC</button>
         <button type="button" class="qa-key qa-submit" id="btnQaSubmit">${sysIcon("check")}</button>
-        <button type="button" class="qa-key qa-tool ${qa.showSplit ? "active" : ""}" id="btnQaSplitToggle">${sysIcon("users-group")}<span>Split</span></button>
       </div>
 
       ${qa.showSplit ? `
