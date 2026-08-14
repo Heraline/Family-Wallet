@@ -8,6 +8,7 @@ import {
   createLedger, joinLedgerByCode, switchLedger, listenUserLedgers,
   renameLedger, regenerateInviteCode, addGuest, removeGuest,
   setMemberRole, setModeratorPermissions, removeMember, leaveLedger, deleteLedger,
+  fetchLedgerContext,
 } from "./ledgers.js";
 import { listenTransactions, addTransaction, deleteTransaction, toggleBookmark } from "./transactions.js";
 import {
@@ -25,7 +26,7 @@ import { listenTags, ensureTagExists, renameTag, deleteTag } from "./tags.js";
 import { listenWallet, addFunds, addWalletRecurring, deleteWalletRecurring, processDueWalletRecurring, refreshWalletNetWorth } from "./wallet.js";
 import { listenLiabilities, addLiability, deleteLiability } from "./liabilities.js";
 import { listenLedgerWallet, fundLedgerWallet, addToLedgerWallet, spendFromLedgerWallet, refundToLedgerWallet, getLedgerCurrency } from "./ledgerWallet.js";
-import { render, splitAmountRowsHtml } from "./ui.js";
+import { render, splitAmountRowsHtml, qaComputeAmount } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); render(s); });
 
@@ -67,6 +68,25 @@ function refreshHomeOverview() {
       .then((overview) => { S.homeSplitsOverview = overview; render(); })
       .catch((err) => console.error("Home splits overview failed:", err));
   }
+}
+
+// Loads another ledger's currency/categories/members/tags into the shared
+// state fields the quick-add screen reads from (S.categories, S.members,
+// S.tags) — same fields the ledger-detail page uses, since quick-add is
+// effectively working inside that ledger's context too, just without its
+// live listeners. Safe to reuse: opening a real ledger page afterward
+// overwrites these via switchLedger()'s own live listeners anyway.
+async function loadQaLedgerContext(lid) {
+  if (!lid) return;
+  const ctx = await fetchLedgerContext(lid);
+  S.categories = ctx.categories;
+  S.members = ctx.members;
+  S.tags = ctx.tags;
+  if (S.quickAdd) {
+    S.quickAdd.ledgerCurrency = ctx.currency;
+    if (!S.quickAdd.currency) S.quickAdd.currency = ctx.currency;
+  }
+  render();
 }
 
 function goTo(view) {
@@ -121,17 +141,19 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (e.target.closest?.("#btnHomeQuickAdd")) {
       const lastLedgerId = S.quickAdd?.ledgerId;
       const stillValid = lastLedgerId && S.ledgers?.[lastLedgerId];
+      const ledgerId = stillValid ? lastLedgerId : Object.keys(S.ledgers || {})[0] || null;
       S.quickAdd = {
         type: "expense",
-        ledgerId: stillValid ? lastLedgerId : Object.keys(S.ledgers || {})[0] || null,
+        ledgerId,
         amount: "", runningTotal: 0, pendingSign: "+",
-        category: null, remark: "",
+        category: null, remark: "", tags: [],
         date: new Date().toISOString().slice(0, 10),
-        account: "", reimburse: false,
-        showDatePicker: false, showLedgerPicker: false,
+        account: "", showSplit: false, payerUids: [], splitUids: [],
+        showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false,
       };
       S.view = "quickAdd";
       render();
+      loadQaLedgerContext(ledgerId).catch((err) => console.error("Quick add context load failed:", err));
     }
     if (id === "btnBackFromQuickAdd") { S.quickAdd = null; goTo("home"); }
 
@@ -168,21 +190,85 @@ document.getElementById("app").addEventListener("click", async (e) => {
       }
       render();
     }
-    if (id === "btnQaDate") { S.quickAdd.showDatePicker = !S.quickAdd.showDatePicker; S.quickAdd.showLedgerPicker = false; render(); }
-    if (id === "btnQaLedger") { S.quickAdd.showLedgerPicker = !S.quickAdd.showLedgerPicker; S.quickAdd.showDatePicker = false; render(); }
+    if (id === "btnQaDate") {
+      S.quickAdd.showDatePicker = !S.quickAdd.showDatePicker;
+      S.quickAdd.showLedgerPicker = false; S.quickAdd.showCurrencyPicker = false;
+      render();
+    }
+    if (id === "btnQaLedger") {
+      S.quickAdd.showLedgerPicker = !S.quickAdd.showLedgerPicker;
+      S.quickAdd.showDatePicker = false; S.quickAdd.showCurrencyPicker = false;
+      render();
+    }
+    if (id === "btnQaCurrency") {
+      S.quickAdd.showCurrencyPicker = !S.quickAdd.showCurrencyPicker;
+      S.quickAdd.showDatePicker = false; S.quickAdd.showLedgerPicker = false;
+      render();
+    }
     if (id === "btnQaAccount") { S.quickAdd.account = S.quickAdd.account === "wallet" ? "" : "wallet"; render(); }
-    if (id === "btnQaReimburse") { S.quickAdd.reimburse = !S.quickAdd.reimburse; render(); }
+    if (id === "btnQaSplitToggle") { S.quickAdd.showSplit = !S.quickAdd.showSplit; render(); }
+    if (e.target.dataset.qaPayer) {
+      const qa = S.quickAdd, uid = e.target.dataset.qaPayer;
+      qa.payerUids = (qa.payerUids || []).includes(uid) ? qa.payerUids.filter((x) => x !== uid) : [...(qa.payerUids || []), uid];
+      render();
+    }
+    if (e.target.dataset.qaSplit) {
+      const qa = S.quickAdd, uid = e.target.dataset.qaSplit;
+      qa.splitUids = (qa.splitUids || []).includes(uid) ? qa.splitUids.filter((x) => x !== uid) : [...(qa.splitUids || []), uid];
+      render();
+    }
+    if (e.target.dataset.qaTag) {
+      const qa = S.quickAdd, tag = e.target.dataset.qaTag;
+      qa.tags = (qa.tags || []).includes(tag) ? qa.tags.filter((x) => x !== tag) : [...(qa.tags || []), tag];
+      render();
+    }
+    if (id === "btnQaNewTagToggle") { S.quickAdd.showNewTag = !S.quickAdd.showNewTag; render(); }
+    if (id === "btnQaAddTag") {
+      const tag = val("qaNewTag");
+      if (!tag) return showError("qaError", "Enter a tag name.");
+      await ensureTagExists(S.quickAdd.ledgerId, tag);
+      const clean = tag.trim();
+      if (!S.tags.some((t) => t.toLowerCase() === clean.toLowerCase())) S.tags = [...S.tags, clean];
+      S.quickAdd.tags = [...(S.quickAdd.tags || []), clean];
+      S.quickAdd.showNewTag = false;
+      render();
+    }
     if (id === "btnQaSubmit") {
       const qa = S.quickAdd;
       if (!qa.ledgerId) return showError("qaError", "Create or select a ledger first.");
       if (!qa.category) return showError("qaError", "Pick a category.");
-      const pending = parseFloat(qa.amount || "0") || 0;
-      const amount = qa.runningTotal + (qa.pendingSign === "-" ? -pending : pending);
+      const amount = qaComputeAmount(qa);
       if (!amount || amount <= 0) return showError("qaError", "Enter an amount.");
+
+      const payerUids = qa.payerUids || [];
+      const splitUids = qa.splitUids || [];
+      let payers, splitAmounts;
+      if (payerUids.length >= 2) {
+        payers = {};
+        payerUids.forEach((uid) => {
+          const input = document.querySelector(`.split-amt-input[data-amt-group="qapayer"][data-amt-uid="${uid}"]`);
+          payers[uid] = Number(input?.value) || 0;
+        });
+        const payerSum = Object.values(payers).reduce((a, b) => a + b, 0);
+        if (Math.abs(payerSum - amount) > 0.01) return showError("qaError", `"Paid by" amounts add up to ${payerSum.toFixed(2)}, but the total is ${amount.toFixed(2)}.`);
+      } else if (payerUids.length === 1) {
+        payers = { [payerUids[0]]: amount };
+      }
+      if (splitUids.length >= 1) {
+        splitAmounts = {};
+        splitUids.forEach((uid) => {
+          const input = document.querySelector(`.split-amt-input[data-amt-group="qasplit"][data-amt-uid="${uid}"]`);
+          splitAmounts[uid] = Number(input?.value) || 0;
+        });
+        const splitSum = Object.values(splitAmounts).reduce((a, b) => a + b, 0);
+        if (Math.abs(splitSum - amount) > 0.01) return showError("qaError", `"Split between" amounts add up to ${splitSum.toFixed(2)}, but the total is ${amount.toFixed(2)}.`);
+      }
+
       await addTransaction({
         type: qa.type, amount, category: qa.category, description: qa.remark,
-        ledgerId: qa.ledgerId, date: qa.date,
-        account: qa.account || undefined, reimburse: qa.reimburse,
+        ledgerId: qa.ledgerId, date: qa.date, currency: qa.currency || qa.ledgerCurrency,
+        account: qa.account || undefined, tags: qa.tags?.length ? qa.tags : undefined,
+        payers, splitWith: splitUids.length ? splitUids : undefined, splitAmounts,
       });
       S.quickAdd = null;
       goTo("home");
@@ -598,7 +684,17 @@ document.getElementById("app").addEventListener("change", async (e) => {
     if (id === "txAmount") { rebuildSplitAmounts("payer"); rebuildSplitAmounts("split"); }
     if (id === "qaRemark") { S.quickAdd.remark = e.target.value; }
     if (id === "qaDateInput") { S.quickAdd.date = e.target.value; S.quickAdd.showDatePicker = false; render(); }
-    if (id === "qaLedgerSelect") { S.quickAdd.ledgerId = e.target.value; S.quickAdd.showLedgerPicker = false; render(); }
+    if (id === "qaCurrencySelect") { S.quickAdd.currency = e.target.value; S.quickAdd.showCurrencyPicker = false; render(); }
+    if (id === "qaLedgerSelect") {
+      const qa = S.quickAdd;
+      qa.ledgerId = e.target.value;
+      qa.showLedgerPicker = false;
+      // Category list, currency, members, and tags are all per-ledger —
+      // reset selections tied to the old ledger and load the new one's.
+      qa.category = null; qa.currency = null; qa.payerUids = []; qa.splitUids = []; qa.tags = [];
+      render();
+      loadQaLedgerContext(qa.ledgerId).catch((err) => console.error("Quick add context load failed:", err));
+    }
     if (e.target.dataset.catField && e.target.dataset.catKey) {
       const field = e.target.dataset.catField, key = e.target.dataset.catKey;
       if (field === "budget") await setCategoryBudget(S.activeLedgerId, key, e.target.value);

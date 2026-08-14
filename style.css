@@ -179,6 +179,8 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-cat-tile:nth-child(9n+9) { background: color-mix(in srgb, #E9B23D 16%, var(--card-bg-flat)); }
 
 .qa-remark { margin-bottom: 6px; }
+.qa-amount-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.qa-currency-pill { border: 1px solid var(--card-border-flat); background: var(--card-bg-flat); color: var(--card-text); font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
 .qa-amount-row { font-size: 34px; font-weight: 800; text-align: right; padding: 6px 4px 4px; color: var(--page-text); }
 .qa-amount-row.expense { color: #d9455c; }
 .qa-amount-row.income { color: #1f9d63; }

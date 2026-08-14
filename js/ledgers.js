@@ -62,6 +62,25 @@ export async function joinLedgerByCode(code) {
   return lid;
 }
 
+// Fetches a ledger's currency, categories, members, and tags in one shot —
+// used by the quick-add flow, which needs to work with a ledger's context
+// (for the category grid, currency default, and split chips) without
+// actually "opening" it and setting up all its live listeners.
+export async function fetchLedgerContext(lid) {
+  const [ledgerSnap, catSnap, memberSnap, tagSnap] = await Promise.all([
+    readOnce(`ledgers/${lid}`),
+    readOnce(`ledgers/${lid}/categories`),
+    readOnce(`ledgerMembers/${lid}`),
+    readOnce(`ledgers/${lid}/tags`),
+  ]);
+  return {
+    currency: ledgerSnap.exists() ? (ledgerSnap.val().currency || "USD") : "USD",
+    categories: catSnap.exists() ? catSnap.val() : {},
+    members: memberSnap.exists() ? memberSnap.val() : {},
+    tags: tagSnap.exists() ? Object.values(tagSnap.val()) : [],
+  };
+}
+
 export function switchLedger(lid) {
   unsubMembers?.();
   unsubDetail?.();

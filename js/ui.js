@@ -858,8 +858,17 @@ function renderWalletPage() {
 // state.js) and is initialized by index.js when the "+" button is tapped —
 // this function just renders whatever's currently in it, falling back to
 // sensible defaults so a stray render() call before init doesn't crash.
+// Resolves the quick-add draft's running-total calculator into one final
+// number — shared between rendering (the live display) and index.js
+// (validating/submitting), so the math only lives in one place.
+export function qaComputeAmount(qa) {
+  if (!qa) return 0;
+  const pending = parseFloat(qa.amount || "0") || 0;
+  return (qa.runningTotal || 0) + (qa.pendingSign === "-" ? -pending : pending);
+}
+
 function renderQuickAddPage() {
-  const qa = S.quickAdd || { type: "expense", ledgerId: null, amount: "", runningTotal: 0, pendingSign: "+", category: null, date: new Date().toISOString().slice(0, 10), account: "", reimburse: false };
+  const qa = S.quickAdd || { type: "expense", ledgerId: null, amount: "", runningTotal: 0, pendingSign: "+", category: null, date: new Date().toISOString().slice(0, 10), account: "" };
   const ledgerEntries = Object.entries(S.ledgers || {});
   const activeLedger = ledgerEntries.find(([lid]) => lid === qa.ledgerId)?.[1];
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -867,6 +876,9 @@ function renderQuickAddPage() {
   const { expense, income } = groupedCategories();
   const cats = qa.type === "income" ? income : expense;
   const displayAmount = qa.amount !== "" ? qa.amount : (qa.runningTotal ? qa.runningTotal.toFixed(2).replace(/\.00$/, "") : "0");
+  const currency = qa.currency || qa.ledgerCurrency || "USD";
+  const memberEntries = Object.entries(S.members || {});
+  const amountSoFar = qaComputeAmount(qa);
 
   app.innerHTML = `
     <div class="topbar">
@@ -890,9 +902,26 @@ function renderQuickAddPage() {
 
       <input id="qaRemark" class="qa-remark" placeholder="Remark" value="${(qa.remark || "").replace(/"/g, "&quot;")}" />
 
-      <div id="qaError" class="error" style="text-align:center"></div>
-      <div class="qa-amount-row ${qa.type}">${qa.pendingSign === "-" && qa.runningTotal !== 0 ? "− " : ""}${displayAmount}</div>
+      <div class="chip-row" style="margin-bottom:2px">
+        ${(S.tags || []).map((t) => `<button type="button" class="chip" data-qa-tag="${t}" style="${qa.tags?.includes(t) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">🏷️ ${t}</button>`).join("")}
+        <button type="button" class="chip" id="btnQaNewTagToggle">${qa.showNewTag ? "✕ cancel" : "+ Tag"}</button>
+      </div>
+      ${qa.showNewTag ? `
+        <div class="btn-row" style="margin-bottom:8px">
+          <input id="qaNewTag" placeholder="New tag..." style="flex:1" />
+          <button type="button" id="btnQaAddTag" class="secondary">Add</button>
+        </div>` : ""}
 
+      <div id="qaError" class="error" style="text-align:center"></div>
+      <div class="qa-amount-wrap">
+        <button type="button" class="qa-currency-pill" id="btnQaCurrency">${currency} ▾</button>
+        <div class="qa-amount-row ${qa.type}">${qa.pendingSign === "-" && qa.runningTotal !== 0 ? "− " : ""}${displayAmount}</div>
+      </div>
+
+      ${qa.showCurrencyPicker ? `
+        <select id="qaCurrencySelect" class="qa-inline-picker">
+          ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map((c) => `<option value="${c}" ${c === currency ? "selected" : ""}>${c}</option>`).join("")}
+        </select>` : ""}
       ${qa.showDatePicker ? `<input type="date" id="qaDateInput" class="qa-inline-picker" value="${qa.date}" />` : ""}
       ${qa.showLedgerPicker ? `
         <select id="qaLedgerSelect" class="qa-inline-picker">
@@ -922,8 +951,23 @@ function renderQuickAddPage() {
         <button type="button" class="qa-key" data-qa-key=".">.</button>
         <button type="button" class="qa-key qa-key-op" data-qa-key="clear">C</button>
         <button type="button" class="qa-key qa-submit" id="btnQaSubmit">${sysIcon("check")}</button>
-        <button type="button" class="qa-key qa-tool ${qa.reimburse ? "active" : ""}" id="btnQaReimburse">${sysIcon("refresh")}<span>Reimburse</span></button>
+        <button type="button" class="qa-key qa-tool ${qa.showSplit ? "active" : ""}" id="btnQaSplitToggle">${sysIcon("users-group")}<span>Split</span></button>
       </div>
+
+      ${qa.showSplit ? `
+        <div class="sub-panel" style="margin-top:10px">
+          ${!memberEntries.length ? `<p class="muted">Loading members...</p>` : `
+            <p class="muted" style="margin-bottom:6px">Paid by <span class="muted">(none selected = you)</span></p>
+            <div class="chip-row">${memberEntries.map(([uid, m]) => `<button type="button" class="chip" data-qa-payer="${uid}" style="${qa.payerUids?.includes(uid) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${m.avatar || "🙂"} ${m.displayName}</button>`).join("")}</div>
+            ${qa.payerUids?.length >= 2 ? `<div class="split-amounts">${splitAmountRowsHtml(qa.payerUids, amountSoFar, "qapayer")}</div>` : ""}
+
+            <p class="muted" style="margin:12px 0 6px">Split between</p>
+            <div class="chip-row">${memberEntries.map(([uid, m]) => `<button type="button" class="chip" data-qa-split="${uid}" style="${qa.splitUids?.includes(uid) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${m.avatar || "🙂"} ${m.displayName}</button>`).join("")}</div>
+            ${qa.splitUids?.length >= 1 ? `<div class="split-amounts">${splitAmountRowsHtml(qa.splitUids, amountSoFar, "qasplit")}</div>` : ""}
+            <p class="muted" style="margin-top:6px">Tip: finish typing the amount before adjusting split amounts, since editing the amount resets custom splits back to equal shares.</p>
+          `}
+        </div>
+      ` : ""}
     `}
   `;
 }
