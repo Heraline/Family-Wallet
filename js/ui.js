@@ -937,7 +937,7 @@ function renderQaCalendar(qa) {
 }
 
 function renderQuickAddPage() {
-  const qa = S.quickAdd || { type: "expense", ledgerId: null, amount: "", runningTotal: null, pendingOp: null, category: null, date: new Date().toISOString().slice(0, 10), account: "" };
+  const qa = S.quickAdd || { type: "expense", ledgerId: null, amount: "", runningTotal: null, pendingOp: null, opMode: { pm: "+", md: "-" }, category: null, date: new Date().toISOString().slice(0, 10), account: "" };
   const ledgerEntries = Object.entries(S.ledgers || {});
   const activeLedger = ledgerEntries.find(([lid]) => lid === qa.ledgerId)?.[1];
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -959,10 +959,12 @@ function renderQuickAddPage() {
         <button type="button" class="qa-tab ${qa.type === "expense" ? "active" : ""}" data-qa-type="expense">Spending</button>
         <button type="button" class="qa-tab ${qa.type === "income" ? "active" : ""}" data-qa-type="income">Receiving</button>
       </div>
-      <span style="width:24px"></span>
+      <button type="button" id="btnQaCategoriesMenu" class="link" aria-label="Category settings">${sysIcon("dots-vertical")}</button>
     </div>
 
     ${!ledgerEntries.length ? `<p class="muted" style="margin:20px 0">Create a ledger first before adding a transaction.</p>` : `
+      ${qa.showCategoriesPanel ? renderCategoriesPanel(S.members?.[S.user.uid], [], { currency: qa.ledgerCurrency }) : ""}
+
       <div class="qa-cat-grid">
         ${cats.map((c) => `
           <button type="button" class="qa-cat-tile ${qa.category === c.label ? "active" : ""}" data-qa-cat="${c.label}">
@@ -1017,29 +1019,29 @@ function renderQuickAddPage() {
           <button type="button" class="qa-key" data-qa-key="1">1</button>
           <button type="button" class="qa-key" data-qa-key="2">2</button>
           <button type="button" class="qa-key" data-qa-key="3">3</button>
-          <button type="button" class="qa-key qa-key-op" data-qa-key="+">+</button>
+          <button type="button" class="qa-key qa-key-op qa-op-pm ${qa.opMode?.pm === "×" ? "is-times" : ""}" data-qa-key="pm">+</button>
 
           <button type="button" class="qa-key" data-qa-key="4">4</button>
           <button type="button" class="qa-key" data-qa-key="5">5</button>
           <button type="button" class="qa-key" data-qa-key="6">6</button>
-          <button type="button" class="qa-key qa-key-op" data-qa-key="-">−</button>
+          <button type="button" class="qa-key qa-key-op qa-op-md ${qa.opMode?.md === "÷" ? "is-divide" : ""}" data-qa-key="md">−</button>
 
           <button type="button" class="qa-key" data-qa-key="7">7</button>
           <button type="button" class="qa-key" data-qa-key="8">8</button>
           <button type="button" class="qa-key" data-qa-key="9">9</button>
-          <button type="button" class="qa-key qa-key-op" data-qa-key="×">×</button>
+          <button type="button" class="qa-key qa-key-ac" data-qa-key="clear">AC</button>
 
           <button type="button" class="qa-key" data-qa-key="0">0</button>
           <button type="button" class="qa-key" data-qa-key=".">.</button>
           <button type="button" class="qa-key qa-key-op" data-qa-key="back">⌫</button>
-          <button type="button" class="qa-key qa-key-op" data-qa-key="÷">÷</button>
+          <span></span>
         </div>
         <div class="qa-keypad-tools">
           <button type="button" class="qa-tool" id="btnQaLedger">${ledgerIcon(activeLedger?.icon)}<span>${activeLedger?.name || "Select"}</span></button>
           <button type="button" class="qa-tool ${qa.account === "wallet" ? "active" : ""}" id="btnQaAccount">${sysIcon("wallet")}<span>${qa.account === "wallet" ? "Wallet" : "Cash"}</span></button>
           <button type="button" class="qa-tool ${qa.showSplit ? "active" : ""}" id="btnQaSplitToggle">${sysIcon("users-group")}<span>Split</span></button>
           <div class="qa-action-row">
-            <button type="button" class="qa-key qa-key-ac" data-qa-key="clear">AC</button>
+            <button type="button" class="qa-key qa-key-record" id="btnQaRecord" title="Save and add another">${sysIcon("check")}</button>
             <button type="button" class="qa-key qa-submit" id="btnQaSubmit">${sysIcon("check")}</button>
           </div>
         </div>

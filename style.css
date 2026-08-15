@@ -222,8 +222,22 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-tool.active { background: var(--accent); color: #fff; }
 .qa-submit { background: var(--accent); color: #fff; font-size: 22px; display: flex; align-items: center; justify-content: center; padding: 0; }
 .qa-key-ac { background: #d7ecfb; color: #2f7fbf; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; }
+.qa-key-record { background: #e6e6e6; color: #6b6b6b; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; }
 .qa-action-row { flex: 1; display: flex; gap: 8px; }
 .qa-action-row .qa-key { flex: 1; }
+
+/* +/× and −/÷ combined operator keys: a real tap commits the current
+   symbol; a genuine double-tap (see index.js) flips the symbol instead. */
+.qa-op-pm { transition: transform .2s ease; display: inline-flex; align-items: center; justify-content: center; }
+.qa-op-pm.is-times { transform: rotate(45deg); }
+.qa-op-md { position: relative; }
+.qa-op-md::before, .qa-op-md::after {
+  content: ""; position: absolute; left: 50%; width: 4px; height: 4px; border-radius: 50%;
+  background: currentColor; transform: translateX(-50%); opacity: 0; transition: opacity .2s ease;
+}
+.qa-op-md::before { top: 10px; }
+.qa-op-md::after { bottom: 10px; }
+.qa-op-md.is-divide::before, .qa-op-md.is-divide::after { opacity: 1; }
 
 /* ===== Quick Add: custom calendar grid ===== */
 .qa-calendar { background: var(--card-bg-flat); border-radius: 14px; padding: 10px; margin: 2px 0 10px; }

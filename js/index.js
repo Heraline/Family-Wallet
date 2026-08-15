@@ -89,6 +89,59 @@ async function loadQaLedgerContext(lid) {
   render();
 }
 
+// Validates and saves the current quick-add draft as one transaction.
+// Returns true on success (already saved) or false after showing an error
+// (validation failed, nothing saved) — shared by the red Submit button and
+// the gray Record button, which only differ in what happens afterward.
+async function submitQuickAdd() {
+  const qa = S.quickAdd;
+  if (!qa.ledgerId) { showError("qaError", "Create or select a ledger first."); return false; }
+  if (!qa.category) { showError("qaError", "Pick a category."); return false; }
+  const amount = qaComputeAmount(qa);
+  if (!amount || amount <= 0) { showError("qaError", "Enter an amount."); return false; }
+
+  const payerUids = qa.payerUids || [];
+  const splitUids = qa.splitUids || [];
+  let payers, splitAmounts;
+  if (payerUids.length >= 2) {
+    payers = {};
+    payerUids.forEach((uid) => {
+      const input = document.querySelector(`.split-amt-input[data-amt-group="qapayer"][data-amt-uid="${uid}"]`);
+      payers[uid] = Number(input?.value) || 0;
+    });
+    const payerSum = Object.values(payers).reduce((a, b) => a + b, 0);
+    if (Math.abs(payerSum - amount) > 0.01) { showError("qaError", `"Paid by" amounts add up to ${payerSum.toFixed(2)}, but the total is ${amount.toFixed(2)}.`); return false; }
+  } else if (payerUids.length === 1) {
+    payers = { [payerUids[0]]: amount };
+  }
+  if (splitUids.length >= 1) {
+    splitAmounts = {};
+    splitUids.forEach((uid) => {
+      const input = document.querySelector(`.split-amt-input[data-amt-group="qasplit"][data-amt-uid="${uid}"]`);
+      splitAmounts[uid] = Number(input?.value) || 0;
+    });
+    const splitSum = Object.values(splitAmounts).reduce((a, b) => a + b, 0);
+    if (Math.abs(splitSum - amount) > 0.01) { showError("qaError", `"Split between" amounts add up to ${splitSum.toFixed(2)}, but the total is ${amount.toFixed(2)}.`); return false; }
+  }
+
+  await addTransaction({
+    type: qa.type, amount, category: qa.category, description: qa.remark,
+    ledgerId: qa.ledgerId, date: qa.date, currency: qa.currency || qa.ledgerCurrency,
+    account: qa.account || undefined, tags: qa.tags?.length ? qa.tags : undefined,
+    payers, splitWith: splitUids.length ? splitUids : undefined, splitAmounts,
+  });
+  return true;
+}
+
+// Category edits made from inside quick-add (via the '⋮' menu) write
+// straight to Firebase like normal, but quick-add reads categories from a
+// one-time fetch rather than a live listener — so re-fetch after any edit
+// to keep the grid in sync. No-op when not in quick-add (the real ledger
+// page already has its own live listener for this).
+async function refreshQaCategoriesIfNeeded() {
+  if (S.view === "quickAdd" && S.quickAdd?.ledgerId) await loadQaLedgerContext(S.quickAdd.ledgerId);
+}
+
 function goTo(view) {
   S.activeLedgerId = null;
   S.view = view;
@@ -149,7 +202,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
         category: null, remark: "", tags: [],
         date: new Date().toISOString().slice(0, 10), calendarMonth: new Date().toISOString().slice(0, 7),
         account: "", showSplit: false, payerUids: [], splitUids: [],
-        showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false, showTagPicker: false,
+        opMode: { pm: "+", md: "-" }, lastOpKey: null, lastOpTapTime: 0,
+        showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false, showTagPicker: false, showCategoriesPanel: false,
       };
       S.view = "quickAdd";
       render();
@@ -173,18 +227,30 @@ document.getElementById("app").addEventListener("click", async (e) => {
         qa.amount = qa.amount.slice(0, -1);
       } else if (key === "clear") {
         qa.amount = ""; qa.runningTotal = null; qa.pendingOp = null;
-      } else if (key === "+" || key === "-" || key === "×" || key === "÷") {
-        // Commits whatever's been typed into the running total (applying
-        // whichever operator was pending), then starts a new segment with
-        // this operator — lets you tap "12" "+" "5" "✓" to add two amounts,
-        // or "3" "×" "4" "✓" to multiply, etc. The first number typed just
-        // becomes the base rather than being combined against an assumed 0
-        // (which works for +/- but silently breaks × and ÷).
-        const val = parseFloat(qa.amount || "0") || 0;
-        if (qa.runningTotal === null) qa.runningTotal = val;
-        else if (qa.pendingOp) qa.runningTotal = qaApplyOp(qa.runningTotal, qa.pendingOp, val);
-        qa.pendingOp = key;
-        qa.amount = "";
+      } else if (key === "pm" || key === "md") {
+        // "pm" toggles between + and ×; "md" toggles between − and ÷ — a
+        // single tap commits the current mode's operator as usual. Tapping
+        // the SAME button again quickly (a real double-tap, within 400ms,
+        // not just "typed nothing in between") instead just flips that
+        // button's mode and corrects the operator just committed, without
+        // committing a second time — this is what makes the + rotate into
+        // × (and − reveal the ÷ dots) only after the person taps twice.
+        qa.opMode = qa.opMode || { pm: "+", md: "-" };
+        const now = Date.now();
+        const isDoubleTap = qa.lastOpKey === key && (now - (qa.lastOpTapTime || 0)) < 400;
+        if (isDoubleTap) {
+          qa.opMode[key] = qa.opMode[key] === (key === "pm" ? "+" : "-") ? (key === "pm" ? "×" : "÷") : (key === "pm" ? "+" : "-");
+          qa.pendingOp = qa.opMode[key];
+          qa.lastOpTapTime = 0;
+        } else {
+          const val = parseFloat(qa.amount || "0") || 0;
+          if (qa.runningTotal === null) qa.runningTotal = val;
+          else if (qa.pendingOp) qa.runningTotal = qaApplyOp(qa.runningTotal, qa.pendingOp, val);
+          qa.pendingOp = qa.opMode[key];
+          qa.amount = "";
+          qa.lastOpKey = key;
+          qa.lastOpTapTime = now;
+        }
       } else if (key === ".") {
         if (!qa.amount.includes(".")) qa.amount += ".";
       } else {
@@ -224,6 +290,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnQaAccount") { S.quickAdd.account = S.quickAdd.account === "wallet" ? "" : "wallet"; render(); }
     if (id === "btnQaSplitToggle") { S.quickAdd.showSplit = !S.quickAdd.showSplit; render(); }
+    if (id === "btnQaCategoriesMenu") { S.quickAdd.showCategoriesPanel = !S.quickAdd.showCategoriesPanel; render(); }
     if (e.target.dataset.qaPayer) {
       const qa = S.quickAdd, uid = e.target.dataset.qaPayer;
       qa.payerUids = (qa.payerUids || []).includes(uid) ? qa.payerUids.filter((x) => x !== uid) : [...(qa.payerUids || []), uid];
@@ -251,44 +318,24 @@ document.getElementById("app").addEventListener("click", async (e) => {
       render();
     }
     if (id === "btnQaSubmit") {
-      const qa = S.quickAdd;
-      if (!qa.ledgerId) return showError("qaError", "Create or select a ledger first.");
-      if (!qa.category) return showError("qaError", "Pick a category.");
-      const amount = qaComputeAmount(qa);
-      if (!amount || amount <= 0) return showError("qaError", "Enter an amount.");
-
-      const payerUids = qa.payerUids || [];
-      const splitUids = qa.splitUids || [];
-      let payers, splitAmounts;
-      if (payerUids.length >= 2) {
-        payers = {};
-        payerUids.forEach((uid) => {
-          const input = document.querySelector(`.split-amt-input[data-amt-group="qapayer"][data-amt-uid="${uid}"]`);
-          payers[uid] = Number(input?.value) || 0;
-        });
-        const payerSum = Object.values(payers).reduce((a, b) => a + b, 0);
-        if (Math.abs(payerSum - amount) > 0.01) return showError("qaError", `"Paid by" amounts add up to ${payerSum.toFixed(2)}, but the total is ${amount.toFixed(2)}.`);
-      } else if (payerUids.length === 1) {
-        payers = { [payerUids[0]]: amount };
+      const ok = await submitQuickAdd();
+      if (ok) { S.quickAdd = null; goTo("home"); }
+    }
+    if (id === "btnQaRecord") {
+      const ok = await submitQuickAdd();
+      if (ok) {
+        // "Record" saves like Submit, but stays on the page and resets only
+        // the entry-specific fields — keeps ledger/type/date/currency/account
+        // so rapid multi-entry doesn't require re-picking them each time.
+        const qa = S.quickAdd;
+        S.quickAdd = {
+          ...qa,
+          amount: "", runningTotal: null, pendingOp: null,
+          category: null, remark: "", tags: [],
+          payerUids: [], splitUids: [], showSplit: false,
+        };
+        render();
       }
-      if (splitUids.length >= 1) {
-        splitAmounts = {};
-        splitUids.forEach((uid) => {
-          const input = document.querySelector(`.split-amt-input[data-amt-group="qasplit"][data-amt-uid="${uid}"]`);
-          splitAmounts[uid] = Number(input?.value) || 0;
-        });
-        const splitSum = Object.values(splitAmounts).reduce((a, b) => a + b, 0);
-        if (Math.abs(splitSum - amount) > 0.01) return showError("qaError", `"Split between" amounts add up to ${splitSum.toFixed(2)}, but the total is ${amount.toFixed(2)}.`);
-      }
-
-      await addTransaction({
-        type: qa.type, amount, category: qa.category, description: qa.remark,
-        ledgerId: qa.ledgerId, date: qa.date, currency: qa.currency || qa.ledgerCurrency,
-        account: qa.account || undefined, tags: qa.tags?.length ? qa.tags : undefined,
-        payers, splitWith: splitUids.length ? splitUids : undefined, splitAmounts,
-      });
-      S.quickAdd = null;
-      goTo("home");
     }
     if (id === "btnBackFromLedgers") goTo("home");
     if (id === "btnWalletAddFunds") {
@@ -569,16 +616,19 @@ document.getElementById("app").addEventListener("click", async (e) => {
       const type = val("catType");
       const icon = document.querySelector("#catEmojiPicker .emoji-chip.active")?.dataset.emoji || "📦";
       if (!label) return showError("catError", "Enter a category name.");
-      await addCategory(S.activeLedgerId, { label, icon, type });
+      await addCategory(S.activeLedgerId || S.quickAdd?.ledgerId, { label, icon, type });
       document.getElementById("catName").value = "";
+      await refreshQaCategoriesIfNeeded();
     }
     if (e.target.dataset.delCat) {
       if (confirm("Delete this category? Past transactions using it will keep showing its name.")) {
-        await deleteCategory(S.activeLedgerId, e.target.dataset.delCat);
+        await deleteCategory(S.activeLedgerId || S.quickAdd?.ledgerId, e.target.dataset.delCat);
+        await refreshQaCategoriesIfNeeded();
       }
     }
     if (e.target.dataset.moveCat) {
-      await moveCategory(S.activeLedgerId, e.target.dataset.moveCat, e.target.dataset.dir);
+      await moveCategory(S.activeLedgerId || S.quickAdd?.ledgerId, e.target.dataset.moveCat, e.target.dataset.dir);
+      await refreshQaCategoriesIfNeeded();
     }
     // Tap a category's icon to open a shared picker; tap an emoji in it to apply.
     if (e.target.dataset.changeIconKey) {
@@ -591,8 +641,9 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (e.target.dataset.setIcon) {
       const picker = document.getElementById("catChangeIconPicker");
       const key = picker?.dataset.editingKey;
-      if (key) await updateCategory(S.activeLedgerId, key, { icon: e.target.dataset.setIcon });
+      if (key) await updateCategory(S.activeLedgerId || S.quickAdd?.ledgerId, key, { icon: e.target.dataset.setIcon });
       picker?.classList.add("hidden");
+      await refreshQaCategoriesIfNeeded();
     }
 
     if (id === "btnRenameLedger") {
