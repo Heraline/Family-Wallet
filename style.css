@@ -205,22 +205,24 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-inline-picker { margin: 2px 0 8px; }
 
 .qa-keypad-wrap { display: flex; gap: 8px; margin-top: 10px; }
-.qa-keypad-numbers { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.qa-keypad-tools { flex: 0 0 92px; display: flex; flex-direction: column; gap: 8px; }
+.qa-keypad-numbers { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.qa-keypad-tools { flex: 0 0 116px; display: flex; flex-direction: column; gap: 10px; }
 .qa-key {
-  padding: 14px 0; font-size: 18px; font-weight: 700; border: none; border-radius: 12px;
+  padding: 20px 0; font-size: 22px; font-weight: 700; border: none; border-radius: 14px;
   background: var(--card-bg-flat); color: var(--card-text); cursor: pointer;
 }
-.qa-key-op { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 16px; }
+.qa-key-op { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 18px; }
 .qa-tool {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  font-size: 10px; font-weight: 700; background: var(--card-bg-flat); color: var(--card-text);
-  border: none; border-radius: 12px; padding: 6px 2px; cursor: pointer;
+  flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 6px;
+  font-size: 11px; font-weight: 700; background: var(--card-bg-flat); color: var(--card-text);
+  border: none; border-radius: 14px; padding: 6px 10px; cursor: pointer; text-align: left;
 }
+.qa-tool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qa-tool .ti, .qa-tool .sys-icon, .qa-tool .nav-icon-badge, .qa-tool .sys-icon-badge { font-size: 17px; flex: 0 0 auto; }
 .qa-tool.active { background: var(--accent); color: #fff; }
-.qa-submit { background: var(--accent); color: #fff; font-size: 20px; display: flex; align-items: center; justify-content: center; padding: 0; }
-.qa-key-ac { background: #d7ecfb; color: #2f7fbf; font-size: 13px; padding: 0; display: flex; align-items: center; justify-content: center; }
-.qa-action-row { flex: 1; display: flex; gap: 6px; }
+.qa-submit { background: var(--accent); color: #fff; font-size: 22px; display: flex; align-items: center; justify-content: center; padding: 0; }
+.qa-key-ac { background: #d7ecfb; color: #2f7fbf; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; }
+.qa-action-row { flex: 1; display: flex; gap: 8px; }
 .qa-action-row .qa-key { flex: 1; }
 
 /* ===== Quick Add: custom calendar grid ===== */
