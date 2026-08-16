@@ -220,11 +220,9 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-tool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .qa-tool .ti, .qa-tool .sys-icon, .qa-tool .nav-icon-badge, .qa-tool .sys-icon-badge { font-size: 17px; flex: 0 0 auto; }
 .qa-tool.active { background: var(--accent); color: #fff; }
-.qa-submit { background: var(--accent); color: #fff; font-size: 22px; display: flex; align-items: center; justify-content: center; padding: 0; }
-.qa-key-ac { background: #d7ecfb; color: #2f7fbf; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; }
-.qa-key-record { background: #e6e6e6; color: #6b6b6b; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; }
-.qa-action-row { flex: 1; display: flex; gap: 8px; }
-.qa-action-row .qa-key { flex: 1; }
+.qa-key-ac { background: #d7ecfb; color: #2f7fbf; font-size: 15px; }
+.qa-key-record { background: #e6e6e6; color: #6b6b6b; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.qa-submit-tool { background: var(--accent); color: #fff; }
 
 /* +/× and −/÷ combined operator keys: a real tap commits the current
    symbol; a genuine double-tap (see index.js) flips the symbol instead. */

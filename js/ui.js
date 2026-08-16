@@ -1034,16 +1034,13 @@ function renderQuickAddPage() {
           <button type="button" class="qa-key" data-qa-key="0">0</button>
           <button type="button" class="qa-key" data-qa-key=".">.</button>
           <button type="button" class="qa-key qa-key-op" data-qa-key="back">⌫</button>
-          <span></span>
+          <button type="button" class="qa-key qa-key-record" id="btnQaRecord" title="Save and add another">${sysIcon("checklist")}</button>
         </div>
         <div class="qa-keypad-tools">
           <button type="button" class="qa-tool" id="btnQaLedger">${ledgerIcon(activeLedger?.icon)}<span>${activeLedger?.name || "Select"}</span></button>
           <button type="button" class="qa-tool ${qa.account === "wallet" ? "active" : ""}" id="btnQaAccount">${sysIcon("wallet")}<span>${qa.account === "wallet" ? "Wallet" : "Cash"}</span></button>
           <button type="button" class="qa-tool ${qa.showSplit ? "active" : ""}" id="btnQaSplitToggle">${sysIcon("users-group")}<span>Split</span></button>
-          <div class="qa-action-row">
-            <button type="button" class="qa-key qa-key-record" id="btnQaRecord" title="Save and add another">${sysIcon("check")}</button>
-            <button type="button" class="qa-key qa-submit" id="btnQaSubmit">${sysIcon("check")}</button>
-          </div>
+          <button type="button" class="qa-tool qa-submit-tool" id="btnQaSubmit">${sysIcon("check")}<span>Done</span></button>
         </div>
       </div>
 

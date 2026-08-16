@@ -202,7 +202,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
         category: null, remark: "", tags: [],
         date: new Date().toISOString().slice(0, 10), calendarMonth: new Date().toISOString().slice(0, 7),
         account: "", showSplit: false, payerUids: [], splitUids: [],
-        opMode: { pm: "+", md: "-" }, lastOpKey: null, lastOpTapTime: 0,
+        opMode: { pm: "+", md: "-" }, lastOpKey: null,
         showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false, showTagPicker: false, showCategoriesPanel: false,
       };
       S.view = "quickAdd";
@@ -225,23 +225,25 @@ document.getElementById("app").addEventListener("click", async (e) => {
       const qa = S.quickAdd;
       if (key === "back") {
         qa.amount = qa.amount.slice(0, -1);
+        qa.lastOpKey = null;
       } else if (key === "clear") {
         qa.amount = ""; qa.runningTotal = null; qa.pendingOp = null;
+        qa.lastOpKey = null;
       } else if (key === "pm" || key === "md") {
         // "pm" toggles between + and ×; "md" toggles between − and ÷ — a
-        // single tap commits the current mode's operator as usual. Tapping
-        // the SAME button again quickly (a real double-tap, within 400ms,
-        // not just "typed nothing in between") instead just flips that
+        // tap commits the current mode's operator as usual. Tapping the
+        // SAME button again right after — with nothing else pressed in
+        // between, no timing window involved — instead just flips that
         // button's mode and corrects the operator just committed, without
-        // committing a second time — this is what makes the + rotate into
-        // × (and − reveal the ÷ dots) only after the person taps twice.
+        // committing a second time. Typing a digit (or anything else)
+        // resets this, so it only fires on two genuinely consecutive taps
+        // of the same operator.
         qa.opMode = qa.opMode || { pm: "+", md: "-" };
-        const now = Date.now();
-        const isDoubleTap = qa.lastOpKey === key && (now - (qa.lastOpTapTime || 0)) < 400;
-        if (isDoubleTap) {
+        const isRepeat = qa.lastOpKey === key;
+        if (isRepeat) {
           qa.opMode[key] = qa.opMode[key] === (key === "pm" ? "+" : "-") ? (key === "pm" ? "×" : "÷") : (key === "pm" ? "+" : "-");
           qa.pendingOp = qa.opMode[key];
-          qa.lastOpTapTime = 0;
+          qa.lastOpKey = null; // consumed — a third tap starts fresh as a commit
         } else {
           const val = parseFloat(qa.amount || "0") || 0;
           if (qa.runningTotal === null) qa.runningTotal = val;
@@ -249,14 +251,15 @@ document.getElementById("app").addEventListener("click", async (e) => {
           qa.pendingOp = qa.opMode[key];
           qa.amount = "";
           qa.lastOpKey = key;
-          qa.lastOpTapTime = now;
         }
       } else if (key === ".") {
         if (!qa.amount.includes(".")) qa.amount += ".";
+        qa.lastOpKey = null;
       } else {
         // digit
         if (qa.amount === "0") qa.amount = key;
         else qa.amount += key;
+        qa.lastOpKey = null;
       }
       render();
     }
