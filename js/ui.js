@@ -966,110 +966,114 @@ function renderQuickAddPage() {
     </div>
 
     ${!ledgerEntries.length ? `<p class="muted" style="margin:20px 0">Create a ledger first before adding a transaction.</p>` : `
-      ${qa.showCategoriesPanel ? renderCategoriesPanel(S.members?.[S.user.uid], [], { currency: qa.ledgerCurrency }) : ""}
+      <div class="qa-scroll-area">
+        ${qa.showCategoriesPanel ? renderCategoriesPanel(S.members?.[S.user.uid], [], { currency: qa.ledgerCurrency }) : ""}
 
-      <div class="qa-cat-grid">
-        ${cats.map((c) => `
-          <button type="button" class="qa-cat-tile ${qa.category === c.label ? "active" : ""}" data-qa-cat="${c.label}">
-            <span class="qa-cat-icon">${c.icon}</span>
-            <span>${c.label}</span>
-          </button>
-        `).join("")}
-      </div>
-
-      <div id="qaError" class="error" style="text-align:center"></div>
-
-      <div class="qa-topline">
-        <button type="button" class="qa-topline-pill ${qa.type}" id="btnQaCurrency">
-          <span class="qa-topline-icon">${qa.type === "income" ? "💰" : "🧾"}</span>
-          <span>${currency}</span>
-          <span class="qa-topline-amount">$${rawDisplay}</span>
-        </button>
-        <div class="qa-remark-wrap">
-          <input id="qaRemark" placeholder="Tap here to write" value="${(qa.remark || "").replace(/"/g, "&quot;")}" />
-          <button type="button" id="btnQaTagToggle" class="qa-tag-btn ${qa.tags?.length ? "active" : ""}" aria-label="Tags">#</button>
+        <div class="qa-cat-grid">
+          ${cats.map((c) => `
+            <button type="button" class="qa-cat-tile ${qa.category === c.label ? "active" : ""}" data-qa-cat="${c.label}">
+              <span class="qa-cat-icon">${c.icon}</span>
+              <span>${c.label}</span>
+            </button>
+          `).join("")}
         </div>
-      </div>
-      ${qa.showCurrencyPicker ? `
-        <div class="qa-modal-backdrop" id="qaCurrencyBackdrop">
-          <div class="qa-modal-card">
-            <div class="qa-modal-title">Select Currency</div>
-            <div class="qa-modal-list">
-              ${QA_CURRENCIES.map((c) => `<button type="button" class="qa-modal-row ${c === (qa.currencyDraft || currency) ? "selected" : ""}" data-qa-currency-draft="${c}">${c} ${QA_CURRENCY_SYMBOLS[c] || ""}</button>`).join("")}
-            </div>
-            <div class="qa-modal-footer">
-              <button type="button" class="qa-modal-cancel" id="btnQaCurrencyCancel">Cancel</button>
-              <button type="button" class="qa-modal-ok" id="btnQaCurrencyOk">OK</button>
-            </div>
+
+        ${qa.showSplit ? `
+          <div class="sub-panel" style="margin-top:10px">
+            ${!memberEntries.length ? `<p class="muted">Loading members...</p>` : `
+              <p class="muted" style="margin-bottom:6px">Paid by <span class="muted">(none selected = you)</span></p>
+              <div class="chip-row">${memberEntries.map(([uid, m]) => `<button type="button" class="chip" data-qa-payer="${uid}" style="${qa.payerUids?.includes(uid) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${m.avatar || "🙂"} ${m.displayName}</button>`).join("")}</div>
+              ${qa.payerUids?.length >= 2 ? `<div class="split-amounts">${splitAmountRowsHtml(qa.payerUids, amountSoFar, "qapayer")}</div>` : ""}
+
+              <p class="muted" style="margin:12px 0 6px">Split between</p>
+              <div class="chip-row">${memberEntries.map(([uid, m]) => `<button type="button" class="chip" data-qa-split="${uid}" style="${qa.splitUids?.includes(uid) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${m.avatar || "🙂"} ${m.displayName}</button>`).join("")}</div>
+              ${qa.splitUids?.length >= 1 ? `<div class="split-amounts">${splitAmountRowsHtml(qa.splitUids, amountSoFar, "qasplit")}</div>` : ""}
+              <p class="muted" style="margin-top:6px">Tip: finish typing the amount before adjusting split amounts, since editing the amount resets custom splits back to equal shares.</p>
+            `}
           </div>
-        </div>` : ""}
-      ${qa.showTagPicker ? `
-        <div class="chip-row" style="margin:2px 0 2px">
-          ${(S.tags || []).map((t) => `<button type="button" class="chip" data-qa-tag="${t}" style="${qa.tags?.includes(t) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">🏷️ ${t}</button>`).join("")}
-          <button type="button" class="chip" id="btnQaNewTagToggle">${qa.showNewTag ? "✕ cancel" : "+ New"}</button>
+        ` : ""}
+      </div>
+
+      <div class="qa-bottom-sheet">
+        <div id="qaError" class="error" style="text-align:center"></div>
+
+        <div class="qa-topline">
+          <button type="button" class="qa-topline-pill ${qa.type}" id="btnQaCurrency">
+            <span class="qa-topline-icon">${qa.type === "income" ? "💰" : "🧾"}</span>
+            <span>${currency}</span>
+            <span class="qa-topline-amount">$${rawDisplay}</span>
+          </button>
+          <div class="qa-remark-wrap">
+            <input id="qaRemark" placeholder="Tap here to write" value="${(qa.remark || "").replace(/"/g, "&quot;")}" />
+            <button type="button" id="btnQaTagToggle" class="qa-tag-btn ${qa.tags?.length ? "active" : ""}" aria-label="Tags">#</button>
+          </div>
         </div>
-        ${qa.showNewTag ? `
-          <div class="btn-row" style="margin-bottom:8px">
-            <input id="qaNewTag" placeholder="New tag..." style="flex:1" />
-            <button type="button" id="btnQaAddTag" class="secondary">Add</button>
+        ${qa.showCurrencyPicker ? `
+          <div class="qa-modal-backdrop" id="qaCurrencyBackdrop">
+            <div class="qa-modal-card">
+              <div class="qa-modal-title">Select Currency</div>
+              <div class="qa-modal-list">
+                ${QA_CURRENCIES.map((c) => `<button type="button" class="qa-modal-row ${c === (qa.currencyDraft || currency) ? "selected" : ""}" data-qa-currency-draft="${c}">${c} ${QA_CURRENCY_SYMBOLS[c] || ""}</button>`).join("")}
+              </div>
+              <div class="qa-modal-footer">
+                <button type="button" class="qa-modal-cancel" id="btnQaCurrencyCancel">Cancel</button>
+                <button type="button" class="qa-modal-ok" id="btnQaCurrencyOk">OK</button>
+              </div>
+            </div>
           </div>` : ""}
-      ` : ""}
+        ${qa.showTagPicker ? `
+          <div class="chip-row" style="margin:2px 0 2px">
+            ${(S.tags || []).map((t) => `<button type="button" class="chip" data-qa-tag="${t}" style="${qa.tags?.includes(t) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">🏷️ ${t}</button>`).join("")}
+            <button type="button" class="chip" id="btnQaNewTagToggle">${qa.showNewTag ? "✕ cancel" : "+ New"}</button>
+          </div>
+          ${qa.showNewTag ? `
+            <div class="btn-row" style="margin-bottom:8px">
+              <input id="qaNewTag" placeholder="New tag..." style="flex:1" />
+              <button type="button" id="btnQaAddTag" class="secondary">Add</button>
+            </div>` : ""}
+        ` : ""}
 
-      <div class="qa-date-bar">
-        <button type="button" id="btnQaDatePrev" aria-label="Previous day">${sysIcon("chevron-left")}</button>
-        <button type="button" id="btnQaDateToggle" class="qa-date-label">${sysIcon("calendar")}<span>${dateLabel}</span></button>
-        <button type="button" id="btnQaDateNext" aria-label="Next day">${sysIcon("chevron-right")}</button>
+        <div class="qa-date-bar">
+          <button type="button" id="btnQaDatePrev" aria-label="Previous day">${sysIcon("chevron-left")}</button>
+          <button type="button" id="btnQaDateToggle" class="qa-date-label">${sysIcon("calendar")}<span>${dateLabel}</span></button>
+          <button type="button" id="btnQaDateNext" aria-label="Next day">${sysIcon("chevron-right")}</button>
+        </div>
+        ${qa.showDatePicker ? renderQaCalendar(qa) : ""}
+        ${qa.showLedgerPicker ? `
+          <select id="qaLedgerSelect" class="qa-inline-picker">
+            ${ledgerEntries.map(([lid, l]) => `<option value="${lid}" ${lid === qa.ledgerId ? "selected" : ""}>${l.icon || "💼"} ${l.name}</option>`).join("")}
+          </select>` : ""}
+
+        <div class="qa-keypad-wrap">
+          <div class="qa-keypad-numbers">
+            <button type="button" class="qa-key" data-qa-key="1">1</button>
+            <button type="button" class="qa-key" data-qa-key="2">2</button>
+            <button type="button" class="qa-key" data-qa-key="3">3</button>
+            <button type="button" class="qa-key qa-key-op qa-op-pm ${qa.opMode?.pm === "×" ? "is-times" : ""}" data-qa-key="pm">+</button>
+
+            <button type="button" class="qa-key" data-qa-key="4">4</button>
+            <button type="button" class="qa-key" data-qa-key="5">5</button>
+            <button type="button" class="qa-key" data-qa-key="6">6</button>
+            <button type="button" class="qa-key qa-key-op qa-op-md ${qa.opMode?.md === "÷" ? "is-divide" : ""}" data-qa-key="md">−</button>
+
+            <button type="button" class="qa-key" data-qa-key="7">7</button>
+            <button type="button" class="qa-key" data-qa-key="8">8</button>
+            <button type="button" class="qa-key" data-qa-key="9">9</button>
+            <button type="button" class="qa-key qa-key-ac" data-qa-key="clear">AC</button>
+
+            <button type="button" class="qa-key" data-qa-key="0">0</button>
+            <button type="button" class="qa-key" data-qa-key=".">.</button>
+            <button type="button" class="qa-key qa-key-op" data-qa-key="back">⌫</button>
+            <button type="button" class="qa-key qa-key-record" id="btnQaRecord" title="Save and add another">${sysIcon("checklist")}</button>
+          </div>
+          <div class="qa-keypad-tools">
+            <button type="button" class="qa-tool" id="btnQaLedger">${ledgerIcon(activeLedger?.icon)}<span>${activeLedger?.name || "Select"}</span></button>
+            <button type="button" class="qa-tool ${qa.account === "wallet" ? "active" : ""}" id="btnQaAccount">${sysIcon("wallet")}<span>${qa.account === "wallet" ? "Wallet" : "Cash"}</span></button>
+            <button type="button" class="qa-tool ${qa.showSplit ? "active" : ""}" id="btnQaSplitToggle">${sysIcon("users-group")}<span>Split</span></button>
+            <button type="button" class="qa-tool qa-submit-tool" id="btnQaSubmit">${sysIcon("check")}<span>Done</span></button>
+          </div>
+        </div>
       </div>
-      ${qa.showDatePicker ? renderQaCalendar(qa) : ""}
-      ${qa.showLedgerPicker ? `
-        <select id="qaLedgerSelect" class="qa-inline-picker">
-          ${ledgerEntries.map(([lid, l]) => `<option value="${lid}" ${lid === qa.ledgerId ? "selected" : ""}>${l.icon || "💼"} ${l.name}</option>`).join("")}
-        </select>` : ""}
-
-      <div class="qa-keypad-wrap">
-        <div class="qa-keypad-numbers">
-          <button type="button" class="qa-key" data-qa-key="1">1</button>
-          <button type="button" class="qa-key" data-qa-key="2">2</button>
-          <button type="button" class="qa-key" data-qa-key="3">3</button>
-          <button type="button" class="qa-key qa-key-op qa-op-pm ${qa.opMode?.pm === "×" ? "is-times" : ""}" data-qa-key="pm">+</button>
-
-          <button type="button" class="qa-key" data-qa-key="4">4</button>
-          <button type="button" class="qa-key" data-qa-key="5">5</button>
-          <button type="button" class="qa-key" data-qa-key="6">6</button>
-          <button type="button" class="qa-key qa-key-op qa-op-md ${qa.opMode?.md === "÷" ? "is-divide" : ""}" data-qa-key="md">−</button>
-
-          <button type="button" class="qa-key" data-qa-key="7">7</button>
-          <button type="button" class="qa-key" data-qa-key="8">8</button>
-          <button type="button" class="qa-key" data-qa-key="9">9</button>
-          <button type="button" class="qa-key qa-key-ac" data-qa-key="clear">AC</button>
-
-          <button type="button" class="qa-key" data-qa-key="0">0</button>
-          <button type="button" class="qa-key" data-qa-key=".">.</button>
-          <button type="button" class="qa-key qa-key-op" data-qa-key="back">⌫</button>
-          <button type="button" class="qa-key qa-key-record" id="btnQaRecord" title="Save and add another">${sysIcon("checklist")}</button>
-        </div>
-        <div class="qa-keypad-tools">
-          <button type="button" class="qa-tool" id="btnQaLedger">${ledgerIcon(activeLedger?.icon)}<span>${activeLedger?.name || "Select"}</span></button>
-          <button type="button" class="qa-tool ${qa.account === "wallet" ? "active" : ""}" id="btnQaAccount">${sysIcon("wallet")}<span>${qa.account === "wallet" ? "Wallet" : "Cash"}</span></button>
-          <button type="button" class="qa-tool ${qa.showSplit ? "active" : ""}" id="btnQaSplitToggle">${sysIcon("users-group")}<span>Split</span></button>
-          <button type="button" class="qa-tool qa-submit-tool" id="btnQaSubmit">${sysIcon("check")}<span>Done</span></button>
-        </div>
-      </div>
-
-      ${qa.showSplit ? `
-        <div class="sub-panel" style="margin-top:10px">
-          ${!memberEntries.length ? `<p class="muted">Loading members...</p>` : `
-            <p class="muted" style="margin-bottom:6px">Paid by <span class="muted">(none selected = you)</span></p>
-            <div class="chip-row">${memberEntries.map(([uid, m]) => `<button type="button" class="chip" data-qa-payer="${uid}" style="${qa.payerUids?.includes(uid) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${m.avatar || "🙂"} ${m.displayName}</button>`).join("")}</div>
-            ${qa.payerUids?.length >= 2 ? `<div class="split-amounts">${splitAmountRowsHtml(qa.payerUids, amountSoFar, "qapayer")}</div>` : ""}
-
-            <p class="muted" style="margin:12px 0 6px">Split between</p>
-            <div class="chip-row">${memberEntries.map(([uid, m]) => `<button type="button" class="chip" data-qa-split="${uid}" style="${qa.splitUids?.includes(uid) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${m.avatar || "🙂"} ${m.displayName}</button>`).join("")}</div>
-            ${qa.splitUids?.length >= 1 ? `<div class="split-amounts">${splitAmountRowsHtml(qa.splitUids, amountSoFar, "qasplit")}</div>` : ""}
-            <p class="muted" style="margin-top:6px">Tip: finish typing the amount before adjusting split amounts, since editing the amount resets custom splits back to equal shares.</p>
-          `}
-        </div>
-      ` : ""}
     `}
   `;
 }
