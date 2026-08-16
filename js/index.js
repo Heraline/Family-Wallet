@@ -289,6 +289,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       render();
     }
     if (id === "btnQaCurrencyCancel" || e.target.id === "qaCurrencyBackdrop") { S.quickAdd.showCurrencyPicker = false; render(); }
+    if (e.target.id === "qaDateBackdrop") { S.quickAdd.showDatePicker = false; render(); }
     if (id === "btnQaCurrencyOk") {
       S.quickAdd.currency = S.quickAdd.currencyDraft;
       S.quickAdd.showCurrencyPicker = false;

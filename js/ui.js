@@ -1038,7 +1038,7 @@ function renderQuickAddPage() {
           <button type="button" id="btnQaDateToggle" class="qa-date-label">${sysIcon("calendar")}<span>${dateLabel}</span></button>
           <button type="button" id="btnQaDateNext" aria-label="Next day">${sysIcon("chevron-right")}</button>
         </div>
-        ${qa.showDatePicker ? renderQaCalendar(qa) : ""}
+        ${qa.showDatePicker ? `<div class="qa-modal-backdrop" id="qaDateBackdrop">${renderQaCalendar(qa)}</div>` : ""}
         ${qa.showLedgerPicker ? `
           <select id="qaLedgerSelect" class="qa-inline-picker">
             ${ledgerEntries.map(([lid, l]) => `<option value="${lid}" ${lid === qa.ledgerId ? "selected" : ""}>${l.icon || "💼"} ${l.name}</option>`).join("")}
