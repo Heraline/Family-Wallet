@@ -180,7 +180,7 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 
 .qa-topline { display: flex; align-items: stretch; gap: 8px; margin: 14px 0 8px; }
 .qa-topline-pill {
-  flex: 0 0 auto; display: flex; align-items: center; gap: 5px; max-width: 50%;
+  flex: 0 0 50%; display: flex; align-items: center; gap: 5px;
   border: none; border-radius: 12px; padding: 0 8px; font-size: 13px; font-weight: 700;
   background: color-mix(in srgb, var(--accent) 10%, var(--card-bg-flat)); color: var(--card-text); cursor: pointer;
 }
