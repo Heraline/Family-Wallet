@@ -180,8 +180,8 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 
 .qa-topline { display: flex; align-items: stretch; gap: 8px; margin: 14px 0 8px; }
 .qa-topline-pill {
-  flex: 0 0 auto; display: flex; align-items: center; gap: 6px; max-width: 45%;
-  border: none; border-radius: 12px; padding: 0 10px; font-size: 13px; font-weight: 700;
+  flex: 0 0 auto; display: flex; align-items: center; gap: 5px; max-width: 36%;
+  border: none; border-radius: 12px; padding: 0 8px; font-size: 13px; font-weight: 700;
   background: color-mix(in srgb, var(--accent) 10%, var(--card-bg-flat)); color: var(--card-text); cursor: pointer;
 }
 .qa-topline-pill.income { background: color-mix(in srgb, #1f9d63 12%, var(--card-bg-flat)); }
@@ -194,6 +194,18 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
   color: var(--card-muted); font-weight: 800; font-size: 14px; cursor: pointer;
 }
 .qa-tag-btn.active { color: var(--accent); }
+
+/* ===== Quick Add: Select Currency modal ===== */
+.qa-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px; }
+.qa-modal-card { background: var(--card-bg-flat); border-radius: 16px; width: 100%; max-width: 300px; overflow: hidden; display: flex; flex-direction: column; max-height: 70vh; }
+.qa-modal-title { text-align: center; font-weight: 800; font-size: 15px; padding: 14px; border-bottom: 1px solid var(--card-border-flat); color: var(--card-text); }
+.qa-modal-list { overflow-y: auto; padding: 6px 0; }
+.qa-modal-row { display: block; width: 100%; text-align: center; padding: 10px; border: none; background: none; font-size: 14px; font-weight: 700; color: var(--card-text); cursor: pointer; }
+.qa-modal-row.selected { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.qa-modal-footer { display: flex; border-top: 1px solid var(--card-border-flat); }
+.qa-modal-cancel, .qa-modal-ok { flex: 1; padding: 12px; border: none; background: none; font-weight: 700; font-size: 14px; cursor: pointer; }
+.qa-modal-cancel { color: var(--card-muted); border-right: 1px solid var(--card-border-flat); }
+.qa-modal-ok { color: var(--accent); }
 
 .qa-date-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;

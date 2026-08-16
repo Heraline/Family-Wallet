@@ -936,6 +936,9 @@ function renderQaCalendar(qa) {
     </div>`;
 }
 
+const QA_CURRENCIES = ["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD", "TWD", "CNY", "KRW", "HKD", "THB"];
+const QA_CURRENCY_SYMBOLS = { USD: "$", MYR: "RM", SGD: "$", EUR: "€", GBP: "£", JPY: "¥", AUD: "$", TWD: "$", CNY: "¥", KRW: "₩", HKD: "$", THB: "฿" };
+
 function renderQuickAddPage() {
   const qa = S.quickAdd || { type: "expense", ledgerId: null, amount: "", runningTotal: null, pendingOp: null, opMode: { pm: "+", md: "-" }, category: null, date: new Date().toISOString().slice(0, 10), account: "" };
   const ledgerEntries = Object.entries(S.ledgers || {});
@@ -988,8 +991,17 @@ function renderQuickAddPage() {
         </div>
       </div>
       ${qa.showCurrencyPicker ? `
-        <div class="chip-row" style="margin:2px 0 8px">
-          ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map((c) => `<button type="button" class="chip" data-qa-currency="${c}" style="${c === currency ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${c}</button>`).join("")}
+        <div class="qa-modal-backdrop" id="qaCurrencyBackdrop">
+          <div class="qa-modal-card">
+            <div class="qa-modal-title">Select Currency</div>
+            <div class="qa-modal-list">
+              ${QA_CURRENCIES.map((c) => `<button type="button" class="qa-modal-row ${c === (qa.currencyDraft || currency) ? "selected" : ""}" data-qa-currency-draft="${c}">${c} ${QA_CURRENCY_SYMBOLS[c] || ""}</button>`).join("")}
+            </div>
+            <div class="qa-modal-footer">
+              <button type="button" class="qa-modal-cancel" id="btnQaCurrencyCancel">Cancel</button>
+              <button type="button" class="qa-modal-ok" id="btnQaCurrencyOk">OK</button>
+            </div>
+          </div>
         </div>` : ""}
       ${qa.showTagPicker ? `
         <div class="chip-row" style="margin:2px 0 2px">

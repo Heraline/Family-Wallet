@@ -202,7 +202,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
         category: null, remark: "", tags: [],
         date: new Date().toISOString().slice(0, 10), calendarMonth: new Date().toISOString().slice(0, 7),
         account: "", showSplit: false, payerUids: [], splitUids: [],
-        opMode: { pm: "+", md: "-" }, lastOpKey: null,
+        opMode: { pm: "+", md: "-" }, lastOpKey: null, currencyDraft: null,
         showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false, showTagPicker: false, showCategoriesPanel: false,
       };
       S.view = "quickAdd";
@@ -275,15 +275,23 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnQaCalPrev") { S.quickAdd.calendarMonth = shiftMonthStr(S.quickAdd.calendarMonth || S.quickAdd.date.slice(0, 7), -1); render(); }
     if (id === "btnQaCalNext") { S.quickAdd.calendarMonth = shiftMonthStr(S.quickAdd.calendarMonth || S.quickAdd.date.slice(0, 7), 1); render(); }
     if (e.target.dataset.qaCalDay) { S.quickAdd.date = e.target.dataset.qaCalDay; S.quickAdd.showDatePicker = false; render(); }
-    if (e.target.dataset.qaCurrency) { S.quickAdd.currency = e.target.dataset.qaCurrency; S.quickAdd.showCurrencyPicker = false; render(); }
+    if (e.target.dataset.qaCurrencyDraft) { S.quickAdd.currencyDraft = e.target.dataset.qaCurrencyDraft; render(); }
     if (id === "btnQaLedger") {
       S.quickAdd.showLedgerPicker = !S.quickAdd.showLedgerPicker;
       S.quickAdd.showDatePicker = false; S.quickAdd.showCurrencyPicker = false; S.quickAdd.showTagPicker = false;
       render();
     }
     if (id === "btnQaCurrency") {
-      S.quickAdd.showCurrencyPicker = !S.quickAdd.showCurrencyPicker;
+      const opening = !S.quickAdd.showCurrencyPicker;
+      S.quickAdd.showCurrencyPicker = opening;
+      if (opening) S.quickAdd.currencyDraft = S.quickAdd.currency || S.quickAdd.ledgerCurrency;
       S.quickAdd.showDatePicker = false; S.quickAdd.showLedgerPicker = false; S.quickAdd.showTagPicker = false;
+      render();
+    }
+    if (id === "btnQaCurrencyCancel" || e.target.id === "qaCurrencyBackdrop") { S.quickAdd.showCurrencyPicker = false; render(); }
+    if (id === "btnQaCurrencyOk") {
+      S.quickAdd.currency = S.quickAdd.currencyDraft;
+      S.quickAdd.showCurrencyPicker = false;
       render();
     }
     if (id === "btnQaTagToggle") {
