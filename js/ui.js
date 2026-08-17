@@ -908,6 +908,58 @@ export function qaComputeAmount(qa) {
 // qa.calendarMonth ("YYYY-MM") is the month currently being browsed —
 // separate from qa.date (the actual selected day) so navigating months
 // doesn't change the selection until a day is actually tapped.
+// Builds one scrollable wheel-picker column (tap a row to select it — same
+// tap+scroll-snap pattern as the currency picker, just reused per-column).
+function qaWheelColumn(options, dataKey) {
+  return `<div class="qa-wheel-col">${options.map((o) => `<button type="button" class="qa-wheel-row ${o.selected ? "selected" : ""}" data-${dataKey}="${o.value}">${o.label}</button>`).join("")}</div>`;
+}
+
+function renderQaDateWheel(qa) {
+  const nowYear = new Date().getFullYear();
+  const years = []; for (let y = nowYear - 3; y <= nowYear + 5; y++) years.push(y);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const yearOpts = years.map((v) => ({ value: v, label: String(v), selected: v === qa.wheelYear }));
+  const monthOpts = months.map((v) => ({ value: v, label: String(v).padStart(2, "0"), selected: v === qa.wheelMonth }));
+  const dayOpts = days.map((v) => ({ value: v, label: String(v).padStart(2, "0"), selected: v === qa.wheelDay }));
+  return `
+    <div class="qa-modal-backdrop qa-modal-backdrop-wheel" id="qaDateWheelBackdrop">
+      <div class="qa-modal-card">
+        <div class="qa-modal-title">Select Date</div>
+        <div class="qa-wheel-row-wrap">
+          ${qaWheelColumn(yearOpts, "wheel-year")}
+          ${qaWheelColumn(monthOpts, "wheel-month")}
+          ${qaWheelColumn(dayOpts, "wheel-day")}
+        </div>
+        <div class="qa-modal-footer">
+          <button type="button" class="qa-modal-cancel" id="btnQaDateWheelCancel">Cancel</button>
+          <button type="button" class="qa-modal-ok" id="btnQaDateWheelOk">OK</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderQaTimeWheel(qa) {
+  const hours = Array.from({ length: 24 }, (_, i) => i);
+  const minutes = Array.from({ length: 60 }, (_, i) => i);
+  const hourOpts = hours.map((v) => ({ value: v, label: String(v).padStart(2, "0"), selected: v === qa.wheelHour }));
+  const minuteOpts = minutes.map((v) => ({ value: v, label: String(v).padStart(2, "0"), selected: v === qa.wheelMinute }));
+  return `
+    <div class="qa-modal-backdrop qa-modal-backdrop-wheel" id="qaTimeWheelBackdrop">
+      <div class="qa-modal-card">
+        <div class="qa-modal-title">Select Time</div>
+        <div class="qa-wheel-row-wrap">
+          ${qaWheelColumn(hourOpts, "wheel-hour")}
+          ${qaWheelColumn(minuteOpts, "wheel-minute")}
+        </div>
+        <div class="qa-modal-footer">
+          <button type="button" class="qa-modal-cancel" id="btnQaTimeWheelCancel">Cancel</button>
+          <button type="button" class="qa-modal-ok" id="btnQaTimeWheelOk">OK</button>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderQaCalendar(qa) {
   const draftDate = qa.dateDraft || qa.date;
   const draftTime = qa.timeDraft || qa.time || "00:00";
@@ -931,10 +983,12 @@ function renderQaCalendar(qa) {
     <div class="qa-calendar">
       <div class="qa-cal-toprow">
         <button type="button" class="qa-cal-today-btn" id="btnQaCalToday">TODAY</button>
-        <input type="date" id="qaDateField" class="qa-cal-field" value="${draftDate}" />
-        <input type="time" id="qaTimeField" class="qa-cal-field" value="${draftTime}" />
+        <button type="button" id="btnQaDateFieldOpen" class="qa-cal-field">${draftDate}</button>
+        <button type="button" id="btnQaTimeFieldOpen" class="qa-cal-field">${draftTime}</button>
         <button type="button" class="qa-cal-confirm" id="btnQaCalConfirm" aria-label="Confirm date">${sysIcon("check")}</button>
       </div>
+      ${qa.showDateWheel ? renderQaDateWheel(qa) : ""}
+      ${qa.showTimeWheel ? renderQaTimeWheel(qa) : ""}
       <div class="qa-cal-header">
         <span class="qa-cal-monthlabel"><strong>${monthLabel}</strong> ${vy}</span>
         <div class="qa-cal-nav">

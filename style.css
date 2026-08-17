@@ -270,7 +270,19 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 
 .qa-cal-toprow { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
 .qa-cal-today-btn { flex: 0 0 auto; background: var(--accent); color: #fff; border: none; border-radius: 999px; padding: 6px 10px; font-size: 10px; font-weight: 800; cursor: pointer; }
-.qa-cal-field { flex: 1; min-width: 0; margin: 0; padding: 5px 6px; font-size: 11px; border: 1px solid var(--card-border-flat); border-radius: 8px; background: var(--card-bg-flat); color: var(--card-text); }
+.qa-cal-field { flex: 1; min-width: 0; margin: 0; padding: 5px 6px; font-size: 11px; font-weight: 700; border: 1px solid var(--card-border-flat); border-radius: 8px; background: var(--card-bg-flat); color: var(--card-text); cursor: pointer; text-align: center; }
+
+/* ===== Quick Add: date/time scroll-wheel pickers ===== */
+.qa-modal-backdrop-wheel { z-index: 60; }
+.qa-wheel-row-wrap { display: flex; border-top: 1px solid var(--card-border-flat); border-bottom: 1px solid var(--card-border-flat); }
+.qa-wheel-col {
+  flex: 1; overflow-y: auto; max-height: 132px; scroll-snap-type: y mandatory; border-right: 1px solid var(--card-border-flat);
+  mask-image: linear-gradient(to bottom, transparent 0, black 22%, black 78%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 22%, black 78%, transparent 100%);
+}
+.qa-wheel-col:last-child { border-right: none; }
+.qa-wheel-row { display: flex; align-items: center; justify-content: center; height: 44px; width: 100%; padding: 0; border: none; background: none; font-size: 14px; font-weight: 700; color: var(--card-text); cursor: pointer; scroll-snap-align: center; }
+.qa-wheel-row.selected { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
 .qa-cal-confirm { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; border: none; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; }
 
 .qa-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 14px; color: var(--card-text); }

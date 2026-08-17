@@ -202,6 +202,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
         category: null, remark: "", tags: [],
         date: new Date().toISOString().slice(0, 10), time: new Date().toTimeString().slice(0, 5), calendarMonth: new Date().toISOString().slice(0, 7),
         dateDraft: null, timeDraft: null,
+        showDateWheel: false, showTimeWheel: false,
+        wheelYear: null, wheelMonth: null, wheelDay: null, wheelHour: null, wheelMinute: null,
         account: "", showSplit: false, payerUids: [], splitUids: [],
         opMode: { pm: "+", md: "-" }, lastOpKey: null, currencyDraft: null,
         showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false, showTagPicker: false, showCategoriesPanel: false,
@@ -290,6 +292,40 @@ document.getElementById("app").addEventListener("click", async (e) => {
       S.quickAdd.date = S.quickAdd.dateDraft || S.quickAdd.date;
       S.quickAdd.time = S.quickAdd.timeDraft || S.quickAdd.time;
       S.quickAdd.showDatePicker = false;
+      render();
+    }
+    if (id === "btnQaDateFieldOpen") {
+      const [y, m, d] = (S.quickAdd.dateDraft || S.quickAdd.date).split("-").map(Number);
+      S.quickAdd.wheelYear = y; S.quickAdd.wheelMonth = m; S.quickAdd.wheelDay = d;
+      S.quickAdd.showDateWheel = true;
+      render();
+    }
+    if (e.target.dataset.wheelYear) { S.quickAdd.wheelYear = Number(e.target.dataset.wheelYear); render(); }
+    if (e.target.dataset.wheelMonth) { S.quickAdd.wheelMonth = Number(e.target.dataset.wheelMonth); render(); }
+    if (e.target.dataset.wheelDay) { S.quickAdd.wheelDay = Number(e.target.dataset.wheelDay); render(); }
+    if (id === "btnQaDateWheelCancel" || e.target.id === "qaDateWheelBackdrop") { S.quickAdd.showDateWheel = false; render(); }
+    if (id === "btnQaDateWheelOk") {
+      const qa = S.quickAdd;
+      const daysInThatMonth = new Date(Date.UTC(qa.wheelYear, qa.wheelMonth, 0)).getUTCDate();
+      const day = Math.min(qa.wheelDay, daysInThatMonth);
+      qa.dateDraft = `${qa.wheelYear}-${String(qa.wheelMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      qa.calendarMonth = qa.dateDraft.slice(0, 7);
+      qa.showDateWheel = false;
+      render();
+    }
+    if (id === "btnQaTimeFieldOpen") {
+      const [h, min] = (S.quickAdd.timeDraft || S.quickAdd.time).split(":").map(Number);
+      S.quickAdd.wheelHour = h; S.quickAdd.wheelMinute = min;
+      S.quickAdd.showTimeWheel = true;
+      render();
+    }
+    if (e.target.dataset.wheelHour) { S.quickAdd.wheelHour = Number(e.target.dataset.wheelHour); render(); }
+    if (e.target.dataset.wheelMinute) { S.quickAdd.wheelMinute = Number(e.target.dataset.wheelMinute); render(); }
+    if (id === "btnQaTimeWheelCancel" || e.target.id === "qaTimeWheelBackdrop") { S.quickAdd.showTimeWheel = false; render(); }
+    if (id === "btnQaTimeWheelOk") {
+      const qa = S.quickAdd;
+      qa.timeDraft = `${String(qa.wheelHour).padStart(2, "0")}:${String(qa.wheelMinute).padStart(2, "0")}`;
+      qa.showTimeWheel = false;
       render();
     }
     if (e.target.dataset.qaCurrencyDraft) { S.quickAdd.currencyDraft = e.target.dataset.qaCurrencyDraft; render(); }
@@ -780,8 +816,6 @@ document.getElementById("app").addEventListener("change", async (e) => {
     }
     if (id === "txAmount") { rebuildSplitAmounts("payer"); rebuildSplitAmounts("split"); }
     if (id === "qaRemark") { S.quickAdd.remark = e.target.value; }
-    if (id === "qaDateField") { S.quickAdd.dateDraft = e.target.value; S.quickAdd.calendarMonth = e.target.value.slice(0, 7); render(); }
-    if (id === "qaTimeField") { S.quickAdd.timeDraft = e.target.value; }
     if (id === "qaLedgerSelect") {
       const qa = S.quickAdd;
       qa.ledgerId = e.target.value;
