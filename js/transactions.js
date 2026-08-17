@@ -17,7 +17,7 @@ export function listenTransactions(lid) {
   return unsub;
 }
 
-export async function addTransaction({ type, amount, category, description, currency, payers, splitWith, splitAmounts, tags, account, reimburse, ledgerId, date }) {
+export async function addTransaction({ type, amount, category, description, currency, payers, splitWith, splitAmounts, tags, account, reimburse, ledgerId, date, time }) {
   // Defaults to the currently active ledger (the normal case, when you're
   // inside a ledger's own page). The quick-add flow can instead pass an
   // explicit ledgerId to post directly to any ledger without navigating
@@ -70,7 +70,7 @@ export async function addTransaction({ type, amount, category, description, curr
     category: type === "income" ? "income" : category,
     description: description?.trim() || category,
     date: date || now.toISOString().slice(0, 10),
-    time: now.toTimeString().slice(0, 5),
+    time: time || now.toTimeString().slice(0, 5),
     ts: Date.now(),
     addedBy: S.user.uid,
     ...(payers ? { payers: scaleToLedgerCurrency(payers) } : {}),

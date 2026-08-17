@@ -126,7 +126,7 @@ async function submitQuickAdd() {
 
   await addTransaction({
     type: qa.type, amount, category: qa.category, description: qa.remark,
-    ledgerId: qa.ledgerId, date: qa.date, currency: qa.currency || qa.ledgerCurrency,
+    ledgerId: qa.ledgerId, date: qa.date, time: qa.time, currency: qa.currency || qa.ledgerCurrency,
     account: qa.account || undefined, tags: qa.tags?.length ? qa.tags : undefined,
     payers, splitWith: splitUids.length ? splitUids : undefined, splitAmounts,
   });
@@ -200,7 +200,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
         ledgerId,
         amount: "", runningTotal: null, pendingOp: null,
         category: null, remark: "", tags: [],
-        date: new Date().toISOString().slice(0, 10), calendarMonth: new Date().toISOString().slice(0, 7),
+        date: new Date().toISOString().slice(0, 10), time: new Date().toTimeString().slice(0, 5), calendarMonth: new Date().toISOString().slice(0, 7),
+        dateDraft: null, timeDraft: null,
         account: "", showSplit: false, payerUids: [], splitUids: [],
         opMode: { pm: "+", md: "-" }, lastOpKey: null, currencyDraft: null,
         showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false, showTagPicker: false, showCategoriesPanel: false,
@@ -266,7 +267,11 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnQaDateToggle") {
       const opening = !S.quickAdd.showDatePicker;
       S.quickAdd.showDatePicker = opening;
-      if (opening) S.quickAdd.calendarMonth = S.quickAdd.date.slice(0, 7);
+      if (opening) {
+        S.quickAdd.dateDraft = S.quickAdd.date;
+        S.quickAdd.timeDraft = S.quickAdd.time;
+        S.quickAdd.calendarMonth = S.quickAdd.date.slice(0, 7);
+      }
       S.quickAdd.showLedgerPicker = false; S.quickAdd.showCurrencyPicker = false; S.quickAdd.showTagPicker = false;
       render();
     }
@@ -274,7 +279,19 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnQaDateNext") { S.quickAdd.date = shiftDateStr(S.quickAdd.date, 1); render(); }
     if (id === "btnQaCalPrev") { S.quickAdd.calendarMonth = shiftMonthStr(S.quickAdd.calendarMonth || S.quickAdd.date.slice(0, 7), -1); render(); }
     if (id === "btnQaCalNext") { S.quickAdd.calendarMonth = shiftMonthStr(S.quickAdd.calendarMonth || S.quickAdd.date.slice(0, 7), 1); render(); }
-    if (e.target.dataset.qaCalDay) { S.quickAdd.date = e.target.dataset.qaCalDay; S.quickAdd.showDatePicker = false; render(); }
+    if (e.target.dataset.qaCalDay) { S.quickAdd.dateDraft = e.target.dataset.qaCalDay; render(); }
+    if (id === "btnQaCalToday") {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      S.quickAdd.dateDraft = todayStr;
+      S.quickAdd.calendarMonth = todayStr.slice(0, 7);
+      render();
+    }
+    if (id === "btnQaCalConfirm") {
+      S.quickAdd.date = S.quickAdd.dateDraft || S.quickAdd.date;
+      S.quickAdd.time = S.quickAdd.timeDraft || S.quickAdd.time;
+      S.quickAdd.showDatePicker = false;
+      render();
+    }
     if (e.target.dataset.qaCurrencyDraft) { S.quickAdd.currencyDraft = e.target.dataset.qaCurrencyDraft; render(); }
     if (id === "btnQaLedger") {
       S.quickAdd.showLedgerPicker = !S.quickAdd.showLedgerPicker;
@@ -763,6 +780,8 @@ document.getElementById("app").addEventListener("change", async (e) => {
     }
     if (id === "txAmount") { rebuildSplitAmounts("payer"); rebuildSplitAmounts("split"); }
     if (id === "qaRemark") { S.quickAdd.remark = e.target.value; }
+    if (id === "qaDateField") { S.quickAdd.dateDraft = e.target.value; S.quickAdd.calendarMonth = e.target.value.slice(0, 7); render(); }
+    if (id === "qaTimeField") { S.quickAdd.timeDraft = e.target.value; }
     if (id === "qaLedgerSelect") {
       const qa = S.quickAdd;
       qa.ledgerId = e.target.value;

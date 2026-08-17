@@ -909,29 +909,40 @@ export function qaComputeAmount(qa) {
 // separate from qa.date (the actual selected day) so navigating months
 // doesn't change the selection until a day is actually tapped.
 function renderQaCalendar(qa) {
-  const viewMonth = qa.calendarMonth || qa.date.slice(0, 7);
+  const draftDate = qa.dateDraft || qa.date;
+  const draftTime = qa.timeDraft || qa.time || "00:00";
+  const viewMonth = qa.calendarMonth || draftDate.slice(0, 7);
   const [vy, vm] = viewMonth.split("-").map(Number);
   const firstOfMonth = new Date(Date.UTC(vy, vm - 1, 1));
   const startWeekday = firstOfMonth.getUTCDay();
   const daysInMonth = new Date(Date.UTC(vy, vm, 0)).getUTCDate();
   const todayStr = new Date().toISOString().slice(0, 10);
-  const monthLabel = firstOfMonth.toLocaleDateString(undefined, { month: "long", year: "numeric", timeZone: "UTC" });
+  const monthLabel = firstOfMonth.toLocaleDateString(undefined, { month: "long", timeZone: "UTC" });
 
   const cells = [];
   for (let i = 0; i < startWeekday; i++) cells.push(`<span></span>`);
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${vy}-${String(vm).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    cells.push(`<button type="button" class="qa-cal-day ${dateStr === qa.date ? "selected" : ""} ${dateStr === todayStr ? "today" : ""}" data-qa-cal-day="${dateStr}">${d}</button>`);
+    const col = (startWeekday + d - 1) % 7; // 0 = Sun, 6 = Sat
+    cells.push(`<button type="button" class="qa-cal-day ${col === 0 ? "sun" : ""} ${col === 6 ? "sat" : ""} ${dateStr === todayStr ? "today" : ""} ${dateStr === draftDate ? "selected" : ""}" data-qa-cal-day="${dateStr}">${d}</button>`);
   }
 
   return `
     <div class="qa-calendar">
-      <div class="qa-cal-header">
-        <button type="button" id="btnQaCalPrev" aria-label="Previous month">${sysIcon("chevron-left")}</button>
-        <span>${monthLabel}</span>
-        <button type="button" id="btnQaCalNext" aria-label="Next month">${sysIcon("chevron-right")}</button>
+      <div class="qa-cal-toprow">
+        <button type="button" class="qa-cal-today-btn" id="btnQaCalToday">TODAY</button>
+        <input type="date" id="qaDateField" class="qa-cal-field" value="${draftDate}" />
+        <input type="time" id="qaTimeField" class="qa-cal-field" value="${draftTime}" />
+        <button type="button" class="qa-cal-confirm" id="btnQaCalConfirm" aria-label="Confirm date">${sysIcon("check")}</button>
       </div>
-      <div class="qa-cal-weekdays">${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => `<span>${d}</span>`).join("")}</div>
+      <div class="qa-cal-header">
+        <span class="qa-cal-monthlabel"><strong>${monthLabel}</strong> ${vy}</span>
+        <div class="qa-cal-nav">
+          <button type="button" id="btnQaCalPrev" aria-label="Previous month">${sysIcon("chevron-left")}</button>
+          <button type="button" id="btnQaCalNext" aria-label="Next month">${sysIcon("chevron-right")}</button>
+        </div>
+      </div>
+      <div class="qa-cal-weekdays"><span class="sun">Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span class="sat">Sat</span></div>
       <div class="qa-cal-grid">${cells.join("")}</div>
     </div>`;
 }
@@ -1038,7 +1049,7 @@ function renderQuickAddPage() {
           <button type="button" id="btnQaDateToggle" class="qa-date-label">${sysIcon("calendar")}<span>${dateLabel}</span></button>
           <button type="button" id="btnQaDateNext" aria-label="Next day">${sysIcon("chevron-right")}</button>
         </div>
-        ${qa.showDatePicker ? `<div class="qa-modal-backdrop" id="qaDateBackdrop">${renderQaCalendar(qa)}</div>` : ""}
+        ${qa.showDatePicker ? `<div class="qa-modal-backdrop qa-modal-backdrop-top" id="qaDateBackdrop">${renderQaCalendar(qa)}</div>` : ""}
         ${qa.showLedgerPicker ? `
           <select id="qaLedgerSelect" class="qa-inline-picker">
             ${ledgerEntries.map(([lid, l]) => `<option value="${lid}" ${lid === qa.ledgerId ? "selected" : ""}>${l.icon || "💼"} ${l.name}</option>`).join("")}
