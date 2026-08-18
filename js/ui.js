@@ -1011,7 +1011,10 @@ function renderQuickAddPage() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const { expense, income } = groupedCategories();
   const cats = qa.type === "income" ? income : expense;
-  const rawDisplay = qa.amount !== "" ? qa.amount : String(qa.runningTotal ?? 0);
+  const qaFormatNum = (n) => (n == null ? "0" : Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, ""));
+  const rawDisplay = qa.pendingOp
+    ? `${qaFormatNum(qa.runningTotal)} ${qa.pendingOp} ${qa.amount}`
+    : (qa.amount !== "" ? qa.amount : qaFormatNum(qa.runningTotal ?? 0));
   const currency = qa.currency || qa.ledgerCurrency || "USD";
   const memberEntries = Object.entries(S.members || {});
   const amountSoFar = qaComputeAmount(qa);
@@ -1154,7 +1157,7 @@ function renderQuickAddPage() {
             <button type="button" class="qa-tool" id="btnQaLedger">${ledgerIcon(activeLedger?.icon)}<span>${activeLedger?.name || "Select"}</span></button>
             <button type="button" class="qa-tool ${qa.account === "wallet" ? "active" : ""}" id="btnQaAccount">${sysIcon("wallet")}<span>${qa.account === "wallet" ? "Wallet" : "Cash"}</span></button>
             <button type="button" class="qa-tool ${qa.showSplit ? "active" : ""}" id="btnQaSplitToggle">${sysIcon("users-group")}<span>Split</span></button>
-            <button type="button" class="qa-tool qa-submit-tool" id="btnQaSubmit">${sysIcon("check")}<span>Done</span></button>
+            <button type="button" class="qa-tool qa-submit-tool ${qa.pendingOp ? "qa-equals-mode" : ""}" id="btnQaSubmit">${qa.pendingOp ? `<span class="qa-equals-sign">=</span>` : `${sysIcon("check")}<span>Done</span>`}</button>
           </div>
         </div>
       </div>

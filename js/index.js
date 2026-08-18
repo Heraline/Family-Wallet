@@ -397,8 +397,21 @@ document.getElementById("app").addEventListener("click", async (e) => {
       render();
     }
     if (id === "btnQaSubmit") {
-      const ok = await submitQuickAdd();
-      if (ok) { S.quickAdd = null; goTo("home"); }
+      const qa = S.quickAdd;
+      if (qa.pendingOp) {
+        // Button is showing "=" right now — evaluate the pending
+        // calculation and stop there. It reverts to "Done" once resolved
+        // (pendingOp cleared), and a second tap then actually submits.
+        const val = parseFloat(qa.amount || "0") || 0;
+        qa.runningTotal = qaApplyOp(qa.runningTotal, qa.pendingOp, val);
+        qa.pendingOp = null;
+        qa.amount = "";
+        qa.lastOpKey = null;
+        render();
+      } else {
+        const ok = await submitQuickAdd();
+        if (ok) { S.quickAdd = null; goTo("home"); }
+      }
     }
     if (id === "btnQaRecord") {
       const ok = await submitQuickAdd();

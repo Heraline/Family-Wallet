@@ -251,6 +251,8 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-key-ac { background: #d7ecfb; color: #2f7fbf; font-size: 13px; }
 .qa-key-record { background: #e6e6e6; color: #6b6b6b; font-size: 15px; display: flex; align-items: center; justify-content: center; }
 .qa-submit-tool { background: var(--accent); color: #fff; }
+.qa-equals-mode { justify-content: center; }
+.qa-equals-sign { font-size: 22px; font-weight: 800; }
 
 /* +/× and −/÷ combined operator keys: a real tap commits the current
    symbol; a genuine double-tap (see index.js) flips the symbol instead.
