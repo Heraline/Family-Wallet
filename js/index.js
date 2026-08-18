@@ -368,6 +368,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnQaAccount") { S.quickAdd.account = S.quickAdd.account === "wallet" ? "" : "wallet"; render(); }
     if (id === "btnQaSplitToggle") { S.quickAdd.showSplit = !S.quickAdd.showSplit; render(); }
+    if (id === "btnQaSplitDone" || e.target.id === "qaSplitBackdrop") { S.quickAdd.showSplit = false; render(); }
     if (id === "btnQaCategoriesMenu") { S.quickAdd.showCategoriesPanel = !S.quickAdd.showCategoriesPanel; render(); }
     if (id === "btnQaCategoriesBack") { S.quickAdd.showCategoriesPanel = false; render(); }
     if (e.target.dataset.qaPayer) {

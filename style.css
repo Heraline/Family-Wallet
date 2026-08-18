@@ -208,6 +208,8 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 /* ===== Quick Add: Select Currency modal ===== */
 .qa-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px; }
 .qa-modal-card { background: var(--card-bg-flat); border-radius: 16px; width: 100%; max-width: 300px; overflow: hidden; display: flex; flex-direction: column; max-height: 70vh; }
+.qa-modal-card-split { max-width: 340px; }
+.qa-modal-body { overflow-y: auto; padding: 14px; }
 .qa-modal-title { text-align: center; font-weight: 800; font-size: 15px; padding: 14px; border-bottom: 1px solid var(--card-border-flat); color: var(--card-text); }
 .qa-modal-list {
   overflow-y: auto; padding: 6px 0; max-height: 132px; scroll-snap-type: y mandatory;
@@ -242,9 +244,9 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-key-op { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 30px; }
 .qa-key-backspace { font-size: 20px; }
 .qa-tool {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 6px;
   font-size: 10px; font-weight: 700; background: var(--card-bg-flat); color: var(--card-text);
-  border: none; border-radius: 12px; padding: 4px 8px; cursor: pointer; text-align: center;
+  border: none; border-radius: 12px; padding: 4px 10px; cursor: pointer; text-align: left;
 }
 .qa-tool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .qa-tool .ti, .qa-tool .sys-icon, .qa-tool .nav-icon-badge, .qa-tool .sys-icon-badge { font-size: 18px; flex: 0 0 auto; }

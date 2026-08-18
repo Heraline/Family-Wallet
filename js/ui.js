@@ -1055,21 +1055,6 @@ function renderQuickAddPage() {
             </button>
           `).join("")}
         </div>
-
-        ${qa.showSplit ? `
-          <div class="sub-panel" style="margin-top:10px">
-            ${!memberEntries.length ? `<p class="muted">Loading members...</p>` : `
-              <p class="muted" style="margin-bottom:6px">Paid by <span class="muted">(none selected = you)</span></p>
-              <div class="chip-row">${memberEntries.map(([uid, m]) => `<button type="button" class="chip" data-qa-payer="${uid}" style="${qa.payerUids?.includes(uid) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${m.avatar || "🙂"} ${m.displayName}</button>`).join("")}</div>
-              ${qa.payerUids?.length >= 2 ? `<div class="split-amounts">${splitAmountRowsHtml(qa.payerUids, amountSoFar, "qapayer")}</div>` : ""}
-
-              <p class="muted" style="margin:12px 0 6px">Split between</p>
-              <div class="chip-row">${memberEntries.map(([uid, m]) => `<button type="button" class="chip" data-qa-split="${uid}" style="${qa.splitUids?.includes(uid) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${m.avatar || "🙂"} ${m.displayName}</button>`).join("")}</div>
-              ${qa.splitUids?.length >= 1 ? `<div class="split-amounts">${splitAmountRowsHtml(qa.splitUids, amountSoFar, "qasplit")}</div>` : ""}
-              <p class="muted" style="margin-top:6px">Tip: finish typing the amount before adjusting split amounts, since editing the amount resets custom splits back to equal shares.</p>
-            `}
-          </div>
-        ` : ""}
       </div>
 
       <div class="qa-bottom-sheet">
@@ -1161,6 +1146,29 @@ function renderQuickAddPage() {
           </div>
         </div>
       </div>
+
+      ${qa.showSplit ? `
+        <div class="qa-modal-backdrop qa-modal-backdrop-top" id="qaSplitBackdrop">
+          <div class="qa-modal-card qa-modal-card-split">
+            <div class="qa-modal-title">Split</div>
+            <div class="qa-modal-body">
+              ${!memberEntries.length ? `<p class="muted">Loading members...</p>` : `
+                <p class="muted" style="margin-bottom:6px">Paid by <span class="muted">(none selected = you)</span></p>
+                <div class="chip-row">${memberEntries.map(([uid, m]) => `<button type="button" class="chip" data-qa-payer="${uid}" style="${qa.payerUids?.includes(uid) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${m.avatar || "🙂"} ${m.displayName}</button>`).join("")}</div>
+                ${qa.payerUids?.length >= 2 ? `<div class="split-amounts">${splitAmountRowsHtml(qa.payerUids, amountSoFar, "qapayer")}</div>` : ""}
+
+                <p class="muted" style="margin:12px 0 6px">Split between</p>
+                <div class="chip-row">${memberEntries.map(([uid, m]) => `<button type="button" class="chip" data-qa-split="${uid}" style="${qa.splitUids?.includes(uid) ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${m.avatar || "🙂"} ${m.displayName}</button>`).join("")}</div>
+                ${qa.splitUids?.length >= 1 ? `<div class="split-amounts">${splitAmountRowsHtml(qa.splitUids, amountSoFar, "qasplit")}</div>` : ""}
+                <p class="muted" style="margin-top:6px">Tip: finish typing the amount before adjusting split amounts, since editing the amount resets custom splits back to equal shares.</p>
+              `}
+            </div>
+            <div class="qa-modal-footer">
+              <button type="button" class="qa-modal-ok" id="btnQaSplitDone" style="flex:1">Done</button>
+            </div>
+          </div>
+        </div>
+      ` : ""}
     `}
   `;
 }
