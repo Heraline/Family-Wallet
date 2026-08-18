@@ -233,7 +233,7 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 
 .qa-keypad-wrap { display: flex; gap: 8px; margin-top: 4px; }
 .qa-keypad-numbers { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.qa-keypad-tools { flex: 0 0 56px; display: flex; flex-direction: column; gap: 8px; }
+.qa-keypad-tools { flex: 0 0 136px; display: flex; flex-direction: column; gap: 8px; }
 .qa-key {
   aspect-ratio: 1; padding: 0; font-size: 27px; font-weight: 700; border: none; border-radius: 14px;
   background: var(--card-bg-flat); color: var(--card-text); cursor: pointer;
@@ -243,11 +243,11 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-key-backspace { font-size: 20px; }
 .qa-tool {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  font-size: 8px; font-weight: 700; background: var(--card-bg-flat); color: var(--card-text);
-  border: none; border-radius: 12px; padding: 4px 2px; cursor: pointer; text-align: center;
+  font-size: 10px; font-weight: 700; background: var(--card-bg-flat); color: var(--card-text);
+  border: none; border-radius: 12px; padding: 4px 8px; cursor: pointer; text-align: center;
 }
 .qa-tool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.qa-tool .ti, .qa-tool .sys-icon, .qa-tool .nav-icon-badge, .qa-tool .sys-icon-badge { font-size: 16px; flex: 0 0 auto; }
+.qa-tool .ti, .qa-tool .sys-icon, .qa-tool .nav-icon-badge, .qa-tool .sys-icon-badge { font-size: 18px; flex: 0 0 auto; }
 .qa-tool.active { background: var(--accent); color: #fff; }
 .qa-key-ac { background: #d7ecfb; color: #2f7fbf; font-size: 19px; }
 .qa-key-record { background: #e6e6e6; color: #6b6b6b; font-size: 21px; display: flex; align-items: center; justify-content: center; }
