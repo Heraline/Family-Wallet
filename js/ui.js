@@ -1138,7 +1138,7 @@ function renderQuickAddPage() {
             <button type="button" class="qa-key" data-qa-key="4">4</button>
             <button type="button" class="qa-key" data-qa-key="5">5</button>
             <button type="button" class="qa-key" data-qa-key="6">6</button>
-            <button type="button" class="qa-key qa-key-op qa-op-md ${qa.opMode?.md === "÷" ? "is-divide" : ""}" data-qa-key="md">−</button>
+            <button type="button" class="qa-key qa-key-op" data-qa-key="md">${qa.opMode?.md === "÷" ? "÷" : "−"}</button>
 
             <button type="button" class="qa-key" data-qa-key="7">7</button>
             <button type="button" class="qa-key" data-qa-key="8">8</button>
@@ -1147,7 +1147,7 @@ function renderQuickAddPage() {
 
             <button type="button" class="qa-key" data-qa-key="0">0</button>
             <button type="button" class="qa-key" data-qa-key=".">.</button>
-            <button type="button" class="qa-key qa-key-op" data-qa-key="back">${sysIcon("backspace")}</button>
+            <button type="button" class="qa-key qa-key-op qa-key-backspace" data-qa-key="back">${sysIcon("backspace")}</button>
             <button type="button" class="qa-key qa-key-record" id="btnQaRecord" title="Save and add another">${sysIcon("checklist")}</button>
           </div>
           <div class="qa-keypad-tools">
