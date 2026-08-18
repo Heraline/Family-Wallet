@@ -1133,7 +1133,7 @@ function renderQuickAddPage() {
             <button type="button" class="qa-key" data-qa-key="1">1</button>
             <button type="button" class="qa-key" data-qa-key="2">2</button>
             <button type="button" class="qa-key" data-qa-key="3">3</button>
-            <button type="button" class="qa-key qa-key-op qa-op-pm ${qa.opMode?.pm === "×" ? "is-times" : ""}" data-qa-key="pm">+</button>
+            <button type="button" class="qa-key qa-key-op" data-qa-key="pm"><span class="qa-op-pm ${qa.opMode?.pm === "×" ? "is-times" : ""}">+</span></button>
 
             <button type="button" class="qa-key" data-qa-key="4">4</button>
             <button type="button" class="qa-key" data-qa-key="5">5</button>
