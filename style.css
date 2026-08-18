@@ -238,7 +238,7 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
   padding: 11px 0; font-size: 17px; font-weight: 700; border: none; border-radius: 12px;
   background: var(--card-bg-flat); color: var(--card-text); cursor: pointer;
 }
-.qa-key-op { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 15px; }
+.qa-key-op { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 15px; display: flex; align-items: center; justify-content: center; }
 .qa-tool {
   flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 5px;
   font-size: 10px; font-weight: 700; background: var(--card-bg-flat); color: var(--card-text);

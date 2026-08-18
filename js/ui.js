@@ -1020,6 +1020,18 @@ function renderQuickAddPage() {
   const relLabel = qa.date === todayStr ? "Today " : (qa.date === shiftDateStr(todayStr, -1) ? "Yesterday " : "");
   const dateLabel = relLabel + dateObj.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 
+  if (qa.showCategoriesPanel) {
+    app.innerHTML = `
+      <div class="topbar">
+        <button id="btnQaCategoriesBack" class="link" aria-label="Back">&larr;</button>
+        <h2 style="margin:0">Categories</h2>
+        <span style="width:24px"></span>
+      </div>
+      ${renderCategoriesPanel(S.members?.[S.user.uid], [], { currency: qa.ledgerCurrency })}
+    `;
+    return;
+  }
+
   app.innerHTML = `
     <div class="topbar">
       <button id="btnBackFromQuickAdd" class="link" aria-label="Close">&larr;</button>
@@ -1032,8 +1044,6 @@ function renderQuickAddPage() {
 
     ${!ledgerEntries.length ? `<p class="muted" style="margin:20px 0">Create a ledger first before adding a transaction.</p>` : `
       <div class="qa-scroll-area">
-        ${qa.showCategoriesPanel ? renderCategoriesPanel(S.members?.[S.user.uid], [], { currency: qa.ledgerCurrency }) : ""}
-
         <div class="qa-cat-grid">
           ${cats.map((c) => `
             <button type="button" class="qa-cat-tile ${qa.category === c.label ? "active" : ""}" data-qa-cat="${c.label}">
@@ -1137,7 +1147,7 @@ function renderQuickAddPage() {
 
             <button type="button" class="qa-key" data-qa-key="0">0</button>
             <button type="button" class="qa-key" data-qa-key=".">.</button>
-            <button type="button" class="qa-key qa-key-op" data-qa-key="back">⌫</button>
+            <button type="button" class="qa-key qa-key-op" data-qa-key="back">${sysIcon("backspace")}</button>
             <button type="button" class="qa-key qa-key-record" id="btnQaRecord" title="Save and add another">${sysIcon("checklist")}</button>
           </div>
           <div class="qa-keypad-tools">
