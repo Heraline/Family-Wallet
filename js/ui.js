@@ -1105,9 +1105,18 @@ function renderQuickAddPage() {
         </div>
         ${qa.showDatePicker ? `<div class="qa-modal-backdrop qa-modal-backdrop-top" id="qaDateBackdrop">${renderQaCalendar(qa)}</div>` : ""}
         ${qa.showLedgerPicker ? `
-          <select id="qaLedgerSelect" class="qa-inline-picker">
-            ${ledgerEntries.map(([lid, l]) => `<option value="${lid}" ${lid === qa.ledgerId ? "selected" : ""}>${l.icon || "💼"} ${l.name}</option>`).join("")}
-          </select>` : ""}
+          <div class="qa-modal-backdrop" id="qaLedgerBackdrop">
+            <div class="qa-modal-card">
+              <div class="qa-modal-title">Select Ledger</div>
+              <div class="qa-modal-list qa-modal-list-ledger">
+                ${ledgerEntries.map(([lid, l]) => `<button type="button" class="qa-modal-row ${lid === (qa.ledgerDraft || qa.ledgerId) ? "selected" : ""}" data-qa-ledger-draft="${lid}">${l.icon || "💼"} ${l.name}</button>`).join("")}
+              </div>
+              <div class="qa-modal-footer">
+                <button type="button" class="qa-modal-cancel" id="btnQaLedgerCancel">Cancel</button>
+                <button type="button" class="qa-modal-ok" id="btnQaLedgerOk">OK</button>
+              </div>
+            </div>
+          </div>` : ""}
 
         <div class="qa-keypad-wrap">
           <div class="qa-keypad-numbers">

@@ -205,7 +205,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
         showDateWheel: false, showTimeWheel: false,
         wheelYear: null, wheelMonth: null, wheelDay: null, wheelHour: null, wheelMinute: null,
         account: "", showSplit: false, payerUids: [], splitUids: [],
-        opMode: { pm: "+", md: "-" }, lastOpKey: null, currencyDraft: null,
+        opMode: { pm: "+", md: "-" }, lastOpKey: null, currencyDraft: null, ledgerDraft: null,
         showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false, showTagPicker: false, showCategoriesPanel: false,
       };
       S.view = "quickAdd";
@@ -329,8 +329,21 @@ document.getElementById("app").addEventListener("click", async (e) => {
       render();
     }
     if (e.target.dataset.qaCurrencyDraft) { S.quickAdd.currencyDraft = e.target.dataset.qaCurrencyDraft; render(); }
+    if (e.target.dataset.qaLedgerDraft) { S.quickAdd.ledgerDraft = e.target.dataset.qaLedgerDraft; render(); }
+    if (id === "btnQaLedgerCancel" || e.target.id === "qaLedgerBackdrop") { S.quickAdd.showLedgerPicker = false; render(); }
+    if (id === "btnQaLedgerOk") {
+      const qa = S.quickAdd;
+      qa.ledgerId = qa.ledgerDraft || qa.ledgerId;
+      qa.showLedgerPicker = false;
+      // Category list, currency, members, and tags are all per-ledger —
+      // reset selections tied to the old ledger and load the new one's.
+      qa.category = null; qa.currency = null; qa.payerUids = []; qa.splitUids = []; qa.tags = [];
+      render();
+      loadQaLedgerContext(qa.ledgerId).catch((err) => console.error("Quick add context load failed:", err));
+    }
     if (id === "btnQaLedger") {
       S.quickAdd.showLedgerPicker = !S.quickAdd.showLedgerPicker;
+      if (S.quickAdd.showLedgerPicker) S.quickAdd.ledgerDraft = S.quickAdd.ledgerId;
       S.quickAdd.showDatePicker = false; S.quickAdd.showCurrencyPicker = false; S.quickAdd.showTagPicker = false;
       render();
     }
@@ -816,16 +829,6 @@ document.getElementById("app").addEventListener("change", async (e) => {
     }
     if (id === "txAmount") { rebuildSplitAmounts("payer"); rebuildSplitAmounts("split"); }
     if (id === "qaRemark") { S.quickAdd.remark = e.target.value; }
-    if (id === "qaLedgerSelect") {
-      const qa = S.quickAdd;
-      qa.ledgerId = e.target.value;
-      qa.showLedgerPicker = false;
-      // Category list, currency, members, and tags are all per-ledger —
-      // reset selections tied to the old ledger and load the new one's.
-      qa.category = null; qa.currency = null; qa.payerUids = []; qa.splitUids = []; qa.tags = [];
-      render();
-      loadQaLedgerContext(qa.ledgerId).catch((err) => console.error("Quick add context load failed:", err));
-    }
     if (e.target.dataset.catField && e.target.dataset.catKey) {
       const field = e.target.dataset.catField, key = e.target.dataset.catKey;
       if (field === "budget") await setCategoryBudget(S.activeLedgerId, key, e.target.value);
