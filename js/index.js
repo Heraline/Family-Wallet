@@ -93,6 +93,30 @@ async function loadQaLedgerContext(lid) {
 // Returns true on success (already saved) or false after showing an error
 // (validation failed, nothing saved) — shared by the red Submit button and
 // the gray Record button, which only differ in what happens afterward.
+// The Split modal's per-person amount inputs only exist in the DOM while
+// it's open — once it closes (Done, or tapping the backdrop), ui.js stops
+// rendering them. So we capture whatever's currently typed into state
+// right before closing, and submitQuickAdd() reads from that captured
+// state instead of querying the DOM (which would find nothing by then).
+function captureSplitAmounts() {
+  const qa = S.quickAdd;
+  if (!qa) return;
+  if ((qa.payerUids || []).length >= 2) {
+    qa.payerAmounts = {};
+    qa.payerUids.forEach((uid) => {
+      const input = document.querySelector(`.split-amt-input[data-amt-group="qapayer"][data-amt-uid="${uid}"]`);
+      if (input) qa.payerAmounts[uid] = Number(input.value) || 0;
+    });
+  }
+  if ((qa.splitUids || []).length >= 1) {
+    qa.splitCustomAmounts = {};
+    qa.splitUids.forEach((uid) => {
+      const input = document.querySelector(`.split-amt-input[data-amt-group="qasplit"][data-amt-uid="${uid}"]`);
+      if (input) qa.splitCustomAmounts[uid] = Number(input.value) || 0;
+    });
+  }
+}
+
 async function submitQuickAdd() {
   const qa = S.quickAdd;
   if (!qa.ledgerId) { showError("qaError", "Create or select a ledger first."); return false; }
@@ -104,22 +128,14 @@ async function submitQuickAdd() {
   const splitUids = qa.splitUids || [];
   let payers, splitAmounts;
   if (payerUids.length >= 2) {
-    payers = {};
-    payerUids.forEach((uid) => {
-      const input = document.querySelector(`.split-amt-input[data-amt-group="qapayer"][data-amt-uid="${uid}"]`);
-      payers[uid] = Number(input?.value) || 0;
-    });
+    payers = qa.payerAmounts || {};
     const payerSum = Object.values(payers).reduce((a, b) => a + b, 0);
     if (Math.abs(payerSum - amount) > 0.01) { showError("qaError", `"Paid by" amounts add up to ${payerSum.toFixed(2)}, but the total is ${amount.toFixed(2)}.`); return false; }
   } else if (payerUids.length === 1) {
     payers = { [payerUids[0]]: amount };
   }
   if (splitUids.length >= 1) {
-    splitAmounts = {};
-    splitUids.forEach((uid) => {
-      const input = document.querySelector(`.split-amt-input[data-amt-group="qasplit"][data-amt-uid="${uid}"]`);
-      splitAmounts[uid] = Number(input?.value) || 0;
-    });
+    splitAmounts = qa.splitCustomAmounts || {};
     const splitSum = Object.values(splitAmounts).reduce((a, b) => a + b, 0);
     if (Math.abs(splitSum - amount) > 0.01) { showError("qaError", `"Split between" amounts add up to ${splitSum.toFixed(2)}, but the total is ${amount.toFixed(2)}.`); return false; }
   }
@@ -204,7 +220,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
         dateDraft: null, timeDraft: null,
         showDateWheel: false, showTimeWheel: false,
         wheelYear: null, wheelMonth: null, wheelDay: null, wheelHour: null, wheelMinute: null,
-        account: "", showSplit: false, payerUids: [], splitUids: [],
+        account: "", showSplit: false, payerUids: [], splitUids: [], payerAmounts: {}, splitCustomAmounts: {},
         opMode: { pm: "+", md: "-" }, lastOpKey: null, currencyDraft: null, ledgerDraft: null,
         showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false, showTagPicker: false, showCategoriesPanel: false,
       };
@@ -368,7 +384,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnQaAccount") { S.quickAdd.account = S.quickAdd.account === "wallet" ? "" : "wallet"; render(); }
     if (id === "btnQaSplitToggle") { S.quickAdd.showSplit = !S.quickAdd.showSplit; render(); }
-    if (id === "btnQaSplitDone" || e.target.id === "qaSplitBackdrop") { S.quickAdd.showSplit = false; render(); }
+    if (id === "btnQaSplitDone" || e.target.id === "qaSplitBackdrop") { captureSplitAmounts(); S.quickAdd.showSplit = false; render(); }
     if (id === "btnQaCategoriesMenu") { S.quickAdd.showCategoriesPanel = !S.quickAdd.showCategoriesPanel; render(); }
     if (id === "btnQaCategoriesBack") { S.quickAdd.showCategoriesPanel = false; render(); }
     if (e.target.dataset.qaPayer) {
@@ -425,7 +441,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
           ...qa,
           amount: "", runningTotal: null, pendingOp: null,
           category: null, remark: "", tags: [],
-          payerUids: [], splitUids: [], showSplit: false,
+          payerUids: [], splitUids: [], payerAmounts: {}, splitCustomAmounts: {}, showSplit: false,
         };
         render();
       }

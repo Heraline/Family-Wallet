@@ -249,7 +249,7 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
   border: none; border-radius: 12px; padding: 4px 10px; cursor: pointer; text-align: left;
 }
 .qa-tool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.qa-tool .ti, .qa-tool .sys-icon, .qa-tool .nav-icon-badge, .qa-tool .sys-icon-badge { font-size: 18px; flex: 0 0 auto; }
+.qa-tool .ti, .qa-tool .sys-icon, .qa-tool .nav-icon-badge, .qa-tool .sys-icon-badge { font-size: 24px; flex: 0 0 auto; }
 .qa-tool.active { background: var(--accent); color: #fff; }
 .qa-key-ac { background: #d7ecfb; color: #2f7fbf; font-size: 19px; }
 .qa-key-record { background: #e6e6e6; color: #6b6b6b; font-size: 21px; display: flex; align-items: center; justify-content: center; }
