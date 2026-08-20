@@ -250,9 +250,18 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 }
 .qa-tool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .qa-tool .ti, .qa-tool .sys-icon, .qa-tool .nav-icon-badge, .qa-tool .sys-icon-badge, .qa-tool .icon { font-size: 27px; flex: 0 0 auto; line-height: 1; }
+.qa-keypad-tools .qa-tool:nth-child(1) { background: #E4EEFD; color: #2f5fb8; }
+.qa-keypad-tools .qa-tool:nth-child(2) { background: #FDF1DC; color: #b8791f; }
+.qa-keypad-tools .qa-tool:nth-child(3) { background: #F1E7FA; color: #6b48c9; }
+.qa-keypad-tools .qa-tool-ledger { background: #fde3d0; color: #a35d1f; }
+.qa-tool-cash { background: #fdf0bf; color: #92720a; }
+.qa-tool-split { background: #ecdffb; color: #6b3fa0; }
+.qa-tool-ledger .ti, .qa-tool-ledger .sys-icon, .qa-tool-ledger .icon,
+.qa-tool-cash .ti, .qa-tool-cash .sys-icon, .qa-tool-cash .icon,
+.qa-tool-split .ti, .qa-tool-split .sys-icon, .qa-tool-split .icon { color: inherit; }
 .qa-tool.active { background: var(--accent); color: #fff; }
-.qa-key-ac { background: #d7ecfb; color: #2f7fbf; font-size: 22px; }
-.qa-key-record { background: #d7ecfb; color: #2f7fbf; font-size: 24px; display: flex; align-items: center; justify-content: center; }
+.qa-key-ac { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 22px; }
+.qa-key-record { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 24px; display: flex; align-items: center; justify-content: center; }
 .qa-submit-tool { background: var(--accent); color: #fff; }
 .qa-equals-mode { justify-content: center; }
 .qa-equals-sign { font-size: 26px; font-weight: 800; }
