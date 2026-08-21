@@ -178,7 +178,7 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-cat-tile:nth-child(9n+8) { background: color-mix(in srgb, #7C8CFF 16%, var(--card-bg-flat)); }
 .qa-cat-tile:nth-child(9n+9) { background: color-mix(in srgb, #E9B23D 16%, var(--card-bg-flat)); }
 
-.qa-scroll-area { padding-bottom: 425px; }
+.qa-scroll-area { padding-bottom: 380px; }
 
 /* ===== Quick Add: fixed bottom sheet (topline through keypad) ===== */
 .qa-bottom-sheet {
@@ -227,22 +227,22 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-date-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   background: color-mix(in srgb, var(--accent) 12%, var(--card-bg-flat)); border-radius: 10px;
-  padding: 0 8px; margin: 6px 0 8px; min-height: 40px;
+  padding: 0 8px; margin: 6px 0 4px; min-height: 40px;
 }
 .qa-date-bar button { border: none; background: none; color: var(--card-text); cursor: pointer; }
-.qa-date-label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; flex: 1; justify-content: center; }
+.qa-date-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; flex: 1; justify-content: center; }
 .qa-inline-picker { margin: 2px 0 6px; }
 
-.qa-keypad-wrap { display: flex; gap: 13px; margin-top: 4px; }
-.qa-keypad-numbers { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; }
-.qa-keypad-tools { flex: 0 0 140px; display: flex; flex-direction: column; gap: 13px; }
+.qa-keypad-wrap { display: flex; gap: 9px; margin-top: 2px; }
+.qa-keypad-numbers { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+.qa-keypad-tools { flex: 0 0 140px; display: flex; flex-direction: column; gap: 9px; }
 .qa-key {
-  aspect-ratio: 1; padding: 0; font-size: 29px; font-weight: 700; border: none; border-radius: 14px;
+  aspect-ratio: 1; padding: 0; font-size: 24px; font-weight: 700; line-height: 1; border: none; border-radius: 14px;
   background: var(--card-bg-flat); color: var(--card-text); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
-.qa-key-op { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 32px; }
-.qa-key-backspace { font-size: 24px; }
+.qa-key-op { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 27px; line-height: 1; }
+.qa-key-backspace { font-size: 27px; }
 .qa-tool {
   flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 7px;
   font-size: 13px; font-weight: 700; background: var(--card-bg-flat); color: var(--card-text);
@@ -250,27 +250,24 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 }
 .qa-tool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .qa-tool .ti, .qa-tool .sys-icon, .qa-tool .nav-icon-badge, .qa-tool .sys-icon-badge, .qa-tool .icon { font-size: 27px; flex: 0 0 auto; line-height: 1; }
-.qa-keypad-tools .qa-tool:nth-child(1) { background: #E4EEFD; color: #2f5fb8; }
-.qa-keypad-tools .qa-tool:nth-child(2) { background: #FDF1DC; color: #b8791f; }
-.qa-keypad-tools .qa-tool:nth-child(3) { background: #F1E7FA; color: #6b48c9; }
-.qa-keypad-tools .qa-tool-ledger { background: #fde3d0; color: #a35d1f; }
-.qa-tool-cash { background: #fdf0bf; color: #92720a; }
-.qa-tool-split { background: #ecdffb; color: #6b3fa0; }
+.qa-tool-ledger { background: #E4EEFD; color: #2f5fb8; }
+.qa-tool-cash { background: #FDF1DC; color: #b8791f; }
+.qa-tool-split { background: #F1E7FA; color: #6b48c9; }
 .qa-tool-ledger .ti, .qa-tool-ledger .sys-icon, .qa-tool-ledger .icon,
 .qa-tool-cash .ti, .qa-tool-cash .sys-icon, .qa-tool-cash .icon,
 .qa-tool-split .ti, .qa-tool-split .sys-icon, .qa-tool-split .icon { color: inherit; }
 .qa-tool.active { background: var(--accent); color: #fff; }
-.qa-key-ac { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 22px; }
-.qa-key-record { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 24px; display: flex; align-items: center; justify-content: center; }
+.qa-key-ac { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 20px; }
+.qa-key-record { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 27px; display: flex; align-items: center; justify-content: center; }
 .qa-submit-tool { background: var(--accent); color: #fff; }
 .qa-equals-mode { justify-content: center; }
-.qa-equals-sign { font-size: 26px; font-weight: 800; }
+.qa-equals-sign { font-size: 22px; font-weight: 800; }
 
 /* +/× and −/÷ combined operator keys: a real tap commits the current
    symbol; a genuine double-tap (see index.js) flips the symbol instead.
    + rotates 45° into ×; − simply swaps its text for ÷ (a real ÷ glyph,
    rather than faking it with dots, so it scales cleanly with font size). */
-.qa-op-pm { transition: transform .2s ease; display: inline-flex; align-items: center; justify-content: center; }
+.qa-op-pm { transition: transform .2s ease; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
 .qa-op-pm.is-times { transform: rotate(45deg); }
 
 /* ===== Quick Add: custom calendar grid ===== */
