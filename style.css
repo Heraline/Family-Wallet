@@ -178,11 +178,11 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-cat-tile:nth-child(9n+8) { background: color-mix(in srgb, #7C8CFF 16%, var(--card-bg-flat)); }
 .qa-cat-tile:nth-child(9n+9) { background: color-mix(in srgb, #E9B23D 16%, var(--card-bg-flat)); }
 
-.qa-scroll-area { padding-bottom: 400px; }
+.qa-scroll-area { padding-bottom: 12px; }
 
 /* ===== Quick Add: fixed bottom sheet (topline through keypad) ===== */
 .qa-bottom-sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto;
+  position: sticky; bottom: 0;
   background: var(--card-bg-flat); border-top: 1px solid var(--card-border-flat);
   box-shadow: 0 -6px 20px rgba(0,0,0,0.1); padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
   z-index: 20;
@@ -227,7 +227,7 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-date-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   background: color-mix(in srgb, var(--accent) 12%, var(--card-bg-flat)); border-radius: 10px;
-  padding: 0 8px; margin: 6px 0 4px; min-height: 40px;
+  padding: 0 8px; margin: 6px 0 8px; min-height: 40px;
 }
 .qa-date-bar button { border: none; background: none; color: var(--card-text); cursor: pointer; }
 .qa-date-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; flex: 1; justify-content: center; }
@@ -241,7 +241,7 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
   background: var(--card-bg-flat); color: var(--card-text); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
-.qa-key-op { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 32px; line-height: 1; padding-bottom: 3px; }
+.qa-key-op { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 32px; line-height: 1; }
 .qa-key-backspace { font-size: 32px; }
 .qa-tool {
   flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 7px;
@@ -259,6 +259,7 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-tool.active { background: var(--accent); color: #fff; }
 .qa-key-ac { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 22px; }
 .qa-key-record { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 32px; display: flex; align-items: center; justify-content: center; }
+.qa-key-backspace .sys-icon, .qa-key-record .sys-icon { font-size: 30px; margin-right: 0; vertical-align: 0; color: inherit; }
 .qa-submit-tool { background: var(--accent); color: #fff; }
 .qa-equals-mode { justify-content: center; }
 .qa-equals-sign { font-size: 22px; font-weight: 800; }
@@ -267,8 +268,9 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
    symbol; a genuine double-tap (see index.js) flips the symbol instead.
    + rotates 45° into ×; − simply swaps its text for ÷ (a real ÷ glyph,
    rather than faking it with dots, so it scales cleanly with font size). */
-.qa-op-pm { transition: transform .2s ease; display: inline-block; line-height: 1; }
-.qa-op-pm.is-times { transform: rotate(45deg); }
+.qa-op-glyph { display: inline-block; line-height: 1; transform: translateY(-2px); }
+.qa-op-pm { transition: transform .2s ease; display: inline-block; line-height: 1; transform: translateY(-2px); }
+.qa-op-pm.is-times { transform: translateY(-2px) rotate(45deg); }
 
 /* ===== Quick Add: custom calendar grid ===== */
 .qa-modal-backdrop-top { align-items: center; padding: 24px 24px 22vh; }

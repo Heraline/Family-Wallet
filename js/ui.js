@@ -97,6 +97,7 @@ function wireHomeCardSwipe() {
 }
 
 export function render() {
+  document.body.classList.toggle("qa-active", S.view === "quickAdd" && !S.activeLedgerId);
   if (!S.user) return renderLogin();
   if (S.activeLedgerId) {
     if (S.view === "splits") return renderSplitsPage();
@@ -1126,7 +1127,7 @@ function renderQuickAddPage() {
             <button type="button" class="qa-key" data-qa-key="4">4</button>
             <button type="button" class="qa-key" data-qa-key="5">5</button>
             <button type="button" class="qa-key" data-qa-key="6">6</button>
-            <button type="button" class="qa-key qa-key-op" data-qa-key="md">${qa.opMode?.md === "÷" ? "÷" : "−"}</button>
+            <button type="button" class="qa-key qa-key-op" data-qa-key="md"><span class="qa-op-glyph">${qa.opMode?.md === "÷" ? "÷" : "−"}</span></button>
 
             <button type="button" class="qa-key" data-qa-key="7">7</button>
             <button type="button" class="qa-key" data-qa-key="8">8</button>
