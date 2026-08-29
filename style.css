@@ -107,17 +107,19 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .nav-label { font-size: 10px; }
 
 .card-button { cursor: pointer; margin: 0; }
-.ledger-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.ledger-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding: 6px 4px 14px; }
 .ledger-scroll-card { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; border-radius: 14px; padding: 12px 16px; min-width: 84px; font-size: 12px; font-weight: 600; color: var(--card-text); }
 
 /* ===== Home: swipeable budget/wallet card ===== */
 .card-swipe-track {
   display: flex; align-items: stretch; overflow-x: auto; scroll-snap-type: x mandatory;
   scrollbar-width: none; -ms-overflow-style: none;
-  /* extra top/bottom padding stops the box-shadow's rounded curve from being
-     clipped: overflow-x:auto implicitly forces overflow-y to auto as well,
-     which otherwise cuts the shadow off in a flat line at the container edge */
-  padding: 6px 0 22px;
+  /* extra padding stops the box-shadow's rounded curve from being clipped:
+     overflow-x:auto implicitly forces overflow-y to auto as well, which
+     otherwise cuts the shadow off in a flat line at the container edge.
+     Small side padding also lets the left/right shadow breathe instead of
+     being clipped flush against the scroll container's edge. */
+  padding: 6px 6px 22px;
 }
 .card-swipe-track::-webkit-scrollbar { display: none; }
 .card-swipe-slide { flex: 0 0 100%; scroll-snap-align: start; display: flex; }
