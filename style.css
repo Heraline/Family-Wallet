@@ -193,7 +193,7 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
   position: fixed; bottom: 0; left: 16px; right: 16px;
   background: var(--card-bg-flat); border-top: 1px solid var(--card-border-flat);
   border-radius: 16px 16px 0 0;
-  box-shadow: 0 -6px 20px rgba(0,0,0,0.1); padding: 6px 0 calc(10px + env(safe-area-inset-bottom));
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.1); padding: 6px 16px calc(10px + env(safe-area-inset-bottom));
   max-width: 448px; margin: 0 auto;
   z-index: 20;
 }
