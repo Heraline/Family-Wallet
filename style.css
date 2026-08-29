@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500;700&display=swap');
 
-* { box-sizing: border-box; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+* { box-sizing: border-box; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; touch-action: manipulation; }
 body {
   max-width: 480px; margin: 0 auto; padding: 24px 16px 40px;
   background: var(--page-bg); color: var(--page-text);
@@ -190,11 +190,11 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 
 /* ===== Quick Add: fixed bottom sheet (topline through keypad) ===== */
 .qa-bottom-sheet {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  position: fixed; bottom: 0; left: 16px; right: 16px;
   background: var(--card-bg-flat); border-top: 1px solid var(--card-border-flat);
   border-radius: 16px 16px 0 0;
-  box-shadow: 0 -6px 20px rgba(0,0,0,0.1); padding: 6px 16px calc(10px + env(safe-area-inset-bottom));
-  max-width: 480px; margin: 0 auto;
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.1); padding: 6px 0 calc(10px + env(safe-area-inset-bottom));
+  max-width: 448px; margin: 0 auto;
   z-index: 20;
 }
 .qa-bottom-sheet #qaError { min-height: 0; margin-bottom: 0; }
