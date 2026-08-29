@@ -260,7 +260,7 @@ function renderHome() {
               <div class="net-worth-divider" style="margin:8px 0"></div>
               <div class="budget-stat-row">
                 <div><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Wallet</span><div style="font-size:16px;font-weight:700">${netWorth.homeCurrency} ${netWorth.assets.toFixed(2)}</div></div>
-                <div style="text-align:right"><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Debt</span><div style="font-size:16px;font-weight:700">${netWorth.homeCurrency} ${netWorth.liabilities.toFixed(2)}</div></div>
+                <div style="text-align:right"><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Borrow</span><div style="font-size:16px;font-weight:700">${netWorth.homeCurrency} ${netWorth.liabilities.toFixed(2)}</div></div>
               </div>
             ` : `<p class="muted">No funds yet — tap to add some.</p>`}
             <p class="muted" style="margin-top:6px">Tap to manage →</p>
@@ -760,24 +760,24 @@ function renderWalletPage() {
     </div>
 
     <div class="panel">
-      <h3>Debt</h3>
-      <p class="muted" style="margin-bottom:8px">Debts you owe — loans, credit cards, IOUs. Subtracted from the Net figure on Home.</p>
+      <h3>Borrow</h3>
+      <p class="muted" style="margin-bottom:8px">Money you borrowed — loans, credit cards, IOUs. Subtracted from the Net figure on Home.</p>
       ${liabilityEntries.length ? liabilityEntries.map(([id, l]) => `
         <div class="tx-row">
           <span>${l.name}</span>
           <span class="expense">${l.currency} ${l.amount.toFixed(2)}</span>
           <button class="link small" data-del-liability="${id}">delete</button>
         </div>
-      `).join("") : `<p class="muted">No debts added.</p>`}
+      `).join("") : `<p class="muted">No borrows added.</p>`}
       <div class="sub-panel">
-        <h4>Add a debt</h4>
+        <h4>Add a borrow</h4>
         <div id="liabilityError" class="error"></div>
         <input id="liabilityName" placeholder="Name (e.g. Car loan, Credit card)" />
         <div class="btn-row">
           <input id="liabilityAmount" type="number" step="0.01" placeholder="Amount" style="flex:2" />
           <select id="liabilityCurrency" style="flex:1">${currencyOptions("USD")}</select>
         </div>
-        <button id="btnAddLiability" style="margin-top:8px">Add debt</button>
+        <button id="btnAddLiability" style="margin-top:8px">Add borrow</button>
       </div>
     </div>
 
