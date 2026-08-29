@@ -184,12 +184,15 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-bottom-sheet {
   position: fixed; bottom: 0; left: 0; right: 0;
   background: var(--card-bg-flat); border-top: 1px solid var(--card-border-flat);
-  box-shadow: 0 -6px 20px rgba(0,0,0,0.1); padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.1); padding: 6px 16px calc(10px + env(safe-area-inset-bottom));
   max-width: 480px; margin: 0 auto;
   z-index: 20;
 }
+.qa-bottom-sheet #qaError { min-height: 0; margin-bottom: 0; }
+.qa-bottom-sheet #qaError:empty { display: none; }
 
-.qa-topline { display: flex; align-items: stretch; gap: 8px; margin: 4px 0 6px; }
+.qa-topline { display: flex; align-items: stretch; gap: 8px; margin: 2px 0 6px; }
 .qa-topline-pill {
   flex: 0 0 50%; display: flex; align-items: center; gap: 5px;
   border: none; border-radius: 12px; padding: 0 8px; font-size: 13px; font-weight: 700;
