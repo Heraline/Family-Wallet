@@ -178,13 +178,14 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .qa-cat-tile:nth-child(9n+8) { background: color-mix(in srgb, #7C8CFF 16%, var(--card-bg-flat)); }
 .qa-cat-tile:nth-child(9n+9) { background: color-mix(in srgb, #E9B23D 16%, var(--card-bg-flat)); }
 
-.qa-scroll-area { padding-bottom: 0; }
+.qa-scroll-area { padding-bottom: 340px; }
 
 /* ===== Quick Add: fixed bottom sheet (topline through keypad) ===== */
 .qa-bottom-sheet {
-  position: sticky; bottom: 0;
+  position: fixed; bottom: 0; left: 0; right: 0;
   background: var(--card-bg-flat); border-top: 1px solid var(--card-border-flat);
   box-shadow: 0 -6px 20px rgba(0,0,0,0.1); padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  max-width: 480px; margin: 0 auto;
   z-index: 20;
 }
 
