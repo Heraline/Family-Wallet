@@ -28,6 +28,28 @@ export function listenUserLedgers() {
   });
 }
 
+// One-time (non-live) fetch of just what quick-add needs to work inside a
+// ledger's context — its currency, categories, members, and tags — without
+// setting up the full set of live listeners that switchLedger() does.
+// Categories fall back to null here (not DEFAULT_CATEGORIES) so the caller
+// can tell "this ledger has no custom categories yet" apart from "still
+// loading"; ui.js already falls back to the shared defaults when rendering.
+export async function fetchLedgerContext(lid) {
+  const [ledgerSnap, catSnap, memberSnap, tagSnap] = await Promise.all([
+    readOnce(`ledgers/${lid}`),
+    readOnce(`ledgers/${lid}/categories`),
+    readOnce(`ledgerMembers/${lid}`),
+    readOnce(`ledgers/${lid}/tags`),
+  ]);
+  const ledger = ledgerSnap.exists() ? ledgerSnap.val() : {};
+  return {
+    currency: ledger.currency || "USD",
+    categories: catSnap.exists() ? catSnap.val() : {},
+    members: memberSnap.exists() ? memberSnap.val() : {},
+    tags: tagSnap.exists() ? Object.values(tagSnap.val()) : [],
+  };
+}
+
 export async function createLedger(name, icon = "💼", currency = "USD") {
   const lid = crypto.randomUUID();
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
