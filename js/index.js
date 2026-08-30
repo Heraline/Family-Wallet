@@ -28,7 +28,45 @@ import { listenLiabilities, addLiability, deleteLiability } from "./liabilities.
 import { listenLedgerWallet, fundLedgerWallet, addToLedgerWallet, spendFromLedgerWallet, refundToLedgerWallet, getLedgerCurrency } from "./ledgerWallet.js";
 import { render, splitAmountRowsHtml, qaComputeAmount, qaApplyOp, shiftDateStr, shiftMonthStr } from "./ui.js";
 
-onStateChange((s) => { applyTheme(); render(s); });
+onStateChange((s) => { applyTheme(); maybeApplyHomeStartupPref(); render(s); });
+
+let startupPrefApplied = false;
+// Applies the user's "Home screen starts on" setting exactly once per
+// session, as soon as both their ledger list and uiPrefs have loaded —
+// waiting on the *Ready flags (rather than just truthiness) avoids acting
+// on the hardcoded pre-load defaults in state.js.
+function maybeApplyHomeStartupPref() {
+  if (startupPrefApplied || !S.user || S.activeLedgerId) return;
+  if (!S.ledgersReady || !S.uiPrefsReady) return;
+  startupPrefApplied = true;
+  const pref = S.uiPrefs?.homeStartup || "overview";
+  let lid = null;
+  if (pref === "last") {
+    const last = localStorage.getItem("tb_last_ledger_id");
+    if (last && S.ledgers?.[last]) lid = last;
+  } else if (pref !== "overview" && S.ledgers?.[pref]) {
+    lid = pref;
+  }
+  if (lid) enterLedger(lid);
+}
+
+// Fully switches into a ledger (transactions, budget, recurring,
+// settlements, categories, tags, ledger wallet — everything the old
+// ledger page needed) and remembers it as "last viewed" for the startup
+// preference. Shared by the pull-down ledger row, the Ledgers list, and
+// the startup-preference logic above, so there's exactly one code path.
+function enterLedger(lid) {
+  switchLedger(lid);
+  listenTransactions(lid);
+  setBudgetUnsub(listenLedgerBudget(lid));
+  listenRecurring(lid);
+  processDueRecurring(lid).catch((err) => console.error("Recurring processing failed:", err));
+  listenSettlements(lid);
+  listenCategories(lid);
+  listenTags(lid);
+  listenLedgerWallet(lid);
+  try { localStorage.setItem("tb_last_ledger_id", lid); } catch { /* storage unavailable — fine, just won't persist */ }
+}
 
 let unsubUserLedgers = null;
 let unsubPersonalBudget = null;
@@ -93,30 +131,6 @@ async function loadQaLedgerContext(lid) {
 // Returns true on success (already saved) or false after showing an error
 // (validation failed, nothing saved) — shared by the red Submit button and
 // the gray Record button, which only differ in what happens afterward.
-// The Split modal's per-person amount inputs only exist in the DOM while
-// it's open — once it closes (Done, or tapping the backdrop), ui.js stops
-// rendering them. So we capture whatever's currently typed into state
-// right before closing, and submitQuickAdd() reads from that captured
-// state instead of querying the DOM (which would find nothing by then).
-function captureSplitAmounts() {
-  const qa = S.quickAdd;
-  if (!qa) return;
-  if ((qa.payerUids || []).length >= 2) {
-    qa.payerAmounts = {};
-    qa.payerUids.forEach((uid) => {
-      const input = document.querySelector(`.split-amt-input[data-amt-group="qapayer"][data-amt-uid="${uid}"]`);
-      if (input) qa.payerAmounts[uid] = Number(input.value) || 0;
-    });
-  }
-  if ((qa.splitUids || []).length >= 1) {
-    qa.splitCustomAmounts = {};
-    qa.splitUids.forEach((uid) => {
-      const input = document.querySelector(`.split-amt-input[data-amt-group="qasplit"][data-amt-uid="${uid}"]`);
-      if (input) qa.splitCustomAmounts[uid] = Number(input.value) || 0;
-    });
-  }
-}
-
 async function submitQuickAdd() {
   const qa = S.quickAdd;
   if (!qa.ledgerId) { showError("qaError", "Create or select a ledger first."); return false; }
@@ -128,14 +142,22 @@ async function submitQuickAdd() {
   const splitUids = qa.splitUids || [];
   let payers, splitAmounts;
   if (payerUids.length >= 2) {
-    payers = qa.payerAmounts || {};
+    payers = {};
+    payerUids.forEach((uid) => {
+      const input = document.querySelector(`.split-amt-input[data-amt-group="qapayer"][data-amt-uid="${uid}"]`);
+      payers[uid] = Number(input?.value) || 0;
+    });
     const payerSum = Object.values(payers).reduce((a, b) => a + b, 0);
     if (Math.abs(payerSum - amount) > 0.01) { showError("qaError", `"Paid by" amounts add up to ${payerSum.toFixed(2)}, but the total is ${amount.toFixed(2)}.`); return false; }
   } else if (payerUids.length === 1) {
     payers = { [payerUids[0]]: amount };
   }
   if (splitUids.length >= 1) {
-    splitAmounts = qa.splitCustomAmounts || {};
+    splitAmounts = {};
+    splitUids.forEach((uid) => {
+      const input = document.querySelector(`.split-amt-input[data-amt-group="qasplit"][data-amt-uid="${uid}"]`);
+      splitAmounts[uid] = Number(input?.value) || 0;
+    });
     const splitSum = Object.values(splitAmounts).reduce((a, b) => a + b, 0);
     if (Math.abs(splitSum - amount) > 0.01) { showError("qaError", `"Split between" amounts add up to ${splitSum.toFixed(2)}, but the total is ${amount.toFixed(2)}.`); return false; }
   }
@@ -184,7 +206,10 @@ document.getElementById("app").addEventListener("click", async (e) => {
     const navBtn = e.target.closest?.("[data-nav]");
     if (navBtn) goTo(navBtn.dataset.nav);
 
-    if (e.target.closest?.("#btnHomeBudgetCard")) goTo("personalBudget");
+    if (e.target.closest?.("#btnHomeBudgetCard")) {
+      if (S.activeLedgerId) { S.view = "ledgerManage"; render(); }
+      else goTo("personalBudget");
+    }
     if (id === "btnHomeSplits") {
       S.activeLedgerId = null;
       S.view = "homeSplits";
@@ -200,15 +225,15 @@ document.getElementById("app").addEventListener("click", async (e) => {
       render();
     }
     if (e.target.closest?.("#btnHomeWalletCard")) {
-      goTo("wallet");
-      processDueWalletRecurring().catch((err) => console.error("Wallet recurring processing failed:", err));
+      if (S.activeLedgerId) { S.view = "ledgerManage"; render(); }
+      else { goTo("wallet"); processDueWalletRecurring().catch((err) => console.error("Wallet recurring processing failed:", err)); }
     }
     if (id === "btnBackFromWallet") goTo("home");
     if (id === "btnHomeSettings") goTo("aiSettings");
     if (id === "btnBackFromSettings") goTo("home");
     if (id === "btnManageLedgers") goTo("ledgers");
     if (e.target.closest?.("#btnHomeQuickAdd")) {
-      const lastLedgerId = S.quickAdd?.ledgerId;
+      const lastLedgerId = S.activeLedgerId || S.quickAdd?.ledgerId;
       const stillValid = lastLedgerId && S.ledgers?.[lastLedgerId];
       const ledgerId = stillValid ? lastLedgerId : Object.keys(S.ledgers || {})[0] || null;
       S.quickAdd = {
@@ -220,7 +245,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
         dateDraft: null, timeDraft: null,
         showDateWheel: false, showTimeWheel: false,
         wheelYear: null, wheelMonth: null, wheelDay: null, wheelHour: null, wheelMinute: null,
-        account: "", showSplit: false, payerUids: [], splitUids: [], payerAmounts: {}, splitCustomAmounts: {},
+        account: "", showSplit: false, payerUids: [], splitUids: [],
         opMode: { pm: "+", md: "-" }, lastOpKey: null, currencyDraft: null, ledgerDraft: null,
         showDatePicker: false, showLedgerPicker: false, showCurrencyPicker: false, showNewTag: false, showTagPicker: false, showCategoriesPanel: false,
       };
@@ -384,7 +409,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnQaAccount") { S.quickAdd.account = S.quickAdd.account === "wallet" ? "" : "wallet"; render(); }
     if (id === "btnQaSplitToggle") { S.quickAdd.showSplit = !S.quickAdd.showSplit; render(); }
-    if (id === "btnQaSplitDone" || e.target.id === "qaSplitBackdrop") { captureSplitAmounts(); S.quickAdd.showSplit = false; render(); }
+    if (id === "btnQaSplitDone" || e.target.id === "qaSplitBackdrop") { S.quickAdd.showSplit = false; render(); }
     if (id === "btnQaCategoriesMenu") { S.quickAdd.showCategoriesPanel = !S.quickAdd.showCategoriesPanel; render(); }
     if (id === "btnQaCategoriesBack") { S.quickAdd.showCategoriesPanel = false; render(); }
     if (e.target.dataset.qaPayer) {
@@ -441,7 +466,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
           ...qa,
           amount: "", runningTotal: null, pendingOp: null,
           category: null, remark: "", tags: [],
-          payerUids: [], splitUids: [], payerAmounts: {}, splitCustomAmounts: {}, showSplit: false,
+          payerUids: [], splitUids: [], showSplit: false,
         };
         render();
       }
@@ -508,15 +533,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
 
     if (e.target.dataset.lid) {
-      switchLedger(e.target.dataset.lid);
-      listenTransactions(e.target.dataset.lid);
-      setBudgetUnsub(listenLedgerBudget(e.target.dataset.lid));
-      listenRecurring(e.target.dataset.lid);
-      processDueRecurring(e.target.dataset.lid).catch((err) => console.error("Recurring processing failed:", err));
-      listenSettlements(e.target.dataset.lid);
-      listenCategories(e.target.dataset.lid);
-      listenTags(e.target.dataset.lid);
-      listenLedgerWallet(e.target.dataset.lid);
+      enterLedger(e.target.dataset.lid);
     }
     if (id === "btnAddLedgerWallet") {
       const amount = val("ledgerFundAmount"), note = val("ledgerFundNote");
@@ -543,7 +560,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
         return showError("ledgerFundError", err.message);
       }
     }
-    if (id === "btnBack") goTo("home");
+    if (id === "btnBackFromLedgerManage") { S.view = null; render(); }
+    if (id === "btnOpenLedgerManage") { S.view = "ledgerManage"; render(); }
     if (id === "btnBackFromBudget") goTo("home");
     if (id === "btnOpenSplits") { S.view = "splits"; render(); }
     if (id === "btnBackFromSplits") { S.view = null; render(); }
@@ -874,6 +892,9 @@ document.getElementById("app").addEventListener("change", async (e) => {
     if (e.target.dataset.includeLid) {
       await setLedgerIncluded(e.target.dataset.includeLid, e.target.checked);
       refreshHomeOverview();
+    }
+    if (id === "homeStartupSelect") {
+      await setThemePref("homeStartup", e.target.value);
     }
     if (id === "receiptFileInput") {
       const file = e.target.files[0];

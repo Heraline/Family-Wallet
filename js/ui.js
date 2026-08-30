@@ -96,13 +96,47 @@ function wireHomeCardSwipe() {
   });
 }
 
+// ===== Home: pull-down-to-reveal ledger switcher row =====
+// Registered once at module load (not per-render) so listeners never pile
+// up across re-renders — the handlers just look up the current DOM by id
+// each time, which works fine since #app is fully replaced on every render.
+let homeLedgerRowOpen = false;
+let pullStartY = null;
+let pullDragging = false;
+
+document.addEventListener("touchstart", (e) => {
+  const wrap = document.getElementById("ledgerPulldownWrap");
+  if (!wrap || window.scrollY > 2) { pullStartY = null; return; }
+  pullStartY = e.touches[0].clientY;
+  pullDragging = true;
+}, { passive: true });
+
+document.addEventListener("touchmove", (e) => {
+  if (!pullDragging || pullStartY == null) return;
+  const wrap = document.getElementById("ledgerPulldownWrap");
+  if (!wrap) return;
+  const dy = e.touches[0].clientY - pullStartY;
+  if (!homeLedgerRowOpen && dy > 40) {
+    wrap.classList.add("open");
+    homeLedgerRowOpen = true;
+    pullDragging = false;
+  } else if (homeLedgerRowOpen && dy < -30) {
+    wrap.classList.remove("open");
+    homeLedgerRowOpen = false;
+    pullDragging = false;
+  }
+}, { passive: true });
+
+document.addEventListener("touchend", () => { pullDragging = false; pullStartY = null; }, { passive: true });
+
 export function render() {
   document.body.classList.toggle("qa-active", S.view === "quickAdd" && !S.activeLedgerId);
   if (!S.user) return renderLogin();
   if (S.activeLedgerId) {
     if (S.view === "splits") return renderSplitsPage();
     if (S.view === "bookmarked") return renderBookmarkedPage();
-    return renderLedgerDetail();
+    if (S.view === "ledgerManage") return renderLedgerDetail();
+    return renderHome();
   }
   if (S.view === "personalBudget") return renderPersonalBudget();
   if (S.view === "aiSettings") return renderAiSettings();
@@ -183,21 +217,62 @@ function ledgerIcon(icon) {
   return `<span class="icon">${icon || "💼"}</span>`;
 }
 
+// Same shape of numbers as the personal overview, but computed for just
+// the active ledger from data that's already live-streamed in (S.txs,
+// S.ledgerBudget) — no extra Firebase reads needed, unlike the multi-ledger
+// personal overview which spans several ledgers and has to fetch on demand.
+function ledgerHomeStats() {
+  const ledger = S.activeLedgerDetail || {};
+  const currency = ledger.currency || "USD";
+  const ym = currentYM();
+  const today = new Date().toISOString().slice(0, 10);
+  let spentToday = 0, spent = 0, received = 0, totalBalance = 0;
+  Object.values(S.txs || {}).forEach((t) => {
+    totalBalance += t.type === "income" ? t.amount : -t.amount;
+    if (t.type === "expense" && t.date === today) spentToday += t.amount;
+    if (t.date?.startsWith(ym)) {
+      if (t.type === "expense") spent += t.amount;
+      else received += t.amount;
+    }
+  });
+  const target = S.ledgerBudget?.total || 0;
+  return { currency, spentToday, spent, received, totalBalance, target };
+}
+
 function renderHome() {
-  const pb = S.personalBudget || {};
-  const homeCurrency = pb.homeCurrency || "USD";
-  const overview = S.personalOverview;
-  const target = pb.total || 0;
-  const spent = overview?.total || 0;
-  const received = overview?.receivedThisMonth || 0;
+  const inLedger = !!S.activeLedgerId;
+  const ledgerEntries = Object.entries(S.ledgers || {});
+  const activeLedger = S.activeLedgerDetail || {};
+
+  let homeCurrency, spentToday, totalBalance, target, spent, received;
+  if (inLedger) {
+    const stats = ledgerHomeStats();
+    homeCurrency = stats.currency;
+    spentToday = stats.spentToday;
+    totalBalance = stats.totalBalance;
+    target = stats.target;
+    spent = stats.spent;
+    received = stats.received;
+  } else {
+    const pb = S.personalBudget || {};
+    homeCurrency = pb.homeCurrency || "USD";
+    const overview = S.personalOverview;
+    target = pb.total || 0;
+    spent = overview?.total || 0;
+    received = overview?.receivedThisMonth || 0;
+    spentToday = overview?.spentToday || 0;
+    totalBalance = overview?.totalBalance || 0;
+  }
   const remaining = target - spent;
   const pct = target > 0 ? Math.min(100, Math.round((spent / target) * 100)) : 0;
   const over = target > 0 && spent > target;
   const today = new Date();
   const daysLeft = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() - today.getDate() + 1;
   const dailySafe = target > 0 ? Math.max(0, remaining) / daysLeft : 0;
-  const ledgerEntries = Object.entries(S.ledgers || {});
   const netWorth = S.walletNetWorth;
+  const budgetCardTitle = inLedger ? `${ledgerIcon(activeLedger.icon)} ${activeLedger.name || "Ledger"} Budget` : "This Month's Budget";
+  const walletCardTitle = inLedger ? "Ledger Wallet" : "Pocket";
+  const hasOverviewData = inLedger || !!S.personalOverview;
 
   app.innerHTML = `
     <div class="topbar">
@@ -212,14 +287,30 @@ function renderHome() {
       </div>
     </div>
 
+    <div class="ledger-pulldown-wrap ${homeLedgerRowOpen ? "open" : ""}" id="ledgerPulldownWrap">
+      <div class="ledger-pulldown-hint"><span class="pulldown-chevron">⌄</span></div>
+      <div class="ledger-pulldown-row">
+        <button class="ledger-pulldown-tile ${!inLedger ? "active" : ""}" data-nav="home">
+          <span class="ledger-pulldown-icon">📊</span><span>Overview</span>
+        </button>
+        ${ledgerEntries.map(([lid, l]) => `
+          <button class="ledger-pulldown-tile ${S.activeLedgerId === lid ? "active" : ""}" data-lid="${lid}">
+            <span class="ledger-pulldown-icon">${ledgerIcon(l.icon)}</span><span>${l.name || "Untitled"}</span>
+          </button>`).join("")}
+        <button class="ledger-pulldown-tile ledger-pulldown-add" data-nav="ledgers">
+          <span class="ledger-pulldown-icon">+</span><span>Add Ledger</span>
+        </button>
+      </div>
+    </div>
+
     <div class="spent-balance-row">
       <div>
         <div class="date-line" style="text-transform:uppercase;letter-spacing:0.04em">Spent Today</div>
-        <div class="spent-today-amount">${homeCurrency} ${(overview?.spentToday || 0).toFixed(2)}</div>
+        <div class="spent-today-amount">${homeCurrency} ${spentToday.toFixed(2)}</div>
       </div>
       <div class="total-balance-pill">
         <span class="muted" style="font-size:11px">Total Balance</span>
-        <span style="font-weight:700">${homeCurrency} ${(overview?.totalBalance || 0).toFixed(2)}</span>
+        <span style="font-weight:700">${homeCurrency} ${totalBalance.toFixed(2)}</span>
       </div>
     </div>
 
@@ -228,18 +319,18 @@ function renderHome() {
         <div class="card-swipe-slide">
           <div id="btnHomeBudgetCard" class="panel card-button" role="button" tabindex="0">
             <div class="card-header-row">
-              <h3 style="margin:0">This Month's Budget</h3>
+              <h3 style="margin:0">${budgetCardTitle}</h3>
               <div class="card-mini-icons">
                 <button class="mini-icon-btn" disabled title="Calendar (coming soon)"><i class="ti ti-calendar" aria-hidden="true"></i></button>
                 <button class="mini-icon-btn" disabled title="Stats (coming soon)"><i class="ti ti-chart-bar" aria-hidden="true"></i></button>
               </div>
             </div>
-            ${overview ? `
+            ${hasOverviewData ? `
               <div class="budget-stat-row">
                 <div><span class="date-line">SPENDING</span><div class="expense" style="font-size:18px;font-weight:700">${homeCurrency} ${spent.toFixed(2)}</div></div>
                 <div style="text-align:right"><span class="date-line">RECEIVING</span><div class="income" style="font-size:18px;font-weight:700">${homeCurrency} ${received.toFixed(2)}</div></div>
               </div>
-              ${target > 0 ? budgetProgress(pct, over) : `<p class="muted">Set a personal budget target to see your progress here.</p>`}
+              ${target > 0 ? budgetProgress(pct, over) : `<p class="muted">Set a${inLedger ? " ledger" : " personal"} budget target to see your progress here.</p>`}
               ${target > 0 ? `
                 <div class="budget-stat-row" style="margin-top:8px">
                   <div><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Remaining</span><div style="font-size:16px;font-weight:700">${homeCurrency} ${remaining.toFixed(2)} <span class="muted" style="font-size:11px;font-weight:500">/ ${target.toFixed(2)}</span></div></div>
@@ -252,8 +343,12 @@ function renderHome() {
         </div>
         <div class="card-swipe-slide">
           <div id="btnHomeWalletCard" class="panel card-button" role="button" tabindex="0">
-            <h3 style="margin:0">Pocket</h3>
-            ${netWorth ? `
+            <h3 style="margin:0">${walletCardTitle}</h3>
+            ${inLedger ? `
+              <div class="budget-stat-row" style="margin-top:8px">
+                <div><span class="date-line">BALANCE</span><div style="font-size:18px;font-weight:700">${homeCurrency} ${(S.ledgerWalletBalance || 0).toFixed(2)}</div></div>
+              </div>
+            ` : (netWorth ? `
               <div class="budget-stat-row" style="margin-top:8px">
                 <div><span class="date-line">NET</span><div style="font-size:18px;font-weight:700">${netWorth.homeCurrency} ${netWorth.net.toFixed(2)}</div></div>
               </div>
@@ -262,7 +357,7 @@ function renderHome() {
                 <div><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Wallet</span><div style="font-size:16px;font-weight:700">${netWorth.homeCurrency} ${netWorth.assets.toFixed(2)}</div></div>
                 <div style="text-align:right"><span class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.03em">Borrow</span><div style="font-size:16px;font-weight:700">${netWorth.homeCurrency} ${netWorth.liabilities.toFixed(2)}</div></div>
               </div>
-            ` : `<p class="muted">No funds yet — tap to add some.</p>`}
+            ` : `<p class="muted">No funds yet — tap to add some.</p>`)}
             <p class="muted" style="margin-top:6px">Tap to manage →</p>
           </div>
         </div>
@@ -273,9 +368,9 @@ function renderHome() {
       </div>
     </div>
 
-    ${renderRecentTransactionsSection()}
+    ${inLedger ? renderLedgerTransactionsSection() : renderRecentTransactionsSection()}
 
-    ${renderGroupsSection(ledgerEntries)}
+    ${!inLedger ? renderGroupsSection(ledgerEntries) : ""}
 
     <div class="quick-tile-row">
       <button id="btnHomeSplits" class="quick-tile">${sysIcon("users-group")}<span>Splits & Settle</span></button>
@@ -288,6 +383,43 @@ function renderHome() {
     </button>`;
 
   wireHomeCardSwipe();
+}
+
+// Ledger-focused equivalent of renderRecentTransactionsSection() — same
+// look, but sourced from this one ledger's own live S.txs instead of the
+// cross-ledger S.recentTx list.
+function renderLedgerTransactionsSection() {
+  const all = Object.values(S.txs || {}).sort((a, b) => b.ts - a.ts);
+  const visibleCount = S.recentTxVisibleCount || 5;
+  const visible = all.slice(0, visibleCount);
+  const remaining = all.length - visible.length;
+  const groups = groupTxByDay(visible);
+
+  const txRowHtml = (t) => {
+    const isShared = !!(t.splitWith?.length || (t.splitAmounts && Object.keys(t.splitAmounts).length));
+    return `
+      <div class="tx-row">
+        <span class="tx-emoji">${categoryEmoji(t.category)}</span>
+        <span class="tx-main">
+          <span class="tx-title">${t.category}${t.description ? " — " + t.description : ""}</span>
+          ${isShared ? `<span class="tx-sub muted">Shared</span>` : ""}
+        </span>
+        <span class="${t.type}">${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)}</span>
+      </div>`;
+  };
+
+  return `
+    <div class="section-header-row">
+      <h3 style="margin:0">Recent Transactions</h3>
+      <button class="link small" id="btnOpenLedgerManage">Add / View all</button>
+    </div>
+    <div class="tx-list">
+      ${all.length ? groups.map((g) => `
+        <div class="tx-day-label muted">${g.label}</div>
+        ${g.items.map(txRowHtml).join("")}
+      `).join("") : `<p class="muted">No transactions yet — tap the + button to add one.</p>`}
+    </div>
+    ${remaining > 0 ? `<button id="btnToggleRecentTx" class="link">Show ${Math.min(5, remaining)} more transaction${Math.min(5, remaining) > 1 ? "s" : ""}</button>` : ""}`;
 }
 
 function renderRecentTransactionsSection() {
@@ -417,6 +549,14 @@ function renderAiSettings() {
         <button class="opt-btn ${(prefs.iconStyle || "plain") === "plain" ? "active" : ""}" data-set-icon-style="plain">Minimal</button>
         <button class="opt-btn ${prefs.iconStyle === "badge" ? "active" : ""}" data-set-icon-style="badge">Bold</button>
       </div>
+      <p class="muted" style="margin:10px 0 8px">Home screen starts on</p>
+      <select id="homeStartupSelect">
+        <option value="overview" ${(prefs.homeStartup || "overview") === "overview" ? "selected" : ""}>Overview</option>
+        <option value="last" ${prefs.homeStartup === "last" ? "selected" : ""}>Last viewed</option>
+        ${Object.entries(S.ledgers || {}).map(([lid, l]) => `
+          <option value="${lid}" ${prefs.homeStartup === lid ? "selected" : ""}>${l.name || "Untitled"}</option>
+        `).join("")}
+      </select>
     </div>
 
     <div class="panel">
@@ -457,7 +597,7 @@ function renderLedgerDetail() {
 
   app.innerHTML = `
     <div class="topbar">
-      <button id="btnBack" class="link">&larr; Home</button>
+      <button id="btnBackFromLedgerManage" class="link">&larr; Back</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
 

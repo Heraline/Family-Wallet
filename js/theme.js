@@ -23,7 +23,8 @@ export const ICON_STYLES = [
 
 export function listenThemePrefs() {
   return listen(`users/${S.user.uid}/uiPrefs`, (data) => {
-    S.uiPrefs = { theme: "teal", cardStyle: "glass", chartStyle: "donut", iconStyle: "plain", ...(data || {}) };
+    S.uiPrefs = { theme: "teal", cardStyle: "glass", chartStyle: "donut", iconStyle: "plain", homeStartup: "overview", ...(data || {}) };
+    S.uiPrefsReady = true;
     applyTheme();
     notify();
   });

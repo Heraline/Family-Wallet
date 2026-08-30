@@ -5,6 +5,7 @@ export const S = {
   user: null,          // firebase auth user object
   profile: null,       // { displayName, avatar, color } from users/{uid}
   ledgers: {},         // { ledgerId: {name, icon, role} } — lightweight list for the ledger-picker screen
+  ledgersReady: false, // true once ledgers has loaded at least once this session
   activeLedgerId: null,
   activeLedgerDetail: null, // full record from ledgers/{lid} (currency, inviteCode, etc.) — only loaded once a ledger is opened
   members: {},         // members of the active ledger { uid: {displayName, role, ...} }
@@ -15,22 +16,19 @@ export const S = {
   personalCategoryBudgets: {}, // this month's per-category personal targets
   includedLedgers: {}, // { lid: true } — which ledgers count toward the personal overview
   personalOverview: null, // computed on demand by budgets.js refreshPersonalOverview()
-  recentTx: [],        // latest transactions across flagged ledgers, for the Home screen
-  recentTxVisibleCount: 5, // how many of S.recentTx are currently shown on Home (grows by 5 per tap)
+  recentTx: [],        // latest 5 transactions across flagged ledgers, for the Home screen
   ledgerBudget: {},    // active ledger's monthly target, from ledgers/{lid}/budgets/{ym}
   recurring: {},       // active ledger's recurring transaction templates
   tags: [],            // active ledger's shared tag list
   walletBalances: {},  // { currency: amount } — your real wallet balance, per currency
   walletTx: {},        // wallet top-up/transfer history
   walletRecurring: {}, // wallet recurring top-up templates (e.g. fixed pocket money)
-  liabilities: {},     // { id: {name, amount, currency, createdAt} } — manually-entered debts
-  walletNetWorth: null, // computed by wallet.js refreshWalletNetWorth(): { assets, liabilities, net, homeCurrency }
   ledgerWalletBalance: 0, // active ledger's own shared/pooled wallet balance (in the ledger's currency)
   categories: {},      // active ledger's custom categories (empty = use DEFAULT_CATEGORIES)
   settlements: {},     // active ledger's recorded settlements
   homeSplitsOverview: null, // cross-ledger combined splits overview for Home
-  uiPrefs: { theme: "teal", cardStyle: "glass", chartStyle: "donut", iconStyle: "plain" }, // synced appearance settings
-  quickAdd: null, // ephemeral draft for the floating "+" quick-add screen — never saved to Firebase directly, just used to build one transaction
+  uiPrefs: { theme: "teal", cardStyle: "glass", chartStyle: "donut", iconStyle: "plain", homeStartup: "overview" }, // synced appearance settings; homeStartup: "overview" | "last" | a ledger id
+  uiPrefsReady: false, // true once uiPrefs has loaded at least once this session
 };
 
 // Very small pub/sub so ui.js can re-render whenever state changes,
