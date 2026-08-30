@@ -370,8 +370,6 @@ function renderHome() {
 
     ${inLedger ? renderLedgerTransactionsSection() : renderRecentTransactionsSection()}
 
-    ${!inLedger ? renderGroupsSection(ledgerEntries) : ""}
-
     <div class="quick-tile-row">
       <button id="btnHomeSplits" class="quick-tile">${sysIcon("users-group")}<span>Splits & Settle</span></button>
       <button class="quick-tile" disabled title="Coming soon">${sysIcon("star")}<span>Bookmarked</span></button>
@@ -455,30 +453,6 @@ function renderRecentTransactionsSection() {
       `).join("") : `<p class="muted">No recent activity yet — flag a ledger to include in your budget to see it here.</p>`}
     </div>
     ${remaining > 0 ? `<button id="btnToggleRecentTx" class="link">Show ${Math.min(5, remaining)} more transaction${Math.min(5, remaining) > 1 ? "s" : ""}</button>` : ""}`;
-}
-
-function renderGroupsSection(ledgerEntries) {
-  const visibleLedgers = ledgerEntries.slice(0, 3);
-  return `
-    <div class="section-header-row" style="margin-top:20px">
-      <h3 style="margin:0">Ledgers</h3>
-      <button class="link small" data-nav="ledgers">View All</button>
-    </div>
-    <div class="ledger-scroll-row">
-      ${visibleLedgers.map(([lid, l]) => {
-        const line = myLedgerSplitLine(lid);
-        return `
-        <button class="ledger-scroll-card group-card" data-lid="${lid}">
-          ${ledgerIcon(l.icon)}
-          <span>${l.name || "Untitled"}</span>
-          <span class="group-split-line ${line?.cls || "muted"}">${line?.text || "\u00A0"}</span>
-        </button>`;
-      }).join("")}
-      <button class="ledger-scroll-card ledger-scroll-add" id="btnManageLedgers" aria-label="Create or join a ledger">
-        ${navIcon("plus")}
-        <span>${ledgerEntries.length ? "Manage" : "Add ledger"}</span>
-      </button>
-    </div>`;
 }
 
 function renderLedgerList() {
