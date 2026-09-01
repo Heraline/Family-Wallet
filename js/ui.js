@@ -96,38 +96,31 @@ function wireHomeCardSwipe() {
   });
 }
 
-// ===== Home: pull-down-to-reveal ledger switcher row =====
+// ===== Home: tap-to-reveal ledger switcher row =====
 // Registered once at module load (not per-render) so listeners never pile
 // up across re-renders — the handlers just look up the current DOM by id
 // each time, which works fine since #app is fully replaced on every render.
 let homeLedgerRowOpen = false;
-let pullStartY = null;
-let pullDragging = false;
 
-document.addEventListener("touchstart", (e) => {
-  const wrap = document.getElementById("ledgerPulldownWrap");
-  if (!wrap || window.scrollY > 2) { pullStartY = null; return; }
-  pullStartY = e.touches[0].clientY;
-  pullDragging = true;
-}, { passive: true });
-
-document.addEventListener("touchmove", (e) => {
-  if (!pullDragging || pullStartY == null) return;
+document.addEventListener("click", (e) => {
   const wrap = document.getElementById("ledgerPulldownWrap");
   if (!wrap) return;
-  const dy = e.touches[0].clientY - pullStartY;
-  if (!homeLedgerRowOpen && dy > 40) {
-    wrap.classList.add("open");
-    homeLedgerRowOpen = true;
-    pullDragging = false;
-  } else if (homeLedgerRowOpen && dy < -30) {
-    wrap.classList.remove("open");
-    homeLedgerRowOpen = false;
-    pullDragging = false;
-  }
-}, { passive: true });
 
-document.addEventListener("touchend", () => { pullDragging = false; pullStartY = null; }, { passive: true });
+  const hint = document.getElementById("ledgerPulldownHint");
+  if (hint && hint.contains(e.target)) {
+    homeLedgerRowOpen = !homeLedgerRowOpen;
+    wrap.classList.toggle("open", homeLedgerRowOpen);
+    return;
+  }
+
+  // Tapped anywhere else on the page while the row is open -> close it.
+  // (Taps on the tiles themselves are inside `wrap`, so they're left alone
+  // here and handled by their own data-lid/data-nav click handling.)
+  if (homeLedgerRowOpen && !wrap.contains(e.target)) {
+    homeLedgerRowOpen = false;
+    wrap.classList.remove("open");
+  }
+});
 
 export function render() {
   document.body.classList.toggle("qa-active", S.view === "quickAdd" && !S.activeLedgerId);
@@ -288,7 +281,7 @@ function renderHome() {
     </div>
 
     <div class="ledger-pulldown-wrap ${homeLedgerRowOpen ? "open" : ""}" id="ledgerPulldownWrap">
-      <div class="ledger-pulldown-hint"><span class="pulldown-chevron">⌄</span></div>
+      <div class="ledger-pulldown-hint" id="ledgerPulldownHint"><span class="pulldown-chevron">⌄</span></div>
       <div class="ledger-pulldown-row">
         <button class="ledger-pulldown-tile ${!inLedger ? "active" : ""}" data-nav="home">
           <span class="ledger-pulldown-icon">📊</span><span>Overview</span>
