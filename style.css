@@ -133,7 +133,7 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .ledger-pulldown-wrap.open .ledger-pulldown-row { max-height: 108px; opacity: 1; margin: 6px 0 2px; }
 .ledger-pulldown-tile {
   flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  border-radius: 14px; padding: 8px 6px; width: 72px; height: 72px; font-size: 11px; font-weight: 600;
+  border-radius: 14px; padding: 8px 6px; width: 82px; height: 62px; font-size: 11px; font-weight: 600;
   color: var(--card-text); background: var(--card-bg); border: 1px solid var(--card-border);
   backdrop-filter: var(--card-blur); -webkit-backdrop-filter: var(--card-blur); box-shadow: var(--card-shadow);
 }
