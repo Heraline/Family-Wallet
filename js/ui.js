@@ -142,7 +142,9 @@ document.addEventListener("click", (e) => {
   if (homeLedgerRowOpen && !wrap.contains(e.target)) {
     closeLedgerRow();
   }
-});
+}, true); // capture phase — must run before index.js's #app click handler
+          // re-renders and detaches e.target, or wrap.contains(e.target)
+          // below would wrongly read as "clicked outside"
 
 
 export function render() {
