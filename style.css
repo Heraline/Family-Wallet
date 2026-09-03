@@ -124,13 +124,13 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .ledger-pulldown-wrap.open .pulldown-chevron { transform: rotate(180deg); }
 .ledger-pulldown-row {
   display: flex; gap: 8px; overflow-x: auto; width: 100%;
-  max-height: 0; opacity: 0; margin: 0; padding: 0 2px;
+  max-height: 0; opacity: 0; margin: 0; padding: 4px 2px 16px;
   transition: max-height 0.25s ease, opacity 0.2s ease, margin 0.25s ease;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* old Edge/IE */
 }
 .ledger-pulldown-row::-webkit-scrollbar { display: none; /* Chrome, Safari */ }
-.ledger-pulldown-wrap.open .ledger-pulldown-row { max-height: 88px; opacity: 1; margin: 6px 0 10px; }
+.ledger-pulldown-wrap.open .ledger-pulldown-row { max-height: 108px; opacity: 1; margin: 6px 0 2px; }
 .ledger-pulldown-tile {
   flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 4px;
   border-radius: 14px; padding: 10px 14px; min-width: 72px; font-size: 11px; font-weight: 600;
