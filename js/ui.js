@@ -284,14 +284,14 @@ function renderHome() {
       <div class="ledger-pulldown-hint" id="ledgerPulldownHint"><span class="pulldown-chevron">⌄</span></div>
       <div class="ledger-pulldown-row">
         <button class="ledger-pulldown-tile ${!inLedger ? "active" : ""}" data-nav="home">
-          <span class="ledger-pulldown-icon">📊</span><span>Overview</span>
+          <span class="ledger-pulldown-icon">📊</span><span class="ledger-pulldown-label">Overview</span>
         </button>
         ${ledgerEntries.map(([lid, l]) => `
           <button class="ledger-pulldown-tile ${S.activeLedgerId === lid ? "active" : ""}" data-lid="${lid}">
-            <span class="ledger-pulldown-icon">${ledgerIcon(l.icon)}</span><span>${l.name || "Untitled"}</span>
+            <span class="ledger-pulldown-icon">${ledgerIcon(l.icon)}</span><span class="ledger-pulldown-label">${l.name || "Untitled"}</span>
           </button>`).join("")}
         <button class="ledger-pulldown-tile ledger-pulldown-add" data-nav="ledgers">
-          <span class="ledger-pulldown-icon">+</span><span>Add Ledger</span>
+          <span class="ledger-pulldown-icon">+</span><span class="ledger-pulldown-label">Add Ledger</span>
         </button>
       </div>
     </div>
