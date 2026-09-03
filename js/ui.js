@@ -101,6 +101,21 @@ function wireHomeCardSwipe() {
 // up across re-renders — the handlers just look up the current DOM by id
 // each time, which works fine since #app is fully replaced on every render.
 let homeLedgerRowOpen = false;
+let ledgerRowAutoCloseTimer = null;
+const LEDGER_ROW_AUTO_CLOSE_MS = 4000; // auto-close after this long with no interaction
+
+function closeLedgerRow() {
+  clearTimeout(ledgerRowAutoCloseTimer);
+  ledgerRowAutoCloseTimer = null;
+  if (!homeLedgerRowOpen) return;
+  homeLedgerRowOpen = false;
+  document.getElementById("ledgerPulldownWrap")?.classList.remove("open");
+}
+
+function scheduleLedgerRowAutoClose() {
+  clearTimeout(ledgerRowAutoCloseTimer);
+  ledgerRowAutoCloseTimer = setTimeout(closeLedgerRow, LEDGER_ROW_AUTO_CLOSE_MS);
+}
 
 document.addEventListener("click", (e) => {
   const wrap = document.getElementById("ledgerPulldownWrap");
@@ -110,17 +125,25 @@ document.addEventListener("click", (e) => {
   if (hint && hint.contains(e.target)) {
     homeLedgerRowOpen = !homeLedgerRowOpen;
     wrap.classList.toggle("open", homeLedgerRowOpen);
+    if (homeLedgerRowOpen) scheduleLedgerRowAutoClose();
+    else clearTimeout(ledgerRowAutoCloseTimer);
     return;
   }
 
-  // Tapped anywhere else on the page while the row is open -> close it.
-  // (Taps on the tiles themselves are inside `wrap`, so they're left alone
-  // here and handled by their own data-lid/data-nav click handling.)
+  // Tapped a tile inside the open row (switching ledgers, Add Ledger, etc.)
+  // -> keep it open, just restart the inactivity countdown.
+  if (homeLedgerRowOpen && wrap.contains(e.target)) {
+    scheduleLedgerRowAutoClose();
+    return;
+  }
+
+  // Tapped anywhere else on the page while the row is open -> close it
+  // immediately (an explicit dismiss, separate from the inactivity timer).
   if (homeLedgerRowOpen && !wrap.contains(e.target)) {
-    homeLedgerRowOpen = false;
-    wrap.classList.remove("open");
+    closeLedgerRow();
   }
 });
+
 
 export function render() {
   document.body.classList.toggle("qa-active", S.view === "quickAdd" && !S.activeLedgerId);
