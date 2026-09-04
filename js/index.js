@@ -574,8 +574,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnBackFromLedgerBudget") { S.view = null; render(); }
     if (id === "btnBackFromLedgerWallet") { S.view = null; render(); }
     if (id === "btnBackFromBudget") goTo("home");
+    if (id === "btnHomeBookmarked") { S.view = "bookmarked"; render(); }
     if (id === "btnBackFromSplits") { S.view = null; render(); }
-    if (id === "btnOpenBookmarked") { S.view = "bookmarked"; render(); }
     if (id === "btnBackFromBookmarked") { S.view = null; render(); }
     if (e.target.dataset.toggleBookmark) {
       const currentlyBookmarked = e.target.dataset.bookmarked === "true";

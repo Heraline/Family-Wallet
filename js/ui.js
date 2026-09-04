@@ -389,7 +389,9 @@ function renderHome() {
 
     <div class="quick-tile-row">
       <button id="btnHomeSplits" class="quick-tile">${sysIcon("users-group")}<span>Splits & Settle</span></button>
-      <button class="quick-tile" disabled title="Coming soon">${sysIcon("star")}<span>Bookmarked</span></button>
+      ${inLedger
+        ? `<button id="btnHomeBookmarked" class="quick-tile">${sysIcon("star")}<span>Bookmarked</span></button>`
+        : `<button class="quick-tile" disabled title="Coming soon">${sysIcon("star")}<span>Bookmarked</span></button>`}
       <button class="quick-tile" disabled title="Coming soon">${sysIcon("pig-money")}<span>Saving Jar</span></button>
     </div>
 
@@ -692,7 +694,6 @@ function renderLedgerSettingsPage() {
 
       ${renderTagsPanel(myMember, txs)}
       ${renderRecurringPanel(myMember, ledger)}
-      <button id="btnOpenBookmarked" class="secondary" style="width:100%;margin-bottom:16px">${sysIcon("star")}Bookmarked</button>
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
       ${renderSettingsPanel(ledger, myMember, iAmOwner)}
     </div>
