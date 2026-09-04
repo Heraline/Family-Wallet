@@ -608,16 +608,35 @@ function renderLedgerDetail() {
 
       <h3>Recent activity</h3>
       <div class="tx-list">
-        ${txs.length ? txs.map(([id, t]) => `
-          <div class="tx-row">
-            <button type="button" class="link small star-btn" data-toggle-bookmark="${id}" data-bookmarked="${t.bookmarked ? "true" : "false"}" title="${t.bookmarked ? "Remove bookmark" : "Bookmark"}">${t.bookmarked ? "⭐" : "☆"}</button>
-            <span>${t.fromRecurringId ? "🔄 " : ""}${t.account === "wallet" ? "🏦 " : ""}${t.category}${t.description ? " — " + t.description : ""}${t.tags?.length ? ` <span class="muted">${t.tags.map(x => "#" + x).join(" ")}</span>` : ""}</span>
-            <span class="${t.type}">
-              ${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}
-              ${t.origCurrency && t.origCurrency !== t.currency ? `<span class="muted" style="font-weight:400"> (≈ ${t.currency} ${t.amount.toFixed(2)})</span>` : ""}
-            </span>
-            ${canDeleteTx(myMember, t, S.user.uid) ? `<button class="link small" data-del="${id}">delete</button>` : ""}
-          </div>`).join("") : `<p class="muted">No transactions yet.</p>`}
+        ${(() => {
+          const activityTxs = txs.map(([id, t]) => ({ id, ...t }));
+          const activityGroups = groupTxByDay(activityTxs);
+          const activityRowHtml = (t) => {
+            const isShared = !!(t.splitWith?.length || (t.splitAmounts && Object.keys(t.splitAmounts).length));
+            const subtitleParts = [];
+            if (isShared) subtitleParts.push("Shared");
+            if (t.tags?.length) subtitleParts.push(t.tags.map(x => "#" + x).join(" "));
+            const subtitle = subtitleParts.join(" · ");
+            return `
+              <div class="tx-row">
+                <button type="button" class="link small star-btn" data-toggle-bookmark="${t.id}" data-bookmarked="${t.bookmarked ? "true" : "false"}" title="${t.bookmarked ? "Remove bookmark" : "Bookmark"}">${t.bookmarked ? "⭐" : "☆"}</button>
+                <span class="tx-emoji">${t.fromRecurringId ? "🔄" : (t.account === "wallet" ? "🏦" : categoryEmoji(t.category))}</span>
+                <span class="tx-main">
+                  <span class="tx-title">${t.category}${t.description ? " — " + t.description : ""}</span>
+                  ${subtitle ? `<span class="tx-sub muted">${subtitle}</span>` : ""}
+                </span>
+                <span class="${t.type}">
+                  ${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}
+                  ${t.origCurrency && t.origCurrency !== t.currency ? `<span class="muted" style="font-weight:400"> (≈ ${t.currency} ${t.amount.toFixed(2)})</span>` : ""}
+                </span>
+                ${canDeleteTx(myMember, t, S.user.uid) ? `<button class="link small" data-del="${t.id}">delete</button>` : ""}
+              </div>`;
+          };
+          return activityTxs.length ? activityGroups.map((g) => `
+            <div class="tx-day-label muted">${g.label}</div>
+            ${g.items.map(activityRowHtml).join("")}
+          `).join("") : `<p class="muted">No transactions yet.</p>`;
+        })()}
       </div>
 
       ${renderCategoriesPanel(myMember, txs, ledger)}
