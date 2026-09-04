@@ -1151,9 +1151,11 @@ function renderQuickAddPage() {
         <button type="button" class="qa-tab ${qa.type === "expense" ? "active" : ""}" data-qa-type="expense">Spending</button>
         <button type="button" class="qa-tab ${qa.type === "income" ? "active" : ""}" data-qa-type="income">Receiving</button>
       </div>
-      <button type="button" id="btnQaScanReceipt" class="link" aria-label="Scan receipt" title="Scan receipt">${sysIcon("camera")}</button>
-      <input type="file" id="qaReceiptFileInput" accept="image/*" capture="environment" style="display:none" />
-      <button type="button" id="btnQaCategoriesMenu" class="link" aria-label="Category settings">${sysIcon("dots-vertical")}</button>
+      <div class="topbar-icons">
+        <button type="button" id="btnQaScanReceipt" class="link" aria-label="Scan receipt" title="Scan receipt">${sysIcon("camera")}</button>
+        <input type="file" id="qaReceiptFileInput" accept="image/*" style="display:none" />
+        <button type="button" id="btnQaCategoriesMenu" class="link" aria-label="Category settings">${sysIcon("dots-vertical")}</button>
+      </div>
     </div>
     <p id="qaScanStatus" class="muted" style="display:none;text-align:center;margin:4px 0">Reading receipt with AI...</p>
 
