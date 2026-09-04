@@ -211,6 +211,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       else goTo("personalBudget");
     }
     if (id === "btnHomeSplits") {
+      if (S.activeLedgerId) { S.view = "splits"; render(); return; }
       S.activeLedgerId = null;
       S.view = "homeSplits";
       render();
@@ -573,7 +574,6 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnBackFromLedgerBudget") { S.view = null; render(); }
     if (id === "btnBackFromLedgerWallet") { S.view = null; render(); }
     if (id === "btnBackFromBudget") goTo("home");
-    if (id === "btnOpenSplits") { S.view = "splits"; render(); }
     if (id === "btnBackFromSplits") { S.view = null; render(); }
     if (id === "btnOpenBookmarked") { S.view = "bookmarked"; render(); }
     if (id === "btnBackFromBookmarked") { S.view = null; render(); }

@@ -692,10 +692,7 @@ function renderLedgerSettingsPage() {
 
       ${renderTagsPanel(myMember, txs)}
       ${renderRecurringPanel(myMember, ledger)}
-      <div class="btn-row" style="margin-bottom:16px">
-        <button id="btnOpenSplits" class="secondary" style="flex:1">${sysIcon("users-group")}Splits & Settle</button>
-        <button id="btnOpenBookmarked" class="secondary" style="flex:1">${sysIcon("star")}Bookmarked</button>
-      </div>
+      <button id="btnOpenBookmarked" class="secondary" style="width:100%;margin-bottom:16px">${sysIcon("star")}Bookmarked</button>
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
       ${renderSettingsPanel(ledger, myMember, iAmOwner)}
     </div>
