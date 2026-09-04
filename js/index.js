@@ -410,8 +410,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnQaAccount") { S.quickAdd.account = S.quickAdd.account === "wallet" ? "" : "wallet"; render(); }
     if (id === "btnQaSplitToggle") { S.quickAdd.showSplit = !S.quickAdd.showSplit; render(); }
     if (id === "btnQaSplitDone" || e.target.id === "qaSplitBackdrop") { S.quickAdd.showSplit = false; render(); }
-    if (id === "btnQaCategoriesMenu") { S.quickAdd.showCategoriesPanel = !S.quickAdd.showCategoriesPanel; render(); }
-    if (id === "btnQaCategoriesBack") { S.quickAdd.showCategoriesPanel = false; render(); }
+    if (id === "btnQaCategoriesMenu") { S.quickAdd.showCategoriesPanel = true; S.categoriesBackView = "quickAdd"; render(); }
     if (e.target.dataset.qaPayer) {
       const qa = S.quickAdd, uid = e.target.dataset.qaPayer;
       qa.payerUids = (qa.payerUids || []).includes(uid) ? qa.payerUids.filter((x) => x !== uid) : [...(qa.payerUids || []), uid];
@@ -562,7 +561,15 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnBackFromLedgerManage") { S.view = null; render(); }
     if (id === "btnOpenLedgerManage") { S.view = "ledgerManage"; render(); }
-    if (id === "btnHomeLedgerManage") { S.view = "ledgerManage"; render(); }
+    if (id === "btnHomeLedgerManage") { S.view = "ledgerSettings"; render(); }
+    if (id === "btnBackFromLedgerSettings") { S.view = null; render(); }
+    if (id === "btnOpenCategoriesFromSettings") { S.categoriesBackView = "ledgerSettings"; S.view = "categories"; render(); }
+    if (id === "btnCategoriesBack") {
+      if (S.categoriesBackView === "quickAdd" && S.quickAdd) S.quickAdd.showCategoriesPanel = false;
+      else S.view = "ledgerSettings";
+      S.categoriesBackView = null;
+      render();
+    }
     if (id === "btnBackFromLedgerBudget") { S.view = null; render(); }
     if (id === "btnBackFromLedgerWallet") { S.view = null; render(); }
     if (id === "btnBackFromBudget") goTo("home");

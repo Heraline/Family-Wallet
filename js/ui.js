@@ -156,6 +156,8 @@ export function render() {
     if (S.view === "ledgerManage") return renderLedgerDetail();
     if (S.view === "ledgerBudget") return renderLedgerBudgetPage();
     if (S.view === "ledgerWallet") return renderLedgerWalletPage();
+    if (S.view === "ledgerSettings") return renderLedgerSettingsPage();
+    if (S.view === "categories") return renderCategoriesPage();
     return renderHome();
   }
   if (S.view === "personalBudget") return renderPersonalBudget();
@@ -576,6 +578,84 @@ function renderLedgerDetail() {
   const ledger = S.activeLedgerDetail || {};
   const txs = Object.entries(S.txs || {}).sort((a, b) => b[1].ts - a[1].ts);
   const balance = txs.reduce((sum, [, t]) => sum + (t.type === "income" ? t.amount : -t.amount), 0);
+  const myMember = S.members[S.user.uid];
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromLedgerManage" class="link">&larr; Back</button>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+
+    <h2>${ledgerIcon(ledger.icon)} ${ledger.name || ""}</h2>
+    <div class="balance">${(ledger.currency || "USD")} ${balance.toFixed(2)}</div>
+
+    <h3>Recent activity</h3>
+    <div class="tx-list">
+      ${(() => {
+        const activityTxs = txs.map(([id, t]) => ({ id, ...t }));
+        const activityGroups = groupTxByDay(activityTxs);
+        const activityRowHtml = (t) => {
+          const isShared = !!(t.splitWith?.length || (t.splitAmounts && Object.keys(t.splitAmounts).length));
+          const subtitleParts = [];
+          if (isShared) subtitleParts.push("Shared");
+          if (t.tags?.length) subtitleParts.push(t.tags.map(x => "#" + x).join(" "));
+          const subtitle = subtitleParts.join(" · ");
+          return `
+            <div class="tx-row">
+              <button type="button" class="link small star-btn" data-toggle-bookmark="${t.id}" data-bookmarked="${t.bookmarked ? "true" : "false"}" title="${t.bookmarked ? "Remove bookmark" : "Bookmark"}">${t.bookmarked ? "⭐" : "☆"}</button>
+              <span class="tx-emoji">${t.fromRecurringId ? "🔄" : (t.account === "wallet" ? "🏦" : categoryEmoji(t.category))}</span>
+              <span class="tx-main">
+                <span class="tx-title">${t.category}${t.description ? " — " + t.description : ""}</span>
+                ${subtitle ? `<span class="tx-sub muted">${subtitle}</span>` : ""}
+              </span>
+              <span class="${t.type}">
+                ${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}
+                ${t.origCurrency && t.origCurrency !== t.currency ? `<span class="muted" style="font-weight:400"> (≈ ${t.currency} ${t.amount.toFixed(2)})</span>` : ""}
+              </span>
+              ${canDeleteTx(myMember, t, S.user.uid) ? `<button class="link small" data-del="${t.id}">delete</button>` : ""}
+            </div>`;
+        };
+        return activityTxs.length ? activityGroups.map((g) => `
+          <div class="tx-day-label muted">${g.label}</div>
+          ${g.items.map(activityRowHtml).join("")}
+        `).join("") : `<p class="muted">No transactions yet.</p>`;
+      })()}
+    </div>
+    <button id="btnHomeQuickAdd" class="fab-add" aria-label="Add a transaction"><i class="ti ti-plus" aria-hidden="true"></i></button>
+  `;
+}
+
+// One shared Categories screen for the whole app — reached from Quick Add's
+// '⋯' menu and from the Settings page's Categories row. S.categoriesBackView
+// ("quickAdd" | "ledgerSettings") tells the back button where to return to.
+function renderCategoriesPage() {
+  const fromQuickAdd = S.categoriesBackView === "quickAdd";
+  const qa = S.quickAdd;
+  // Quick Add can be adding to a ledger other than the one currently "open"
+  // (S.activeLedgerId) — in that case we don't have a live tx listener for
+  // it, so fall back to no spending figures rather than showing wrong ones.
+  const sameLedger = !fromQuickAdd || !qa?.ledgerId || qa.ledgerId === S.activeLedgerId;
+  const ledger = sameLedger ? (S.activeLedgerDetail || {}) : { currency: qa?.ledgerCurrency };
+  const txs = sameLedger ? Object.entries(S.txs || {}) : [];
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnCategoriesBack" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Categories</h2>
+      <span style="width:24px"></span>
+    </div>
+    ${renderCategoriesPanel(S.members?.[S.user.uid], txs, ledger)}
+  `;
+}
+
+// The ledger management hub — Tags, Recurring, Splits & Settle, Bookmarked,
+// Members, and ledger Settings, all stacked on one page for now. Categories
+// isn't included here directly since it's the shared page above; this page
+// just links out to it. (Splitting these into individual tap-through pages
+// is a later pass.)
+function renderLedgerSettingsPage() {
+  const ledger = S.activeLedgerDetail || {};
+  const txs = Object.entries(S.txs || {}).sort((a, b) => b[1].ts - a[1].ts);
   const memberEntries = Object.entries(S.members || {});
 
   const realMember = S.members[S.user.uid];
@@ -586,7 +666,7 @@ function renderLedgerDetail() {
 
   app.innerHTML = `
     <div class="topbar">
-      <button id="btnBackFromLedgerManage" class="link">&larr; Back</button>
+      <button id="btnBackFromLedgerSettings" class="link">&larr; Back</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
 
@@ -603,43 +683,13 @@ function renderLedgerDetail() {
 
     <div class="${previewing ? "preview-lock" : ""}">
       ${previewing ? `<p class="preview-note">Previewing as <strong>${S.debugPreviewRole}</strong> — everything below is view-only, no actions will actually run.</p>` : ""}
-      <h2>${ledgerIcon(ledger.icon)} ${ledger.name || ""}</h2>
-      <div class="balance">${(ledger.currency || "USD")} ${balance.toFixed(2)}</div>
+      <h2>${ledgerIcon(ledger.icon)} ${ledger.name || ""} settings</h2>
 
-      <h3>Recent activity</h3>
-      <div class="tx-list">
-        ${(() => {
-          const activityTxs = txs.map(([id, t]) => ({ id, ...t }));
-          const activityGroups = groupTxByDay(activityTxs);
-          const activityRowHtml = (t) => {
-            const isShared = !!(t.splitWith?.length || (t.splitAmounts && Object.keys(t.splitAmounts).length));
-            const subtitleParts = [];
-            if (isShared) subtitleParts.push("Shared");
-            if (t.tags?.length) subtitleParts.push(t.tags.map(x => "#" + x).join(" "));
-            const subtitle = subtitleParts.join(" · ");
-            return `
-              <div class="tx-row">
-                <button type="button" class="link small star-btn" data-toggle-bookmark="${t.id}" data-bookmarked="${t.bookmarked ? "true" : "false"}" title="${t.bookmarked ? "Remove bookmark" : "Bookmark"}">${t.bookmarked ? "⭐" : "☆"}</button>
-                <span class="tx-emoji">${t.fromRecurringId ? "🔄" : (t.account === "wallet" ? "🏦" : categoryEmoji(t.category))}</span>
-                <span class="tx-main">
-                  <span class="tx-title">${t.category}${t.description ? " — " + t.description : ""}</span>
-                  ${subtitle ? `<span class="tx-sub muted">${subtitle}</span>` : ""}
-                </span>
-                <span class="${t.type}">
-                  ${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}
-                  ${t.origCurrency && t.origCurrency !== t.currency ? `<span class="muted" style="font-weight:400"> (≈ ${t.currency} ${t.amount.toFixed(2)})</span>` : ""}
-                </span>
-                ${canDeleteTx(myMember, t, S.user.uid) ? `<button class="link small" data-del="${t.id}">delete</button>` : ""}
-              </div>`;
-          };
-          return activityTxs.length ? activityGroups.map((g) => `
-            <div class="tx-day-label muted">${g.label}</div>
-            ${g.items.map(activityRowHtml).join("")}
-          `).join("") : `<p class="muted">No transactions yet.</p>`;
-        })()}
-      </div>
+      <button type="button" id="btnOpenCategoriesFromSettings" class="panel card-button" style="text-align:left">
+        <div class="card-header-row"><h3 style="margin:0">${sysIcon("tag")}Categories</h3><span>&rarr;</span></div>
+        <p class="muted" style="margin:0">Manage expense and income categories</p>
+      </button>
 
-      ${renderCategoriesPanel(myMember, txs, ledger)}
       ${renderTagsPanel(myMember, txs)}
       ${renderRecurringPanel(myMember, ledger)}
       <div class="btn-row" style="margin-bottom:16px">
@@ -649,7 +699,6 @@ function renderLedgerDetail() {
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
       ${renderSettingsPanel(ledger, myMember, iAmOwner)}
     </div>
-    <button id="btnHomeQuickAdd" class="fab-add" aria-label="Add a transaction"><i class="ti ti-plus" aria-hidden="true"></i></button>
   `;
 }
 
@@ -1152,15 +1201,8 @@ function renderQuickAddPage() {
   const dateLabel = relLabel + dateObj.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 
   if (qa.showCategoriesPanel) {
-    app.innerHTML = `
-      <div class="topbar">
-        <button id="btnQaCategoriesBack" class="link" aria-label="Back">&larr;</button>
-        <h2 style="margin:0">Categories</h2>
-        <span style="width:24px"></span>
-      </div>
-      ${renderCategoriesPanel(S.members?.[S.user.uid], [], { currency: qa.ledgerCurrency })}
-    `;
-    return;
+    S.categoriesBackView = "quickAdd";
+    return renderCategoriesPage();
   }
 
   app.innerHTML = `

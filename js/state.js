@@ -12,6 +12,7 @@ export const S = {
   txs: {},             // transactions of the active ledger { txId: {...} }
   debugPreviewRole: null, // Owner-only testing tool: "member" | "moderator" | "guest" | null
   view: "home",        // "home" | "ledgers" | "personalBudget" | "aiSettings"
+  categoriesBackView: null, // where the shared Categories page's back button returns to: "quickAdd" | "ledgerSettings"
   personalBudget: {},  // this month's personal target, from users/{uid}/personalBudget/{ym}
   personalCategoryBudgets: {}, // this month's per-category personal targets
   includedLedgers: {}, // { lid: true } — which ledgers count toward the personal overview
