@@ -207,7 +207,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (navBtn) goTo(navBtn.dataset.nav);
 
     if (e.target.closest?.("#btnHomeBudgetCard")) {
-      if (S.activeLedgerId) { S.view = "ledgerManage"; render(); }
+      if (S.activeLedgerId) { S.view = "ledgerBudget"; render(); }
       else goTo("personalBudget");
     }
     if (id === "btnHomeSplits") {
@@ -225,7 +225,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       render();
     }
     if (e.target.closest?.("#btnHomeWalletCard")) {
-      if (S.activeLedgerId) { S.view = "ledgerManage"; render(); }
+      if (S.activeLedgerId) { S.view = "ledgerWallet"; render(); }
       else { goTo("wallet"); processDueWalletRecurring().catch((err) => console.error("Wallet recurring processing failed:", err)); }
     }
     if (id === "btnBackFromWallet") goTo("home");
@@ -562,6 +562,9 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnBackFromLedgerManage") { S.view = null; render(); }
     if (id === "btnOpenLedgerManage") { S.view = "ledgerManage"; render(); }
+    if (id === "btnHomeLedgerManage") { S.view = "ledgerManage"; render(); }
+    if (id === "btnBackFromLedgerBudget") { S.view = null; render(); }
+    if (id === "btnBackFromLedgerWallet") { S.view = null; render(); }
     if (id === "btnBackFromBudget") goTo("home");
     if (id === "btnOpenSplits") { S.view = "splits"; render(); }
     if (id === "btnBackFromSplits") { S.view = null; render(); }

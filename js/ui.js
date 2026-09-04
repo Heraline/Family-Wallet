@@ -154,6 +154,8 @@ export function render() {
     if (S.view === "splits") return renderSplitsPage();
     if (S.view === "bookmarked") return renderBookmarkedPage();
     if (S.view === "ledgerManage") return renderLedgerDetail();
+    if (S.view === "ledgerBudget") return renderLedgerBudgetPage();
+    if (S.view === "ledgerWallet") return renderLedgerWalletPage();
     return renderHome();
   }
   if (S.view === "personalBudget") return renderPersonalBudget();
@@ -301,6 +303,7 @@ function renderHome() {
       <div class="topbar-icons">
         <button id="btnHomeSearch" class="icon-btn" aria-label="Search" title="Search (coming soon)" disabled><i class="ti ti-search" aria-hidden="true"></i></button>
         <button id="btnHomeNotifications" class="icon-btn" aria-label="Notifications" title="Notifications (coming soon)" disabled><i class="ti ti-bell" aria-hidden="true"></i></button>
+        ${inLedger ? `<button id="btnHomeLedgerManage" class="icon-btn" aria-label="Manage ledger" title="Manage this ledger"><i class="ti ti-list-details" aria-hidden="true"></i></button>` : ""}
         <button id="btnHomeSettings" class="icon-btn" aria-label="Settings"><i class="ti ti-settings" aria-hidden="true"></i></button>
       </div>
     </div>
@@ -668,8 +671,6 @@ function renderLedgerDetail() {
           </div>`).join("") : `<p class="muted">No transactions yet.</p>`}
       </div>
 
-      ${renderLedgerWalletPanel(ledger)}
-      ${renderLedgerBudgetPanel(ledger, myMember, txs)}
       ${renderCategoriesPanel(myMember, txs, ledger)}
       ${renderTagsPanel(myMember, txs)}
       ${renderRecurringPanel(myMember, ledger)}
@@ -683,16 +684,26 @@ function renderLedgerDetail() {
   `;
 }
 
-function renderLedgerWalletPanel(ledger) {
+function renderLedgerWalletPage() {
+  const ledger = S.activeLedgerDetail || {};
   const balance = S.ledgerWalletBalance || 0;
   const currency = ledger.currency || "USD";
 
-  return `
-    <div class="panel">
-      <h3>${sysIcon("building-bank")}Ledger Wallet</h3>
-      <p class="muted" style="margin-bottom:8px">Pooled money for this ledger's purpose. Fund-ins show up in the activity feed above too.</p>
-      <div class="balance" style="font-size:22px">${currency} ${balance.toFixed(2)}</div>
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromLedgerWallet" class="link">&larr; Home</button>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+    <h2>${sysIcon("building-bank")}${ledgerIcon(ledger.icon)} ${ledger.name || "Ledger"} Wallet</h2>
+    <p class="muted" style="margin-bottom:12px">Pooled money for this ledger's purpose. Fund-ins show up in the activity feed too.</p>
 
+    <div class="panel">
+      <h3>Balance</h3>
+      <div class="balance" style="font-size:22px">${currency} ${balance.toFixed(2)}</div>
+    </div>
+
+    <div class="panel">
+      <h3>Add funds</h3>
       <div id="ledgerFundError" class="error"></div>
       <input id="ledgerFundAmount" type="number" step="0.01" placeholder="Amount (${currency})" />
       <input id="ledgerFundNote" placeholder="Note (optional)" />
@@ -705,29 +716,44 @@ function renderLedgerWalletPanel(ledger) {
 }
 
 
-function renderLedgerBudgetPanel(ledger, myMember, txs) {
+function renderLedgerBudgetPage() {
+  const ledger = S.activeLedgerDetail || {};
+  const myMember = S.members?.[S.user.uid];
   const canEdit = can(myMember, "manageBudget");
   const budget = S.ledgerBudget || {};
   const target = budget.total || 0;
+  const currency = ledger.currency || "USD";
   const ym = currentYM();
+  const txs = Object.entries(S.txs || {});
   const spent = txs.filter(([, t]) => t.type === "expense" && t.date?.startsWith(ym)).reduce((sum, [, t]) => sum + t.amount, 0);
   const pct = target > 0 ? Math.min(100, Math.round((spent / target) * 100)) : 0;
   const over = target > 0 && spent > target;
 
-  return `
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromLedgerBudget" class="link">&larr; Home</button>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+    <h2>${sysIcon("chart-bar")}${ledgerIcon(ledger.icon)} ${ledger.name || "Ledger"} Budget — ${ym}</h2>
+
     <div class="panel">
-      <h3>Ledger budget — ${ym}</h3>
-      <div class="balance" style="font-size:20px">${ledger.currency || "USD"} ${spent.toFixed(2)} <span class="muted" style="font-size:13px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
+      <h3>This month's spending</h3>
+      <div class="balance">${currency} ${spent.toFixed(2)} <span class="muted" style="font-size:14px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
       ${target > 0 ? `
         ${budgetProgress(pct, over)}
         ${over ? `<p class="budget-over">Over budget</p>` : `<p class="muted">${pct}% used</p>`}
-      ` : ""}
-      ${canEdit ? `
-        <div class="btn-row" style="margin-top:10px">
-          <input id="ledgerBudgetInput" type="number" step="0.01" placeholder="Monthly target" value="${target || ""}" />
-          <button id="btnSaveLedgerBudget">Save</button>
-        </div>` : ""}
-    </div>`;
+      ` : `<p class="muted">Set a monthly target below to see your progress here.</p>`}
+    </div>
+
+    ${canEdit ? `
+    <div class="panel">
+      <h3>Target</h3>
+      <div class="btn-row">
+        <input id="ledgerBudgetInput" type="number" step="0.01" placeholder="Monthly target" value="${target || ""}" />
+        <span class="muted" style="align-self:center;padding:0 8px 0 4px">${currency}</span>
+      </div>
+      <button id="btnSaveLedgerBudget">Save target</button>
+    </div>` : ""}`;
 }
 
 function categoryRowHtml(c, canEdit, spentByCat, ledgerCurrency, isFirst, isLast) {
