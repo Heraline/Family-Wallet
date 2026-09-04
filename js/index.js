@@ -25,7 +25,7 @@ import { listenCategories, addCategory, updateCategory, deleteCategory, setCateg
 import { listenTags, ensureTagExists, renameTag, deleteTag } from "./tags.js";
 import { listenWallet, addFunds, addWalletRecurring, deleteWalletRecurring, processDueWalletRecurring, refreshWalletNetWorth } from "./wallet.js";
 import { listenLiabilities, addLiability, deleteLiability } from "./liabilities.js";
-import { listenLedgerWallet, fundLedgerWallet, addToLedgerWallet, spendFromLedgerWallet, refundToLedgerWallet, getLedgerCurrency } from "./ledgerWallet.js";
+import { listenLedgerWallet, fundLedgerWallet, addToLedgerWallet, refundToLedgerWallet, getLedgerCurrency } from "./ledgerWallet.js";
 import { render, splitAmountRowsHtml, qaComputeAmount, qaApplyOp, shiftDateStr, shiftMonthStr } from "./ui.js";
 
 onStateChange((s) => { applyTheme(); maybeApplyHomeStartupPref(); render(s); });
@@ -591,7 +591,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       render();
     }
     if (id === "btnClearAiKey") { clearGeminiKey(); render(); }
-    if (id === "btnScanReceipt") { document.getElementById("receiptFileInput").click(); }
+    if (id === "btnQaScanReceipt") { document.getElementById("qaReceiptFileInput").click(); }
 
     const themeBtn = e.target.closest?.("[data-set-theme]");
     if (themeBtn) await setThemePref("theme", themeBtn.dataset.setTheme);
@@ -613,59 +613,6 @@ document.getElementById("app").addEventListener("click", async (e) => {
       if (!code) return showError("joinError", "Enter an invite code.");
       await joinLedgerByCode(code);
     }
-    if (id === "btnAddTx") {
-      const type = val("txType"), amount = val("txAmount"), category = val("txCategory"), description = val("txDesc"), currency = val("txCurrency");
-      const account = val("txAccount");
-      if (!amount || !category) return showError("txError", "Amount and category are required.");
-
-      const ledgerCurrency = S.activeLedgerDetail?.currency || "USD";
-      if (account === "wallet") {
-        if (type !== "expense") return showError("txError", "Paying from the Ledger Wallet only applies to expenses.");
-        if (currency !== ledgerCurrency) return showError("txError", `Paying from the Ledger Wallet requires the ${ledgerCurrency} currency (v1 doesn't convert) — switch currency or choose "No account".`);
-        try {
-          await spendFromLedgerWallet(S.activeLedgerId, amount);
-        } catch (err) {
-          return showError("txError", err.message);
-        }
-      }
-
-      const payerUids = Array.from(document.querySelectorAll('.chip[data-group="payer"].active')).map((c) => c.dataset.uid);
-      const splitUids = Array.from(document.querySelectorAll('.chip[data-group="split"].active')).map((c) => c.dataset.uid);
-      let payers, splitAmounts;
-      if (payerUids.length >= 2) {
-        payers = {};
-        payerUids.forEach((uid) => {
-          const input = document.querySelector(`.split-amt-input[data-amt-group="payer"][data-amt-uid="${uid}"]`);
-          payers[uid] = Number(input?.value) || 0;
-        });
-        const payerSum = Object.values(payers).reduce((a, b) => a + b, 0);
-        if (Math.abs(payerSum - Number(amount)) > 0.01) {
-          return showError("txError", `"Paid by" amounts add up to ${payerSum.toFixed(2)}, but the total is ${Number(amount).toFixed(2)}.`);
-        }
-      } else if (payerUids.length === 1) {
-        payers = { [payerUids[0]]: Number(amount) };
-      }
-      if (splitUids.length >= 1) {
-        splitAmounts = {};
-        splitUids.forEach((uid) => {
-          const input = document.querySelector(`.split-amt-input[data-amt-group="split"][data-amt-uid="${uid}"]`);
-          splitAmounts[uid] = Number(input?.value) || 0;
-        });
-        const splitSum = Object.values(splitAmounts).reduce((a, b) => a + b, 0);
-        if (Math.abs(splitSum - Number(amount)) > 0.01) {
-          return showError("txError", `"Split between" amounts add up to ${splitSum.toFixed(2)}, but the total is ${Number(amount).toFixed(2)}.`);
-        }
-      }
-
-      const selectedTags = Array.from(document.querySelectorAll(".tag-chip.active")).map((c) => c.dataset.tag);
-
-      await addTransaction({ type, amount, category, description, currency, payers, splitAmounts, tags: selectedTags, account: account || undefined });
-      const newTags = selectedTags.filter((t) => !(S.tags || []).some((existing) => existing.toLowerCase() === t.toLowerCase()));
-      await Promise.all(newTags.map((t) => ensureTagExists(S.activeLedgerId, t)));
-    }
-    if (id === "btnToggleSplit") document.getElementById("splitSection")?.classList.toggle("hidden");
-    const chip = e.target.closest?.(".chip[data-group]");
-    if (chip) { chip.classList.toggle("active"); rebuildSplitAmounts(chip.dataset.group); }
     if (e.target.dataset.del) {
       const tx = S.txs[e.target.dataset.del];
       await deleteTransaction(e.target.dataset.del);
@@ -689,27 +636,6 @@ document.getElementById("app").addEventListener("click", async (e) => {
       }
     }
 
-    const tagChip = e.target.closest?.(".tag-chip");
-    if (tagChip) tagChip.classList.toggle("active");
-    if (id === "btnAddTagChip") {
-      const input = document.getElementById("newTagInput");
-      const tagName = input?.value.trim();
-      if (tagName) {
-        const container = document.getElementById("tagChips");
-        const existing = Array.from(container.querySelectorAll(".tag-chip")).find((c) => c.dataset.tag.toLowerCase() === tagName.toLowerCase());
-        if (existing) {
-          existing.classList.add("active");
-        } else {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "chip tag-chip active";
-          btn.dataset.tag = tagName;
-          btn.textContent = "🏷️ " + tagName;
-          container.appendChild(btn);
-        }
-        input.value = "";
-      }
-    }
     if (e.target.dataset.delTag) {
       if (confirm(`Delete tag "${e.target.dataset.delTag}"? It'll be removed from every transaction using it.`)) {
         await deleteTag(S.activeLedgerId, e.target.dataset.delTag);
@@ -827,7 +753,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
   } catch (err) {
     console.error(err);
     showError("authError", err.message) || showError("createError", err.message) ||
-      showError("joinError", err.message) || showError("txError", err.message) ||
+      showError("joinError", err.message) ||
       showError("recurringError", err.message) || showError("guestError", err.message) ||
       showError("settleError", err.message) || showError("catError", err.message) ||
       showError("pcatError", err.message) || showError("walletAddError", err.message) ||
@@ -844,21 +770,6 @@ function showError(id, msg) {
   if (!el) return false;
   el.textContent = msg;
   return true;
-}
-
-// Redraws the equal-split amount inputs for whichever group (payer/split)
-// just had a chip toggled, based on currently-active chips + the amount
-// typed so far. Direct DOM update (not a full render()) so nothing else
-// in the form gets wiped while someone's mid-entry.
-function rebuildSplitAmounts(group) {
-  const container = document.getElementById(group === "payer" ? "payerAmounts" : "splitAmounts");
-  if (!container) return;
-  const uids = Array.from(document.querySelectorAll(`.chip[data-group="${group}"].active`)).map((c) => c.dataset.uid);
-  const totalAmount = document.getElementById("txAmount")?.value || 0;
-  // A single payer doesn't need a custom-amount input (they're implicitly paying it all);
-  // 2+ payers, or any number of split-between people, do.
-  if (group === "payer" && uids.length < 2) { container.innerHTML = ""; return; }
-  container.innerHTML = splitAmountRowsHtml(uids, totalAmount, group);
 }
 
 // Role changes and permission checkboxes fire "change", not "click".
@@ -879,7 +790,6 @@ document.getElementById("app").addEventListener("change", async (e) => {
       S.debugPreviewRole = e.target.value || null;
       render();
     }
-    if (id === "txAmount") { rebuildSplitAmounts("payer"); rebuildSplitAmounts("split"); }
     if (id === "qaRemark") { S.quickAdd.remark = e.target.value; }
     if (e.target.dataset.catField && e.target.dataset.catKey) {
       const field = e.target.dataset.catField, key = e.target.dataset.catKey;
@@ -899,28 +809,22 @@ document.getElementById("app").addEventListener("change", async (e) => {
     if (id === "homeStartupSelect") {
       await setThemePref("homeStartup", e.target.value);
     }
-    if (id === "receiptFileInput") {
+    if (id === "qaReceiptFileInput") {
       const file = e.target.files[0];
       if (!file) return;
-      const statusEl = document.getElementById("scanStatus");
+      const statusEl = document.getElementById("qaScanStatus");
       if (statusEl) statusEl.style.display = "block";
-      showError("txError", "");
+      showError("qaError", "");
       try {
         const { base64, mimeType } = await fileToBase64(file);
         const parsed = await scanReceipt(base64, mimeType);
-        const amountEl = document.getElementById("txAmount");
-        const categoryEl = document.getElementById("txCategory");
-        const descEl = document.getElementById("txDesc");
-        const currencyEl = document.getElementById("txCurrency");
-        if (amountEl) amountEl.value = parsed.amount ?? "";
-        if (categoryEl) categoryEl.value = parsed.category ?? "";
-        if (descEl) descEl.value = parsed.description ?? "";
-        if (currencyEl && parsed.currency) {
-          const hasOption = Array.from(currencyEl.options).some((o) => o.value === parsed.currency);
-          if (hasOption) currencyEl.value = parsed.currency;
-        }
+        if (parsed.amount != null) { S.quickAdd.amount = String(parsed.amount); S.quickAdd.pendingOp = null; S.quickAdd.runningTotal = null; }
+        if (parsed.category) S.quickAdd.category = parsed.category;
+        if (parsed.description) S.quickAdd.remark = parsed.description;
+        if (parsed.currency) S.quickAdd.currency = parsed.currency;
+        render();
       } catch (err) {
-        showError("txError", err.message);
+        showError("qaError", err.message);
       } finally {
         if (statusEl) statusEl.style.display = "none";
         e.target.value = ""; // allow re-selecting the same photo again later

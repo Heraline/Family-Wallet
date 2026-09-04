@@ -184,12 +184,6 @@ function budgetProgress(pct, over) {
   return `<div class="budget-bar-track"><div class="budget-bar-fill ${over ? "over" : ""}" style="width:${pct}%"></div></div>`;
 }
 
-function memberChips(memberEntries, group) {
-  return memberEntries.map(([uid, m]) => `
-    <button type="button" class="chip" data-group="${group}" data-uid="${uid}">${m.avatar || "🙂"} ${m.displayName}</button>
-  `).join("");
-}
-
 // Rebuilds the equal-split-by-default amount inputs for a group of selected
 // people. Called from index.js (not during a full render) whenever chip
 // selection or the total amount changes — keeps typed form values intact.
@@ -612,51 +606,6 @@ function renderLedgerDetail() {
       <h2>${ledgerIcon(ledger.icon)} ${ledger.name || ""}</h2>
       <div class="balance">${(ledger.currency || "USD")} ${balance.toFixed(2)}</div>
 
-      <div class="panel">
-        <h3>Add entry</h3>
-        <div id="txError" class="error"></div>
-        <button id="btnScanReceipt" class="secondary" style="margin-bottom:10px">${sysIcon("camera")}Scan receipt (optional)</button>
-        <input type="file" id="receiptFileInput" accept="image/*" capture="environment" style="display:none" />
-        <p id="scanStatus" class="muted" style="display:none;margin-bottom:8px">Reading receipt with AI...</p>
-        <select id="txType"><option value="expense">Expense</option><option value="income">Income</option></select>
-        <div class="btn-row">
-          <input id="txAmount" type="number" step="0.01" placeholder="Amount" style="flex:2" />
-          <select id="txCurrency" style="flex:1">
-            ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map(c => `<option value="${c}" ${((ledger.currency || "USD") === c) ? "selected" : ""}>${c}</option>`).join("")}
-          </select>
-        </div>
-        <select id="txCategory">${categoryOptionsHtml()}</select>
-        <input id="txDesc" placeholder="Description (optional)" />
-
-        <p class="muted" style="margin:6px 0 4px">Pay from (expenses only)</p>
-        <select id="txAccount">
-          <option value="">No account / Pending</option>
-          <option value="wallet">🏦 Ledger Wallet (${ledger.currency || "USD"} ${(S.ledgerWalletBalance || 0).toFixed(2)} available)</option>
-        </select>
-
-        <button type="button" id="btnToggleSplit" class="secondary" style="margin-bottom:10px">${sysIcon("plus")}Split this expense (optional)</button>
-        <div id="splitSection" class="sub-panel hidden">
-          <p class="muted" style="margin-bottom:6px">Paid by <span class="muted">(none selected = you)</span></p>
-          <div class="chip-row" id="payerChips">${memberChips(memberEntries, "payer")}</div>
-          <div id="payerAmounts" class="split-amounts"></div>
-
-          <p class="muted" style="margin:12px 0 6px">Split between</p>
-          <div class="chip-row" id="splitChips">${memberChips(memberEntries, "split")}</div>
-          <div id="splitAmounts" class="split-amounts"></div>
-        </div>
-
-        <p class="muted" style="margin:10px 0 6px">Tags (optional)</p>
-        <div class="chip-row" id="tagChips">
-          ${(S.tags || []).map(t => `<button type="button" class="chip tag-chip" data-tag="${t}">🏷️ ${t}</button>`).join("")}
-        </div>
-        <div class="btn-row" style="margin-bottom:10px">
-          <input id="newTagInput" placeholder="New tag..." style="flex:1" />
-          <button type="button" id="btnAddTagChip" class="secondary">Add</button>
-        </div>
-
-        <button id="btnAddTx">Add</button>
-      </div>
-
       <h3>Recent activity</h3>
       <div class="tx-list">
         ${txs.length ? txs.map(([id, t]) => `
@@ -681,6 +630,7 @@ function renderLedgerDetail() {
       ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
       ${renderSettingsPanel(ledger, myMember, iAmOwner)}
     </div>
+    <button id="btnHomeQuickAdd" class="fab-add" aria-label="Add a transaction"><i class="ti ti-plus" aria-hidden="true"></i></button>
   `;
 }
 
@@ -1201,8 +1151,11 @@ function renderQuickAddPage() {
         <button type="button" class="qa-tab ${qa.type === "expense" ? "active" : ""}" data-qa-type="expense">Spending</button>
         <button type="button" class="qa-tab ${qa.type === "income" ? "active" : ""}" data-qa-type="income">Receiving</button>
       </div>
+      <button type="button" id="btnQaScanReceipt" class="link" aria-label="Scan receipt" title="Scan receipt">${sysIcon("camera")}</button>
+      <input type="file" id="qaReceiptFileInput" accept="image/*" capture="environment" style="display:none" />
       <button type="button" id="btnQaCategoriesMenu" class="link" aria-label="Category settings">${sysIcon("dots-vertical")}</button>
     </div>
+    <p id="qaScanStatus" class="muted" style="display:none;text-align:center;margin:4px 0">Reading receipt with AI...</p>
 
     ${!ledgerEntries.length ? `<p class="muted" style="margin:20px 0">Create a ledger first before adding a transaction.</p>` : `
       <div class="qa-scroll-area">
