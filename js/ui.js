@@ -156,7 +156,6 @@ export function render() {
     if (S.view === "ledgerManage") return renderLedgerDetail();
     if (S.view === "ledgerBudget") return renderLedgerBudgetPage();
     if (S.view === "ledgerWallet") return renderLedgerWalletPage();
-    if (S.view === "ledgerSettings") return renderLedgerSettingsPage();
     if (S.view === "categories") return renderCategoriesPage();
     if (S.view === "tags") return renderTagsPage();
     if (S.view === "recurring") return renderRecurringPage();
@@ -303,7 +302,6 @@ function renderHome() {
       <div class="topbar-icons">
         <button id="btnHomeSearch" class="icon-btn" aria-label="Search" title="Search (coming soon)" disabled><i class="ti ti-search" aria-hidden="true"></i></button>
         <button id="btnHomeNotifications" class="icon-btn" aria-label="Notifications" title="Notifications (coming soon)" disabled><i class="ti ti-bell" aria-hidden="true"></i></button>
-        ${inLedger ? `<button id="btnHomeLedgerManage" class="icon-btn" aria-label="Manage ledger" title="Manage this ledger"><i class="ti ti-list-details" aria-hidden="true"></i></button>` : ""}
         <button id="btnHomeSettings" class="icon-btn" aria-label="Settings"><i class="ti ti-settings" aria-hidden="true"></i></button>
       </div>
     </div>
@@ -516,12 +514,50 @@ function renderAiSettings() {
   const hasKey = !!getGeminiKey();
   const prefs = S.uiPrefs || {};
   const themeBtn = (t) => `<button class="opt-btn ${prefs.theme === t.key ? "active" : ""}" data-set-theme="${t.key}">${t.label}</button>`;
+
+  const inLedger = !!S.activeLedgerId;
+  const ledger = S.activeLedgerDetail || {};
+  const realMember = S.members[S.user.uid];
+  const iAmRealOwner = inLedger && isOwner(realMember);
+  const myMember = effectiveLedgerMember();
+  const iAmOwner = isOwner(myMember);
+
+  const menuRow = (id, icon, title, subtitle) => `
+    <button type="button" id="${id}" class="panel card-button" style="text-align:left" ${inLedger ? "" : "disabled"}>
+      <div class="card-header-row"><h3 style="margin:0">${sysIcon(icon)}${title}</h3><span>&rarr;</span></div>
+      <p class="muted" style="margin:0">${subtitle}</p>
+    </button>`;
+
   app.innerHTML = `
     <div class="topbar">
       <button id="btnBackFromSettings" class="link">&larr; Home</button>
       <button id="btnLogout" class="link">Log out</button>
     </div>
     <h2>Settings</h2>
+
+    <div class="panel">
+      <h3>${sysIcon("wallet")}This ledger${inLedger ? `: ${ledger.name || ""}` : ""}</h3>
+      ${!inLedger ? `<p class="muted" style="margin-bottom:10px">Open a ledger from Home to manage these.</p>` : ""}
+      <div class="${inLedger ? "" : "preview-lock"}">
+        ${menuRow("btnOpenCategoriesFromSettings", "tag", "Categories", "Manage expense and income categories")}
+        ${menuRow("btnOpenTagsFromSettings", "tags", "Tags", "Manage tags used across transactions")}
+        ${menuRow("btnOpenRecurringFromSettings", "repeat", "Recurring", "Manage recurring transaction templates")}
+        ${menuRow("btnOpenMembersFromSettings", "users", "Members", "See and manage who's in this ledger")}
+      </div>
+      ${inLedger ? previewWrap(renderSettingsPanel(ledger, myMember, iAmOwner)) : ""}
+    </div>
+
+    ${iAmRealOwner ? `
+      <div class="panel">
+        <h3>🔍 Preview as <span class="muted" style="font-weight:400">(testing tool)</span></h3>
+        <p class="muted" style="margin-bottom:8px">See this ledger as a different role would — nothing you do while previewing actually happens.</p>
+        <select id="previewRoleSelect">
+          <option value="" ${!S.debugPreviewRole ? "selected" : ""}>My real view (Owner)</option>
+          <option value="moderator" ${S.debugPreviewRole === "moderator" ? "selected" : ""}>Moderator (all permissions)</option>
+          <option value="member" ${S.debugPreviewRole === "member" ? "selected" : ""}>Member</option>
+          <option value="guest" ${S.debugPreviewRole === "guest" ? "selected" : ""}>Guest</option>
+        </select>
+      </div>` : ""}
 
     <div class="panel">
       <h3>${sysIcon("palette")}Appearance</h3>
@@ -652,7 +688,7 @@ function renderLedgerDetail() {
 
 // One shared Categories screen for the whole app — reached from Quick Add's
 // '⋯' menu and from the Settings page's Categories row. S.categoriesBackView
-// ("quickAdd" | "ledgerSettings") tells the back button where to return to.
+// ("quickAdd" | "settings") tells the back button where to return to.
 function renderCategoriesPage() {
   const fromQuickAdd = S.categoriesBackView === "quickAdd";
   const qa = S.quickAdd;
@@ -711,49 +747,6 @@ function renderMembersPage() {
       <span style="width:24px"></span>
     </div>
     ${previewWrap(renderMembersPanel(memberEntries, myMember, iAmOwner))}
-  `;
-}
-
-// The ledger management hub — a menu of rows, each opening its own page.
-// Ledger Settings (rename/invite/delete) stays inline here for now.
-function renderLedgerSettingsPage() {
-  const ledger = S.activeLedgerDetail || {};
-  const realMember = S.members[S.user.uid];
-  const iAmRealOwner = isOwner(realMember);
-  const myMember = effectiveLedgerMember();
-  const iAmOwner = isOwner(myMember);
-
-  const menuRow = (id, icon, title, subtitle) => `
-    <button type="button" id="${id}" class="panel card-button" style="text-align:left">
-      <div class="card-header-row"><h3 style="margin:0">${sysIcon(icon)}${title}</h3><span>&rarr;</span></div>
-      <p class="muted" style="margin:0">${subtitle}</p>
-    </button>`;
-
-  app.innerHTML = `
-    <div class="topbar">
-      <button id="btnBackFromLedgerSettings" class="link">&larr; Back</button>
-      <button id="btnLogout" class="link">Log out</button>
-    </div>
-
-    ${iAmRealOwner ? `
-      <div class="preview-bar">
-        <label>🔍 Preview as:</label>
-        <select id="previewRoleSelect">
-          <option value="" ${!S.debugPreviewRole ? "selected" : ""}>My real view (Owner)</option>
-          <option value="moderator" ${S.debugPreviewRole === "moderator" ? "selected" : ""}>Moderator (all permissions)</option>
-          <option value="member" ${S.debugPreviewRole === "member" ? "selected" : ""}>Member</option>
-          <option value="guest" ${S.debugPreviewRole === "guest" ? "selected" : ""}>Guest</option>
-        </select>
-      </div>` : ""}
-
-    ${previewWrap(`
-      <h2>${ledgerIcon(ledger.icon)} ${ledger.name || ""} settings</h2>
-      ${menuRow("btnOpenCategoriesFromSettings", "tag", "Categories", "Manage expense and income categories")}
-      ${menuRow("btnOpenTagsFromSettings", "tags", "Tags", "Manage tags used across transactions")}
-      ${menuRow("btnOpenRecurringFromSettings", "repeat", "Recurring", "Manage recurring transaction templates")}
-      ${menuRow("btnOpenMembersFromSettings", "users", "Members", "See and manage who's in this ledger")}
-      ${renderSettingsPanel(ledger, myMember, iAmOwner)}
-    `)}
   `;
 }
 
