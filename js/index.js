@@ -231,8 +231,8 @@ document.getElementById("app").addEventListener("click", async (e) => {
       else { goTo("wallet"); processDueWalletRecurring().catch((err) => console.error("Wallet recurring processing failed:", err)); }
     }
     if (id === "btnBackFromWallet") goTo("home");
-    if (id === "btnHomeSettings") goTo("aiSettings");
-    if (id === "btnBackFromSettings") goTo("home");
+    if (id === "btnHomeSettings") { S.view = "aiSettings"; render(); }
+    if (id === "btnBackFromSettings") { S.view = null; render(); }
     if (id === "btnManageLedgers") goTo("ledgers");
     if (e.target.closest?.("#btnHomeQuickAdd")) {
       const lastLedgerId = S.activeLedgerId || S.quickAdd?.ledgerId;
@@ -255,7 +255,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       render();
       loadQaLedgerContext(ledgerId).catch((err) => console.error("Quick add context load failed:", err));
     }
-    if (id === "btnBackFromQuickAdd") { S.quickAdd = null; goTo("home"); }
+    if (id === "btnBackFromQuickAdd") { S.quickAdd = null; S.view = null; render(); }
 
     if (e.target.dataset.qaType) {
       S.quickAdd.type = e.target.dataset.qaType;
@@ -453,7 +453,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
         render();
       } else {
         const ok = await submitQuickAdd();
-        if (ok) { S.quickAdd = null; goTo("home"); }
+        if (ok) { S.quickAdd = null; S.view = null; render(); }
       }
     }
     if (id === "btnQaRecord") {
