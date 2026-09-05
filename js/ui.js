@@ -150,6 +150,7 @@ document.addEventListener("click", (e) => {
 export function render() {
   document.body.classList.toggle("qa-active", S.view === "quickAdd" && !S.activeLedgerId);
   if (!S.user) return renderLogin();
+  if (S.view === "aiSettings") return renderAiSettings();
   if (S.activeLedgerId) {
     if (S.view === "splits") return renderSplitsPage();
     if (S.view === "bookmarked") return renderBookmarkedPage();
@@ -163,7 +164,6 @@ export function render() {
     return renderHome();
   }
   if (S.view === "personalBudget") return renderPersonalBudget();
-  if (S.view === "aiSettings") return renderAiSettings();
   if (S.view === "ledgers") return renderLedgerList();
   if (S.view === "homeSplits") return renderHomeSplitsPage();
   if (S.view === "homeBookmarks") return renderHomeBookmarksPage();
