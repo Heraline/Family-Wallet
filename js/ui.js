@@ -164,6 +164,7 @@ export function render() {
   if (S.view === "aiSettings") return renderAiSettings();
   if (S.view === "ledgers") return renderLedgerList();
   if (S.view === "homeSplits") return renderHomeSplitsPage();
+  if (S.view === "homeBookmarks") return renderHomeBookmarksPage();
   if (S.view === "wallet") return renderWalletPage();
   if (S.view === "quickAdd") return renderQuickAddPage();
   return renderHome();
@@ -389,9 +390,7 @@ function renderHome() {
 
     <div class="quick-tile-row">
       <button id="btnHomeSplits" class="quick-tile">${sysIcon("users-group")}<span>Splits & Settle</span></button>
-      ${inLedger
-        ? `<button id="btnHomeBookmarked" class="quick-tile">${sysIcon("star")}<span>Bookmarked</span></button>`
-        : `<button class="quick-tile" disabled title="Coming soon">${sysIcon("star")}<span>Bookmarked</span></button>`}
+      <button id="btnHomeBookmarked" class="quick-tile">${sysIcon("star")}<span>Bookmarked</span></button>
       <button class="quick-tile" disabled title="Coming soon">${sysIcon("pig-money")}<span>Saving Jar</span></button>
     </div>
 
@@ -1344,6 +1343,45 @@ function renderQuickAddPage() {
       ` : ""}
     `}
   `;
+}
+
+function renderHomeBookmarksPage() {
+  const overview = S.homeBookmarksOverview;
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromHomeBookmarks" class="link">&larr; Home</button>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+    <h2>${sysIcon("star")}Bookmarked</h2>
+    <p class="muted" style="margin-bottom:12px">Starred transactions across every ledger you've flagged for your overview. To unstar or delete one, open that ledger's own Bookmarked screen.</p>
+
+    ${overview ? `
+      <div class="panel">
+        <h3 style="margin-bottom:4px">Summary</h3>
+        <div class="balance" style="font-size:22px">${overview.ledgersWithBookmarksCount} of ${overview.totalLedgersChecked} ledgers</div>
+        <p class="muted">have bookmarked transactions</p>
+      </div>
+
+      ${overview.perLedger.length ? overview.perLedger.map(l => `
+        <div class="panel">
+          <h4 style="margin-bottom:6px">${l.icon || "💼"} ${l.name}</h4>
+          <div class="tx-list">
+            ${l.txs.map(t => `
+              <div class="tx-row">
+                <span class="tx-emoji">⭐</span>
+                <span class="tx-main">
+                  <span class="tx-title">${t.category}${t.description ? " — " + t.description : ""}</span>
+                </span>
+                <span class="${t.type}">
+                  ${t.type === "income" ? "+" : "-"}${(t.origAmount ?? t.amount).toFixed(2)} ${t.origCurrency || t.currency}
+                </span>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `).join("") : `<p class="muted">${overview.totalLedgersChecked ? "Nothing bookmarked yet in your flagged ledgers." : "Flag a ledger for your overview to see its bookmarks here."}</p>`}
+    ` : `<p class="muted">Loading...</p>`}
+    `;
 }
 
 function renderHomeSplitsPage() {

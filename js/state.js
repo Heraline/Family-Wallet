@@ -28,6 +28,7 @@ export const S = {
   categories: {},      // active ledger's custom categories (empty = use DEFAULT_CATEGORIES)
   settlements: {},     // active ledger's recorded settlements
   homeSplitsOverview: null, // cross-ledger combined splits overview for Home
+  homeBookmarksOverview: null, // cross-ledger bookmarked transactions overview for Home (flagged ledgers only)
   uiPrefs: { theme: "teal", cardStyle: "glass", chartStyle: "donut", iconStyle: "plain", homeStartup: "overview" }, // synced appearance settings; homeStartup: "overview" | "last" | a ledger id
   uiPrefsReady: false, // true once uiPrefs has loaded at least once this session
 };

@@ -91,3 +91,32 @@ export async function deleteTransaction(txId) {
 export async function toggleBookmark(txId, currentlyBookmarked) {
   await writeUpdate(`ledgerTransactions/${S.activeLedgerId}/${txId}`, { bookmarked: !currentlyBookmarked });
 }
+
+// Home-screen overview: gathers bookmarked transactions across multiple
+// ledgers onto one page. Read-only, same as computeHomeSplitsOverview —
+// to unstar or delete one, open that ledger's own Bookmarked screen.
+export async function computeHomeBookmarksOverview(ledgerIds) {
+  const perLedger = [];
+  const combined = [];
+
+  for (const lid of ledgerIds) {
+    const [txSnap, ledgerSnap] = await Promise.all([
+      readOnce(`ledgerTransactions/${lid}`),
+      readOnce(`ledgers/${lid}`),
+    ]);
+    const txs = txSnap.exists() ? txSnap.val() : {};
+    const ledger = ledgerSnap.exists() ? ledgerSnap.val() : {};
+    const currency = ledger.currency || "USD";
+    const bookmarked = Object.entries(txs)
+      .filter(([, t]) => t.bookmarked)
+      .map(([id, t]) => ({ id, lid, ledgerName: ledger.name, ledgerIcon: ledger.icon, currency, ...t }))
+      .sort((a, b) => b.ts - a.ts);
+    if (!bookmarked.length) continue;
+
+    perLedger.push({ lid, name: ledger.name, icon: ledger.icon, currency, txs: bookmarked });
+    combined.push(...bookmarked);
+  }
+
+  combined.sort((a, b) => b.ts - a.ts);
+  return { combined, perLedger, ledgersWithBookmarksCount: perLedger.length, totalLedgersChecked: ledgerIds.length };
+}

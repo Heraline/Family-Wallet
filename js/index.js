@@ -10,7 +10,7 @@ import {
   setMemberRole, setModeratorPermissions, removeMember, leaveLedger, deleteLedger,
   fetchLedgerContext,
 } from "./ledgers.js";
-import { listenTransactions, addTransaction, deleteTransaction, toggleBookmark } from "./transactions.js";
+import { listenTransactions, addTransaction, deleteTransaction, toggleBookmark, computeHomeBookmarksOverview } from "./transactions.js";
 import {
   listenPersonalBudget, setPersonalBudget, listenIncludedLedgers, setLedgerIncluded,
   listenLedgerBudget, setLedgerBudget, refreshPersonalOverview,
@@ -221,6 +221,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
         .catch((err) => console.error("Home splits overview failed:", err));
     }
     if (id === "btnBackFromHomeSplits") goTo("home");
+    if (id === "btnBackFromHomeBookmarks") goTo("home");
     if (id === "btnToggleRecentTx") {
       S.recentTxVisibleCount = Math.min((S.recentTx || []).length, (S.recentTxVisibleCount || 5) + 5);
       render();
@@ -574,7 +575,15 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnBackFromLedgerBudget") { S.view = null; render(); }
     if (id === "btnBackFromLedgerWallet") { S.view = null; render(); }
     if (id === "btnBackFromBudget") goTo("home");
-    if (id === "btnHomeBookmarked") { S.view = "bookmarked"; render(); }
+    if (id === "btnHomeBookmarked") {
+      if (S.activeLedgerId) { S.view = "bookmarked"; render(); return; }
+      S.view = "homeBookmarks";
+      render();
+      const flaggedLedgerIds = Object.keys(S.includedLedgers || {});
+      computeHomeBookmarksOverview(flaggedLedgerIds)
+        .then((overview) => { S.homeBookmarksOverview = overview; render(); })
+        .catch((err) => console.error("Home bookmarks overview failed:", err));
+    }
     if (id === "btnBackFromSplits") { S.view = null; render(); }
     if (id === "btnBackFromBookmarked") { S.view = null; render(); }
     if (e.target.dataset.toggleBookmark) {
