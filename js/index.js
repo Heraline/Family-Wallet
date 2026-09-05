@@ -566,6 +566,12 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnHomeLedgerManage") { S.view = "ledgerSettings"; render(); }
     if (id === "btnBackFromLedgerSettings") { S.view = null; render(); }
     if (id === "btnOpenCategoriesFromSettings") { S.categoriesBackView = "ledgerSettings"; S.view = "categories"; render(); }
+    if (id === "btnOpenTagsFromSettings") { S.view = "tags"; render(); }
+    if (id === "btnBackFromTags") { S.view = "ledgerSettings"; render(); }
+    if (id === "btnOpenRecurringFromSettings") { S.view = "recurring"; render(); }
+    if (id === "btnBackFromRecurring") { S.view = "ledgerSettings"; render(); }
+    if (id === "btnOpenMembersFromSettings") { S.view = "members"; render(); }
+    if (id === "btnBackFromMembers") { S.view = "ledgerSettings"; render(); }
     if (id === "btnCategoriesBack") {
       if (S.categoriesBackView === "quickAdd" && S.quickAdd) S.quickAdd.showCategoriesPanel = false;
       else S.view = "ledgerSettings";

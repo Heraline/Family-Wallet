@@ -158,6 +158,9 @@ export function render() {
     if (S.view === "ledgerWallet") return renderLedgerWalletPage();
     if (S.view === "ledgerSettings") return renderLedgerSettingsPage();
     if (S.view === "categories") return renderCategoriesPage();
+    if (S.view === "tags") return renderTagsPage();
+    if (S.view === "recurring") return renderRecurringPage();
+    if (S.view === "members") return renderMembersPage();
     return renderHome();
   }
   if (S.view === "personalBudget") return renderPersonalBudget();
@@ -575,6 +578,27 @@ function fakePreviewMember(role) {
   return null;
 }
 
+// The member to use for permission checks on any ledger-management page —
+// honors the owner's "Preview as" testing tool (set from the Settings hub),
+// so every sub-page (Categories, Tags, Recurring, Members) sees it the
+// same way without recomputing this individually.
+function effectiveLedgerMember() {
+  const realMember = S.members[S.user.uid];
+  const previewing = isOwner(realMember) && S.debugPreviewRole;
+  return previewing ? fakePreviewMember(S.debugPreviewRole) : realMember;
+}
+
+// Wraps a sub-page's content in the dimmed, non-interactive "preview" state
+// (with an explanatory banner) whenever the owner has a preview role active.
+function previewWrap(innerHtml) {
+  const realMember = S.members[S.user.uid];
+  if (!(isOwner(realMember) && S.debugPreviewRole)) return innerHtml;
+  return `<div class="preview-lock">
+    <p class="preview-note">Previewing as <strong>${S.debugPreviewRole}</strong> — everything below is view-only, no actions will actually run.</p>
+    ${innerHtml}
+  </div>`;
+}
+
 function renderLedgerDetail() {
   const ledger = S.activeLedgerDetail || {};
   const txs = Object.entries(S.txs || {}).sort((a, b) => b[1].ts - a[1].ts);
@@ -638,6 +662,7 @@ function renderCategoriesPage() {
   const sameLedger = !fromQuickAdd || !qa?.ledgerId || qa.ledgerId === S.activeLedgerId;
   const ledger = sameLedger ? (S.activeLedgerDetail || {}) : { currency: qa?.ledgerCurrency };
   const txs = sameLedger ? Object.entries(S.txs || {}) : [];
+  const myMember = fromQuickAdd ? S.members?.[S.user.uid] : effectiveLedgerMember();
 
   app.innerHTML = `
     <div class="topbar">
@@ -645,25 +670,64 @@ function renderCategoriesPage() {
       <h2 style="margin:0">Categories</h2>
       <span style="width:24px"></span>
     </div>
-    ${renderCategoriesPanel(S.members?.[S.user.uid], txs, ledger)}
+    ${previewWrap(renderCategoriesPanel(myMember, txs, ledger))}
   `;
 }
 
-// The ledger management hub — Tags, Recurring, Splits & Settle, Bookmarked,
-// Members, and ledger Settings, all stacked on one page for now. Categories
-// isn't included here directly since it's the shared page above; this page
-// just links out to it. (Splitting these into individual tap-through pages
-// is a later pass.)
+function renderTagsPage() {
+  const myMember = effectiveLedgerMember();
+  const txs = Object.entries(S.txs || {});
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromTags" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Tags</h2>
+      <span style="width:24px"></span>
+    </div>
+    ${previewWrap(renderTagsPanel(myMember, txs))}
+  `;
+}
+
+function renderRecurringPage() {
+  const ledger = S.activeLedgerDetail || {};
+  const myMember = effectiveLedgerMember();
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromRecurring" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Recurring</h2>
+      <span style="width:24px"></span>
+    </div>
+    ${previewWrap(renderRecurringPanel(myMember, ledger))}
+  `;
+}
+
+function renderMembersPage() {
+  const memberEntries = Object.entries(S.members || {});
+  const myMember = effectiveLedgerMember();
+  const iAmOwner = isOwner(myMember);
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromMembers" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Members</h2>
+      <span style="width:24px"></span>
+    </div>
+    ${previewWrap(renderMembersPanel(memberEntries, myMember, iAmOwner))}
+  `;
+}
+
+// The ledger management hub — a menu of rows, each opening its own page.
+// Ledger Settings (rename/invite/delete) stays inline here for now.
 function renderLedgerSettingsPage() {
   const ledger = S.activeLedgerDetail || {};
-  const txs = Object.entries(S.txs || {}).sort((a, b) => b[1].ts - a[1].ts);
-  const memberEntries = Object.entries(S.members || {});
-
   const realMember = S.members[S.user.uid];
   const iAmRealOwner = isOwner(realMember);
-  const previewing = iAmRealOwner && S.debugPreviewRole;
-  const myMember = previewing ? fakePreviewMember(S.debugPreviewRole) : realMember;
+  const myMember = effectiveLedgerMember();
   const iAmOwner = isOwner(myMember);
+
+  const menuRow = (id, icon, title, subtitle) => `
+    <button type="button" id="${id}" class="panel card-button" style="text-align:left">
+      <div class="card-header-row"><h3 style="margin:0">${sysIcon(icon)}${title}</h3><span>&rarr;</span></div>
+      <p class="muted" style="margin:0">${subtitle}</p>
+    </button>`;
 
   app.innerHTML = `
     <div class="topbar">
@@ -682,20 +746,14 @@ function renderLedgerSettingsPage() {
         </select>
       </div>` : ""}
 
-    <div class="${previewing ? "preview-lock" : ""}">
-      ${previewing ? `<p class="preview-note">Previewing as <strong>${S.debugPreviewRole}</strong> — everything below is view-only, no actions will actually run.</p>` : ""}
+    ${previewWrap(`
       <h2>${ledgerIcon(ledger.icon)} ${ledger.name || ""} settings</h2>
-
-      <button type="button" id="btnOpenCategoriesFromSettings" class="panel card-button" style="text-align:left">
-        <div class="card-header-row"><h3 style="margin:0">${sysIcon("tag")}Categories</h3><span>&rarr;</span></div>
-        <p class="muted" style="margin:0">Manage expense and income categories</p>
-      </button>
-
-      ${renderTagsPanel(myMember, txs)}
-      ${renderRecurringPanel(myMember, ledger)}
-      ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
+      ${menuRow("btnOpenCategoriesFromSettings", "tag", "Categories", "Manage expense and income categories")}
+      ${menuRow("btnOpenTagsFromSettings", "tags", "Tags", "Manage tags used across transactions")}
+      ${menuRow("btnOpenRecurringFromSettings", "repeat", "Recurring", "Manage recurring transaction templates")}
+      ${menuRow("btnOpenMembersFromSettings", "users", "Members", "See and manage who's in this ledger")}
       ${renderSettingsPanel(ledger, myMember, iAmOwner)}
-    </div>
+    `)}
   `;
 }
 
