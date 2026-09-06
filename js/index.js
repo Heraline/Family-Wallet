@@ -230,7 +230,7 @@ document.getElementById("app").addEventListener("click", async (e) => {
       if (S.activeLedgerId) { S.view = "ledgerWallet"; render(); }
       else { goTo("wallet"); processDueWalletRecurring().catch((err) => console.error("Wallet recurring processing failed:", err)); }
     }
-    if (id === "btnBackFromWallet") goTo("home");
+    if (id === "btnBackFromWallet") { S.view = null; render(); }
     if (id === "btnHomeSettings") { S.view = "aiSettings"; render(); }
     if (id === "btnBackFromSettings") { S.view = null; render(); }
     if (id === "btnManageLedgers") goTo("ledgers");
@@ -568,8 +568,26 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnBackFromTags") { S.view = "aiSettings"; render(); }
     if (id === "btnOpenRecurringFromSettings") { S.view = "recurring"; render(); }
     if (id === "btnBackFromRecurring") { S.view = "aiSettings"; render(); }
-    if (id === "btnOpenMembersFromSettings") { S.view = "members"; render(); }
-    if (id === "btnBackFromMembers") { S.view = "aiSettings"; render(); }
+    if (id === "btnOpenMembersFromLedgerSection") { S.view = "members"; render(); }
+    if (id === "btnBackFromMembers") { S.view = "ledgerSection"; render(); }
+    if (id === "btnOpenAppearanceFromSettings") { S.view = "settingsAppearance"; render(); }
+    if (id === "btnBackFromAppearance") { S.view = "aiSettings"; render(); }
+    if (id === "btnOpenIconLibraryFromSettings") { S.view = "settingsIconLibrary"; render(); }
+    if (id === "btnBackFromIconLibrary") { S.view = "aiSettings"; render(); }
+    if (id === "btnOpenStartupFromSettings") { S.view = "settingsStartup"; render(); }
+    if (id === "btnBackFromStartup") { S.view = "aiSettings"; render(); }
+    if (id === "btnOpenCurrencyFromSettings") { S.view = "settingsCurrency"; render(); }
+    if (id === "btnBackFromCurrency") { S.view = "aiSettings"; render(); }
+    if (id === "btnSaveSettingsCurrency") {
+      const homeCurrency = val("settingsHomeCurrency");
+      await setPersonalBudget(S.personalBudget?.total || 0, homeCurrency);
+      await refreshPersonalOverview(homeCurrency);
+    }
+    if (id === "btnOpenLedgerSectionFromSettings") { S.view = "ledgerSection"; render(); }
+    if (id === "btnBackFromLedgerSection") { S.view = "aiSettings"; render(); }
+    if (id === "btnOpenPocketFromSettings") { S.view = "wallet"; render(); }
+    if (id === "btnOpenAiReceiptFromSettings") { S.view = "settingsAiReceipt"; render(); }
+    if (id === "btnBackFromAiReceipt") { S.view = "aiSettings"; render(); }
     if (id === "btnCategoriesBack") {
       if (S.categoriesBackView === "quickAdd" && S.quickAdd) S.quickAdd.showCategoriesPanel = false;
       else S.view = "aiSettings";

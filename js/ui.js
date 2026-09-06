@@ -151,6 +151,12 @@ export function render() {
   document.body.classList.toggle("qa-active", S.view === "quickAdd" && !S.activeLedgerId);
   if (!S.user) return renderLogin();
   if (S.view === "aiSettings") return renderAiSettings();
+  if (S.view === "settingsAppearance") return renderAppearancePage();
+  if (S.view === "settingsIconLibrary") return renderIconLibraryPage();
+  if (S.view === "settingsStartup") return renderStartupPage();
+  if (S.view === "settingsCurrency") return renderCurrencyPage();
+  if (S.view === "ledgerSection") return renderLedgerSectionPage();
+  if (S.view === "settingsAiReceipt") return renderAiReceiptScanPage();
   if (S.activeLedgerId) {
     if (S.view === "splits") return renderSplitsPage();
     if (S.view === "bookmarked") return renderBookmarkedPage();
@@ -511,22 +517,15 @@ function renderLedgerList() {
 }
 
 function renderAiSettings() {
-  const hasKey = !!getGeminiKey();
-  const prefs = S.uiPrefs || {};
-  const themeBtn = (t) => `<button class="opt-btn ${prefs.theme === t.key ? "active" : ""}" data-set-theme="${t.key}">${t.label}</button>`;
-
   const inLedger = !!S.activeLedgerId;
   const ledger = S.activeLedgerDetail || {};
-  const realMember = S.members[S.user.uid];
-  const iAmRealOwner = inLedger && isOwner(realMember);
-  const myMember = effectiveLedgerMember();
-  const iAmOwner = isOwner(myMember);
 
-  const menuRow = (id, icon, title, subtitle) => `
-    <button type="button" id="${id}" class="panel card-button" style="text-align:left" ${inLedger ? "" : "disabled"}>
+  const menuRow = (id, icon, title, subtitle, opts = {}) => `
+    <button type="button" id="${id}" class="panel card-button" style="text-align:left" ${opts.disabled ? "disabled" : ""}>
       <div class="card-header-row"><h3 style="margin:0">${sysIcon(icon)}${title}</h3><span>&rarr;</span></div>
       <p class="muted" style="margin:0">${subtitle}</p>
     </button>`;
+  const soon = (icon, title) => menuRow(`btnSettingsSoon_${title.replace(/\s+/g, "")}`, icon, title, "Coming soon", { disabled: true });
 
   app.innerHTML = `
     <div class="topbar">
@@ -536,31 +535,63 @@ function renderAiSettings() {
     <h2>Settings</h2>
 
     <div class="panel">
-      <h3>${sysIcon("wallet")}This ledger${inLedger ? `: ${ledger.name || ""}` : ""}</h3>
-      ${!inLedger ? `<p class="muted" style="margin-bottom:10px">Open a ledger from Home to manage these.</p>` : ""}
-      <div class="${inLedger ? "" : "preview-lock"}">
-        ${menuRow("btnOpenCategoriesFromSettings", "tag", "Categories", "Manage expense and income categories")}
-        ${menuRow("btnOpenTagsFromSettings", "tags", "Tags", "Manage tags used across transactions")}
-        ${menuRow("btnOpenRecurringFromSettings", "repeat", "Recurring", "Manage recurring transaction templates")}
-        ${menuRow("btnOpenMembersFromSettings", "users", "Members", "See and manage who's in this ledger")}
-      </div>
-      ${inLedger ? previewWrap(renderSettingsPanel(ledger, myMember, iAmOwner)) : ""}
+      <h3>Preference</h3>
+      ${soon("language", "Language")}
+      ${menuRow("btnOpenAppearanceFromSettings", "palette", "Appearance", "Theme colors and card style")}
+      ${menuRow("btnOpenIconLibraryFromSettings", "icons", "Icon Library", "Minimal or bold icon style")}
+      ${menuRow("btnOpenStartupFromSettings", "home", "Start up", "Choose what Home opens to")}
+      ${soon("adjustments", "Simple mode")}
     </div>
 
-    ${iAmRealOwner ? `
-      <div class="panel">
-        <h3>🔍 Preview as <span class="muted" style="font-weight:400">(testing tool)</span></h3>
-        <p class="muted" style="margin-bottom:8px">See this ledger as a different role would — nothing you do while previewing actually happens.</p>
-        <select id="previewRoleSelect">
-          <option value="" ${!S.debugPreviewRole ? "selected" : ""}>My real view (Owner)</option>
-          <option value="moderator" ${S.debugPreviewRole === "moderator" ? "selected" : ""}>Moderator (all permissions)</option>
-          <option value="member" ${S.debugPreviewRole === "member" ? "selected" : ""}>Member</option>
-          <option value="guest" ${S.debugPreviewRole === "guest" ? "selected" : ""}>Guest</option>
-        </select>
-      </div>` : ""}
+    <div class="panel">
+      <h3>General</h3>
+      ${menuRow("btnOpenLedgerSectionFromSettings", "wallet", "Ledger", inLedger ? `${ledger.name || "Current ledger"}, members, and switching` : "Switch, join, or create a ledger")}
+      ${menuRow("btnOpenCurrencyFromSettings", "currency-dollar", "Currency", "Your personal overview currency")}
+      ${menuRow("btnOpenCategoriesFromSettings", "tag", "Categories and Budget", "Manage expense and income categories", { disabled: !inLedger })}
+      ${menuRow("btnOpenPocketFromSettings", "briefcase", "Pocket", "Your personal wallet balance")}
+      ${menuRow("btnOpenTagsFromSettings", "tags", "Tag", "Manage tags used across transactions", { disabled: !inLedger })}
+      ${menuRow("btnOpenRecurringFromSettings", "repeat", "Recurring", "Manage recurring transaction templates", { disabled: !inLedger })}
+      ${soon("bell", "Reminder")}
+      ${soon("pig-money", "Saving Jar")}
+    </div>
 
     <div class="panel">
-      <h3>${sysIcon("palette")}Appearance</h3>
+      <h3>AI Feature</h3>
+      ${soon("bolt", "Shortcuts")}
+      ${menuRow("btnOpenAiReceiptFromSettings", "camera", "AI Receipt Scanning", "Gemini API key for scanning receipts")}
+      ${soon("robot", "AI Buddy Assistant")}
+    </div>
+
+    <div class="panel">
+      <h3>Data</h3>
+      ${soon("file-export", "Export to CSV")}
+      ${soon("trash", "Clear all data")}
+    </div>
+
+    <div class="panel">
+      <h3>Support</h3>
+      ${soon("help", "How to Use")}
+    </div>
+
+    <div class="panel">
+      <h3>About</h3>
+      ${soon("info-circle", "App intro")}
+    </div>
+  `;
+}
+
+// ---------- Preference sub-pages ----------
+
+function renderAppearancePage() {
+  const prefs = S.uiPrefs || {};
+  const themeBtn = (t) => `<button class="opt-btn ${prefs.theme === t.key ? "active" : ""}" data-set-theme="${t.key}">${t.label}</button>`;
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromAppearance" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Appearance</h2>
+      <span style="width:24px"></span>
+    </div>
+    <div class="panel">
       <p class="muted" style="margin-bottom:8px">Dark themes</p>
       <div class="btn-row" style="flex-wrap:wrap;margin-bottom:10px">${THEMES.dark.map(themeBtn).join("")}</div>
       <p class="muted" style="margin-bottom:8px">Light themes</p>
@@ -575,12 +606,36 @@ function renderAiSettings() {
         <button class="opt-btn ${prefs.chartStyle === "donut" ? "active" : ""}" data-set-chart="donut">Ring</button>
         <button class="opt-btn ${prefs.chartStyle === "bar" ? "active" : ""}" data-set-chart="bar">Bar</button>
       </div>
-      <p class="muted" style="margin:10px 0 8px">Icon style</p>
+    </div>`;
+}
+
+function renderIconLibraryPage() {
+  const prefs = S.uiPrefs || {};
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromIconLibrary" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Icon Library</h2>
+      <span style="width:24px"></span>
+    </div>
+    <div class="panel">
+      <p class="muted" style="margin-bottom:8px">Icon style</p>
       <div class="btn-row">
         <button class="opt-btn ${(prefs.iconStyle || "plain") === "plain" ? "active" : ""}" data-set-icon-style="plain">Minimal</button>
         <button class="opt-btn ${prefs.iconStyle === "badge" ? "active" : ""}" data-set-icon-style="badge">Bold</button>
       </div>
-      <p class="muted" style="margin:10px 0 8px">Home screen starts on</p>
+    </div>`;
+}
+
+function renderStartupPage() {
+  const prefs = S.uiPrefs || {};
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromStartup" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Start up</h2>
+      <span style="width:24px"></span>
+    </div>
+    <div class="panel">
+      <p class="muted" style="margin-bottom:8px">Home screen starts on</p>
       <select id="homeStartupSelect">
         <option value="overview" ${(prefs.homeStartup || "overview") === "overview" ? "selected" : ""}>Overview</option>
         <option value="last" ${prefs.homeStartup === "last" ? "selected" : ""}>Last viewed</option>
@@ -588,10 +643,90 @@ function renderAiSettings() {
           <option value="${lid}" ${prefs.homeStartup === lid ? "selected" : ""}>${l.name || "Untitled"}</option>
         `).join("")}
       </select>
+    </div>`;
+}
+
+// ---------- General sub-pages ----------
+
+function renderCurrencyPage() {
+  const pb = S.personalBudget || {};
+  const homeCurrency = pb.homeCurrency || "USD";
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromCurrency" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Currency</h2>
+      <span style="width:24px"></span>
+    </div>
+    <div class="panel">
+      <p class="muted" style="margin-bottom:8px">Used for your personal Overview and budget total. Each ledger keeps its own currency separately.</p>
+      <select id="settingsHomeCurrency">
+        ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map(c => `<option value="${c}" ${homeCurrency === c ? "selected" : ""}>${c}</option>`).join("")}
+      </select>
+      <button id="btnSaveSettingsCurrency">Save</button>
+    </div>`;
+}
+
+// The "Ledger" hub under General — switching ledgers, this ledger's members,
+// its identity settings (rename/invite/delete), and the owner's preview
+// tool. Members/settings/preview gray out when no ledger is open; switching
+// ledgers works regardless.
+function renderLedgerSectionPage() {
+  const inLedger = !!S.activeLedgerId;
+  const ledger = S.activeLedgerDetail || {};
+  const realMember = S.members[S.user.uid];
+  const iAmRealOwner = inLedger && isOwner(realMember);
+  const myMember = effectiveLedgerMember();
+  const iAmOwner = isOwner(myMember);
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromLedgerSection" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Ledger</h2>
+      <span style="width:24px"></span>
     </div>
 
     <div class="panel">
-      <h3>${sysIcon("key")}AI Settings</h3>
+      <button type="button" id="btnManageLedgers" class="panel card-button" style="text-align:left">
+        <div class="card-header-row"><h3 style="margin:0">${sysIcon("switch-3")}Switch / Manage Ledgers</h3><span>&rarr;</span></div>
+        <p class="muted" style="margin:0">Create, join, or switch between your ledgers</p>
+      </button>
+      <button type="button" id="btnOpenMembersFromLedgerSection" class="panel card-button" style="text-align:left" ${inLedger ? "" : "disabled"}>
+        <div class="card-header-row"><h3 style="margin:0">${sysIcon("users")}Members</h3><span>&rarr;</span></div>
+        <p class="muted" style="margin:0">${inLedger ? "See and manage who's in this ledger" : "Open a ledger to manage its members"}</p>
+      </button>
+    </div>
+
+    ${inLedger ? `
+      <div class="panel">
+        <h3>${ledgerIcon(ledger.icon)} ${ledger.name || ""} settings</h3>
+        ${previewWrap(renderSettingsPanel(ledger, myMember, iAmOwner))}
+      </div>` : ""}
+
+    ${iAmRealOwner ? `
+      <div class="panel">
+        <h3>🔍 Preview as <span class="muted" style="font-weight:400">(testing tool)</span></h3>
+        <p class="muted" style="margin-bottom:8px">See this ledger as a different role would — nothing you do while previewing actually happens.</p>
+        <select id="previewRoleSelect">
+          <option value="" ${!S.debugPreviewRole ? "selected" : ""}>My real view (Owner)</option>
+          <option value="moderator" ${S.debugPreviewRole === "moderator" ? "selected" : ""}>Moderator (all permissions)</option>
+          <option value="member" ${S.debugPreviewRole === "member" ? "selected" : ""}>Member</option>
+          <option value="guest" ${S.debugPreviewRole === "guest" ? "selected" : ""}>Guest</option>
+        </select>
+      </div>` : ""}
+  `;
+}
+
+// ---------- AI Feature sub-pages ----------
+
+function renderAiReceiptScanPage() {
+  const hasKey = !!getGeminiKey();
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromAiReceipt" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">AI Receipt Scanning</h2>
+      <span style="width:24px"></span>
+    </div>
+    <div class="panel">
       <p class="muted" style="margin-bottom:10px">Used for scanning receipt photos. Get a free key at <strong>aistudio.google.com/apikey</strong>. It's stored only in this browser — never sent anywhere except directly to Google when you scan a receipt.</p>
       <div id="aiKeyError" class="error"></div>
       <input id="geminiKeyInput" type="password" placeholder="Paste Gemini API key..." value="${getGeminiKey()}" />
@@ -600,8 +735,7 @@ function renderAiSettings() {
         ${hasKey ? `<button id="btnClearAiKey" class="secondary">Remove key</button>` : ""}
       </div>
       ${hasKey ? `<p class="muted" style="margin-top:8px">✓ Key saved</p>` : ""}
-    </div>
-    `;
+    </div>`;
 }
 
 function fakePreviewMember(role) {
