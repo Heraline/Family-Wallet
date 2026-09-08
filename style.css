@@ -106,7 +106,19 @@ body[data-icon="badge"] .icon-btn:disabled { box-shadow: none; }
 .nav-icon { font-size: 20px; }
 .nav-label { font-size: 10px; }
 
-.card-button { cursor: pointer; margin: 0; }
+.card-button {
+  cursor: pointer; margin: 0 0 10px; width: 100%;
+  min-height: 64px; display: flex; flex-direction: column; justify-content: center;
+}
+.card-button:last-child { margin-bottom: 0; }
+.card-button .card-header-row { flex-wrap: nowrap; gap: 8px; }
+.card-button .card-header-row h3 {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1;
+}
+.card-button .card-header-row > span:last-child { flex: none; }
+.card-button > p.muted {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .ledger-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding: 6px 4px 14px; }
 .ledger-scroll-card { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; border-radius: 14px; padding: 12px 16px; min-width: 84px; font-size: 12px; font-weight: 600; color: var(--card-text); }
 

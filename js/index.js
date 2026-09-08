@@ -572,8 +572,6 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnBackFromMembers") { S.view = "ledgerSection"; render(); }
     if (id === "btnOpenAppearanceFromSettings") { S.view = "settingsAppearance"; render(); }
     if (id === "btnBackFromAppearance") { S.view = "aiSettings"; render(); }
-    if (id === "btnOpenIconLibraryFromSettings") { S.view = "settingsIconLibrary"; render(); }
-    if (id === "btnBackFromIconLibrary") { S.view = "aiSettings"; render(); }
     if (id === "btnOpenStartupFromSettings") { S.view = "settingsStartup"; render(); }
     if (id === "btnBackFromStartup") { S.view = "aiSettings"; render(); }
     if (id === "btnOpenCurrencyFromSettings") { S.view = "settingsCurrency"; render(); }

@@ -152,7 +152,6 @@ export function render() {
   if (!S.user) return renderLogin();
   if (S.view === "aiSettings") return renderAiSettings();
   if (S.view === "settingsAppearance") return renderAppearancePage();
-  if (S.view === "settingsIconLibrary") return renderIconLibraryPage();
   if (S.view === "settingsStartup") return renderStartupPage();
   if (S.view === "settingsCurrency") return renderCurrencyPage();
   if (S.view === "ledgerSection") return renderLedgerSectionPage();
@@ -537,8 +536,8 @@ function renderAiSettings() {
     <div class="panel">
       <h3>Preference</h3>
       ${soon("language", "Language")}
-      ${menuRow("btnOpenAppearanceFromSettings", "palette", "Appearance", "Theme colors and card style")}
-      ${menuRow("btnOpenIconLibraryFromSettings", "icons", "Icon Library", "Minimal or bold icon style")}
+      ${menuRow("btnOpenAppearanceFromSettings", "palette", "Appearance", "Theme colors, card style, and icon style")}
+      ${soon("icons", "Icon Library")}
       ${menuRow("btnOpenStartupFromSettings", "home", "Start up", "Choose what Home opens to")}
       ${soon("adjustments", "Simple mode")}
     </div>
@@ -602,22 +601,10 @@ function renderAppearancePage() {
         <button class="opt-btn ${prefs.cardStyle === "flat" ? "active" : ""}" data-set-card="flat">Flat / Minimal</button>
       </div>
       <p class="muted" style="margin-bottom:8px">Budget progress style</p>
-      <div class="btn-row">
+      <div class="btn-row" style="margin-bottom:10px">
         <button class="opt-btn ${prefs.chartStyle === "donut" ? "active" : ""}" data-set-chart="donut">Ring</button>
         <button class="opt-btn ${prefs.chartStyle === "bar" ? "active" : ""}" data-set-chart="bar">Bar</button>
       </div>
-    </div>`;
-}
-
-function renderIconLibraryPage() {
-  const prefs = S.uiPrefs || {};
-  app.innerHTML = `
-    <div class="topbar">
-      <button id="btnBackFromIconLibrary" class="link" aria-label="Back">&larr;</button>
-      <h2 style="margin:0">Icon Library</h2>
-      <span style="width:24px"></span>
-    </div>
-    <div class="panel">
       <p class="muted" style="margin-bottom:8px">Icon style</p>
       <div class="btn-row">
         <button class="opt-btn ${(prefs.iconStyle || "plain") === "plain" ? "active" : ""}" data-set-icon-style="plain">Minimal</button>
