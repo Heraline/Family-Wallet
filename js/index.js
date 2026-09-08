@@ -6,7 +6,7 @@ import { S, onStateChange } from "./state.js";
 import { initAuthWatcher, register, login, logout } from "./auth.js";
 import {
   createLedger, joinLedgerByCode, switchLedger, listenUserLedgers,
-  renameLedger, regenerateInviteCode, addGuest, removeGuest,
+  renameLedger, updateLedgerCurrency, regenerateInviteCode, addGuest, removeGuest,
   setMemberRole, setModeratorPermissions, removeMember, leaveLedger, deleteLedger,
   fetchLedgerContext,
 } from "./ledgers.js";
@@ -563,7 +563,11 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnBackFromLedgerManage") { S.view = null; render(); }
     if (id === "btnOpenLedgerManage") { S.view = "ledgerManage"; render(); }
-    if (id === "btnOpenCategoriesFromSettings") { S.categoriesBackView = "settings"; S.view = "categories"; render(); }
+    if (id === "btnOpenCategoriesFromSettings") {
+      if (S.activeLedgerId) { S.view = "settingsCategoriesAndBudget"; render(); }
+      else goTo("personalBudget");
+    }
+    if (id === "btnBackFromSettingsCategoriesAndBudget") { S.view = "aiSettings"; render(); }
     if (id === "btnOpenTagsFromSettings") { S.view = "tags"; render(); }
     if (id === "btnBackFromTags") { S.view = "aiSettings"; render(); }
     if (id === "btnOpenRecurringFromSettings") { S.view = "recurring"; render(); }
@@ -574,8 +578,16 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnBackFromAppearance") { S.view = "aiSettings"; render(); }
     if (id === "btnOpenStartupFromSettings") { S.view = "settingsStartup"; render(); }
     if (id === "btnBackFromStartup") { S.view = "aiSettings"; render(); }
-    if (id === "btnOpenCurrencyFromSettings") { S.view = "settingsCurrency"; render(); }
+    if (id === "btnOpenCurrencyFromSettings") {
+      S.view = S.activeLedgerId ? "settingsLedgerCurrency" : "settingsCurrency";
+      render();
+    }
     if (id === "btnBackFromCurrency") { S.view = "aiSettings"; render(); }
+    if (id === "btnBackFromLedgerCurrency") { S.view = "aiSettings"; render(); }
+    if (id === "btnSaveLedgerCurrency") {
+      const currency = val("ledgerCurrencySelect");
+      await updateLedgerCurrency(S.activeLedgerId, currency);
+    }
     if (id === "btnSaveSettingsCurrency") {
       const homeCurrency = val("settingsHomeCurrency");
       await setPersonalBudget(S.personalBudget?.total || 0, homeCurrency);
@@ -583,7 +595,10 @@ document.getElementById("app").addEventListener("click", async (e) => {
     }
     if (id === "btnOpenLedgerSectionFromSettings") { S.view = "ledgerSection"; render(); }
     if (id === "btnBackFromLedgerSection") { S.view = "aiSettings"; render(); }
-    if (id === "btnOpenPocketFromSettings") { S.view = "wallet"; render(); }
+    if (id === "btnOpenPocketFromSettings") {
+      S.view = S.activeLedgerId ? "ledgerWallet" : "wallet";
+      render();
+    }
     if (id === "btnOpenAiReceiptFromSettings") { S.view = "settingsAiReceipt"; render(); }
     if (id === "btnBackFromAiReceipt") { S.view = "aiSettings"; render(); }
     if (id === "btnCategoriesBack") {
@@ -824,6 +839,18 @@ document.getElementById("app").addEventListener("change", async (e) => {
     }
     if (id === "previewRoleSelect") {
       S.debugPreviewRole = e.target.value || null;
+      render();
+    }
+    if (id === "settingsContextSelect") {
+      const lid = e.target.value;
+      if (lid) {
+        switchLedger(lid);
+      } else {
+        S.activeLedgerId = null;
+        S.activeLedgerDetail = null;
+        S.members = {};
+        S.txs = {};
+      }
       render();
     }
     if (id === "qaRemark") { S.quickAdd.remark = e.target.value; }

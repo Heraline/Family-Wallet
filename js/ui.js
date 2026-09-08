@@ -154,6 +154,8 @@ export function render() {
   if (S.view === "settingsAppearance") return renderAppearancePage();
   if (S.view === "settingsStartup") return renderStartupPage();
   if (S.view === "settingsCurrency") return renderCurrencyPage();
+  if (S.view === "settingsLedgerCurrency") return renderLedgerCurrencyPage();
+  if (S.view === "settingsCategoriesAndBudget") return renderSettingsCategoriesAndBudgetPage();
   if (S.view === "ledgerSection") return renderLedgerSectionPage();
   if (S.view === "settingsAiReceipt") return renderAiReceiptScanPage();
   if (S.activeLedgerId) {
@@ -544,12 +546,20 @@ function renderAiSettings() {
 
     <div class="panel">
       <h3>General</h3>
-      ${menuRow("btnOpenLedgerSectionFromSettings", "wallet", "Ledger", inLedger ? `${ledger.name || "Current ledger"}, members, and switching` : "Switch, join, or create a ledger")}
-      ${menuRow("btnOpenCurrencyFromSettings", "currency-dollar", "Currency", "Your personal overview currency")}
-      ${menuRow("btnOpenCategoriesFromSettings", "tag", "Categories and Budget", "Manage expense and income categories", { disabled: !inLedger })}
-      ${menuRow("btnOpenPocketFromSettings", "briefcase", "Pocket", "Your personal wallet balance")}
-      ${menuRow("btnOpenTagsFromSettings", "tags", "Tag", "Manage tags used across transactions", { disabled: !inLedger })}
-      ${menuRow("btnOpenRecurringFromSettings", "repeat", "Recurring", "Manage recurring transaction templates", { disabled: !inLedger })}
+      <p class="muted" style="margin-bottom:6px">Viewing settings for</p>
+      <select id="settingsContextSelect" style="margin-bottom:14px">
+        <option value="" ${!inLedger ? "selected" : ""}>🏠 Overview</option>
+        ${Object.entries(S.ledgers || {}).map(([lid, l]) => `
+          <option value="${lid}" ${S.activeLedgerId === lid ? "selected" : ""}>${l.icon || "💼"} ${l.name || "Untitled"}</option>
+        `).join("")}
+      </select>
+
+      ${menuRow("btnOpenLedgerSectionFromSettings", "wallet", "Ledger", inLedger ? `${ledger.name || "Current ledger"} — members, identity, switching` : "Switch, join, or create a ledger")}
+      ${menuRow("btnOpenCurrencyFromSettings", "currency-dollar", "Currency", inLedger ? `${ledger.currency || "USD"} — this ledger's currency` : "Your personal overview currency")}
+      ${menuRow("btnOpenCategoriesFromSettings", "tag", "Categories and Budget", inLedger ? "Manage categories and monthly target" : "Your personal budget target")}
+      ${menuRow("btnOpenPocketFromSettings", "briefcase", "Pocket", inLedger ? "This ledger's shared wallet" : "Your personal wallet balance")}
+      ${inLedger ? menuRow("btnOpenTagsFromSettings", "tags", "Tag", "Manage tags used across transactions") : ""}
+      ${inLedger ? menuRow("btnOpenRecurringFromSettings", "repeat", "Recurring", "Manage recurring transaction templates") : ""}
       ${soon("bell", "Reminder")}
       ${soon("pig-money", "Saving Jar")}
     </div>
@@ -831,6 +841,51 @@ function renderCategoriesPage() {
   `;
 }
 
+// Settings' General section "Categories and Budget" row, for a specific
+// ledger — combines the overall monthly target (from the Ledger Budget
+// page) with per-category budgets (from the Categories page) in one place.
+function renderSettingsCategoriesAndBudgetPage() {
+  const ledger = S.activeLedgerDetail || {};
+  const myMember = effectiveLedgerMember();
+  const txs = Object.entries(S.txs || {});
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromSettingsCategoriesAndBudget" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Categories and Budget</h2>
+      <span style="width:24px"></span>
+    </div>
+    ${previewWrap(`
+      ${ledgerBudgetTargetPanelsHtml(ledger, myMember, txs)}
+      ${renderCategoriesPanel(myMember, txs, ledger)}
+    `)}
+  `;
+}
+
+// Only changes the currency label going forward — doesn't retroactively
+// convert amounts already recorded on existing transactions.
+function renderLedgerCurrencyPage() {
+  const ledger = S.activeLedgerDetail || {};
+  const myMember = effectiveLedgerMember();
+  const canEdit = isOwner(myMember);
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromLedgerCurrency" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Currency</h2>
+      <span style="width:24px"></span>
+    </div>
+    ${previewWrap(`
+      <div class="panel">
+        <p class="muted" style="margin-bottom:8px">This ledger's currency. Changing it only affects budgets and new transactions going forward — amounts already recorded keep their original currency.</p>
+        <select id="ledgerCurrencySelect" ${canEdit ? "" : "disabled"}>
+          ${["USD", "MYR", "SGD", "EUR", "GBP", "JPY", "AUD"].map(c => `<option value="${c}" ${(ledger.currency || "USD") === c ? "selected" : ""}>${c}</option>`).join("")}
+        </select>
+        ${canEdit ? `<button id="btnSaveLedgerCurrency">Save</button>` : `<p class="muted">Only the owner can change this.</p>`}
+      </div>
+    `)}
+  `;
+}
+
 function renderTagsPage() {
   const myMember = effectiveLedgerMember();
   const txs = Object.entries(S.txs || {});
@@ -903,26 +958,20 @@ function renderLedgerWalletPage() {
 }
 
 
-function renderLedgerBudgetPage() {
-  const ledger = S.activeLedgerDetail || {};
-  const myMember = S.members?.[S.user.uid];
+// Shared fragment: "this month's spending" progress + editable target input.
+// Used by both the standalone Ledger Budget page (Home's Budget card) and
+// the combined "Categories and Budget" Settings page.
+function ledgerBudgetTargetPanelsHtml(ledger, myMember, txs) {
   const canEdit = can(myMember, "manageBudget");
   const budget = S.ledgerBudget || {};
   const target = budget.total || 0;
   const currency = ledger.currency || "USD";
   const ym = currentYM();
-  const txs = Object.entries(S.txs || {});
   const spent = txs.filter(([, t]) => t.type === "expense" && t.date?.startsWith(ym)).reduce((sum, [, t]) => sum + t.amount, 0);
   const pct = target > 0 ? Math.min(100, Math.round((spent / target) * 100)) : 0;
   const over = target > 0 && spent > target;
 
-  app.innerHTML = `
-    <div class="topbar">
-      <button id="btnBackFromLedgerBudget" class="link">&larr; Home</button>
-      <button id="btnLogout" class="link">Log out</button>
-    </div>
-    <h2>${sysIcon("chart-bar")}${ledgerIcon(ledger.icon)} ${ledger.name || "Ledger"} Budget — ${ym}</h2>
-
+  return `
     <div class="panel">
       <h3>This month's spending</h3>
       <div class="balance">${currency} ${spent.toFixed(2)} <span class="muted" style="font-size:14px">/ ${target ? target.toFixed(2) : "no target set"}</span></div>
@@ -941,6 +990,21 @@ function renderLedgerBudgetPage() {
       </div>
       <button id="btnSaveLedgerBudget">Save target</button>
     </div>` : ""}`;
+}
+
+function renderLedgerBudgetPage() {
+  const ledger = S.activeLedgerDetail || {};
+  const myMember = S.members?.[S.user.uid];
+  const txs = Object.entries(S.txs || {});
+  const ym = currentYM();
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromLedgerBudget" class="link">&larr; Home</button>
+      <button id="btnLogout" class="link">Log out</button>
+    </div>
+    <h2>${sysIcon("chart-bar")}${ledgerIcon(ledger.icon)} ${ledger.name || "Ledger"} Budget — ${ym}</h2>
+    ${ledgerBudgetTargetPanelsHtml(ledger, myMember, txs)}`;
 }
 
 function categoryRowHtml(c, canEdit, spentByCat, ledgerCurrency, isFirst, isLast) {

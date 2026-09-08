@@ -114,6 +114,13 @@ export async function renameLedger(lid, name, icon) {
   await writeUpdate("/", updates);
 }
 
+// Changes the ledger's currency label going forward (budgets, wallet, new
+// transactions). Existing transactions keep their recorded amount/currency
+// as-is — this does NOT retroactively convert historical data.
+export async function updateLedgerCurrency(lid, currency) {
+  await writeUpdate(`ledgers/${lid}`, { currency });
+}
+
 export async function regenerateInviteCode(lid) {
   const inviteCode = genInviteCode();
   await writeUpdate(`ledgers/${lid}`, { inviteCode });
