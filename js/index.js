@@ -591,6 +591,22 @@ document.getElementById("app").addEventListener("click", async (e) => {
       await setPersonalBudget(S.personalBudget?.total || 0, homeCurrency);
       await refreshPersonalOverview(homeCurrency);
     }
+    if (id === "btnOpenContextPicker") { S.view = "settingsContextPicker"; render(); }
+    if (id === "btnBackFromContextPicker") { S.view = "aiSettings"; render(); }
+    const contextRow = e.target.closest?.("[data-context-lid]");
+    if (contextRow) {
+      const lid = contextRow.dataset.contextLid;
+      if (lid) {
+        switchLedger(lid);
+      } else {
+        S.activeLedgerId = null;
+        S.activeLedgerDetail = null;
+        S.members = {};
+        S.txs = {};
+      }
+      S.view = "aiSettings";
+      render();
+    }
     if (id === "btnOpenLedgerSectionFromSettings") {
       S.view = S.activeLedgerId ? "ledgerSection" : "ledgers";
       render();
@@ -840,18 +856,6 @@ document.getElementById("app").addEventListener("change", async (e) => {
     }
     if (id === "previewRoleSelect") {
       S.debugPreviewRole = e.target.value || null;
-      render();
-    }
-    if (id === "settingsContextSelect") {
-      const lid = e.target.value;
-      if (lid) {
-        switchLedger(lid);
-      } else {
-        S.activeLedgerId = null;
-        S.activeLedgerDetail = null;
-        S.members = {};
-        S.txs = {};
-      }
       render();
     }
     if (id === "qaRemark") { S.quickAdd.remark = e.target.value; }

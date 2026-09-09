@@ -151,6 +151,7 @@ export function render() {
   document.body.classList.toggle("qa-active", S.view === "quickAdd" && !S.activeLedgerId);
   if (!S.user) return renderLogin();
   if (S.view === "aiSettings") return renderAiSettings();
+  if (S.view === "settingsContextPicker") return renderSettingsContextPickerPage();
   if (S.view === "settingsAppearance") return renderAppearancePage();
   if (S.view === "settingsStartup") return renderStartupPage();
   if (S.view === "settingsCurrency") return renderCurrencyPage();
@@ -516,6 +517,33 @@ function renderLedgerList() {
     </div>`;
 }
 
+// Small dedicated picker for General's "Viewing settings for" row — lists
+// Overview plus every ledger, with a checkmark on whichever is active.
+// Picking one switches context (same as switchLedger) and returns here.
+function renderSettingsContextPickerPage() {
+  const inLedger = !!S.activeLedgerId;
+  const ledgers = Object.entries(S.ledgers || {});
+
+  const row = (lid, icon, name, subtitle, selected) => `
+    <button type="button" data-context-lid="${lid}" class="panel card-button" style="text-align:left">
+      <div class="card-header-row">
+        <h3 style="margin:0">${icon} ${name}</h3>
+        ${selected ? sysIcon("check") : ""}
+      </div>
+      <p class="muted" style="margin:0">${subtitle}</p>
+    </button>`;
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button id="btnBackFromContextPicker" class="link" aria-label="Back">&larr;</button>
+      <h2 style="margin:0">Viewing settings for</h2>
+      <span style="width:24px"></span>
+    </div>
+    ${row("", "🏠", "Overview", "Your personal overview, budget, and Pocket", !inLedger)}
+    ${ledgers.map(([lid, l]) => row(lid, l.icon || "💼", l.name || "Untitled ledger", l.role || "member", S.activeLedgerId === lid)).join("")}
+  `;
+}
+
 function renderAiSettings() {
   const inLedger = !!S.activeLedgerId;
   const ledger = S.activeLedgerDetail || {};
@@ -545,13 +573,7 @@ function renderAiSettings() {
 
     <div class="panel">
       <h3>General</h3>
-      <p class="muted" style="margin-bottom:6px">Viewing settings for</p>
-      <select id="settingsContextSelect" style="margin-bottom:14px">
-        <option value="" ${!inLedger ? "selected" : ""}>🏠 Overview</option>
-        ${Object.entries(S.ledgers || {}).map(([lid, l]) => `
-          <option value="${lid}" ${S.activeLedgerId === lid ? "selected" : ""}>${l.icon || "💼"} ${l.name || "Untitled"}</option>
-        `).join("")}
-      </select>
+      ${menuRow("btnOpenContextPicker", "adjustments-horizontal", "Viewing settings for", inLedger ? `${ledger.icon || "💼"} ${ledger.name || "Untitled ledger"}` : "🏠 Overview")}
 
       ${menuRow("btnOpenLedgerSectionFromSettings", "wallet", "Ledger", inLedger ? `${ledger.name || "Current ledger"} — members, identity, switching` : "Switch, join, or create a ledger")}
       ${menuRow("btnOpenCurrencyFromSettings", "currency-dollar", "Currency", inLedger ? `${ledger.currency || "USD"} — this ledger's currency` : "Your personal overview currency")}
