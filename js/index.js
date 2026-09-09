@@ -572,8 +572,6 @@ document.getElementById("app").addEventListener("click", async (e) => {
     if (id === "btnBackFromTags") { S.view = "aiSettings"; render(); }
     if (id === "btnOpenRecurringFromSettings") { S.view = "recurring"; render(); }
     if (id === "btnBackFromRecurring") { S.view = "aiSettings"; render(); }
-    if (id === "btnOpenMembersFromLedgerSection") { S.view = "members"; render(); }
-    if (id === "btnBackFromMembers") { S.view = "ledgerSection"; render(); }
     if (id === "btnOpenAppearanceFromSettings") { S.view = "settingsAppearance"; render(); }
     if (id === "btnBackFromAppearance") { S.view = "aiSettings"; render(); }
     if (id === "btnOpenStartupFromSettings") { S.view = "settingsStartup"; render(); }
@@ -593,7 +591,10 @@ document.getElementById("app").addEventListener("click", async (e) => {
       await setPersonalBudget(S.personalBudget?.total || 0, homeCurrency);
       await refreshPersonalOverview(homeCurrency);
     }
-    if (id === "btnOpenLedgerSectionFromSettings") { S.view = "ledgerSection"; render(); }
+    if (id === "btnOpenLedgerSectionFromSettings") {
+      S.view = S.activeLedgerId ? "ledgerSection" : "ledgers";
+      render();
+    }
     if (id === "btnBackFromLedgerSection") { S.view = "aiSettings"; render(); }
     if (id === "btnOpenPocketFromSettings") {
       S.view = S.activeLedgerId ? "ledgerWallet" : "wallet";

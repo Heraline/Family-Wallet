@@ -167,7 +167,6 @@ export function render() {
     if (S.view === "categories") return renderCategoriesPage();
     if (S.view === "tags") return renderTagsPage();
     if (S.view === "recurring") return renderRecurringPage();
-    if (S.view === "members") return renderMembersPage();
     return renderHome();
   }
   if (S.view === "personalBudget") return renderPersonalBudget();
@@ -668,36 +667,33 @@ function renderCurrencyPage() {
 // tool. Members/settings/preview gray out when no ledger is open; switching
 // ledgers works regardless.
 function renderLedgerSectionPage() {
-  const inLedger = !!S.activeLedgerId;
   const ledger = S.activeLedgerDetail || {};
   const realMember = S.members[S.user.uid];
-  const iAmRealOwner = inLedger && isOwner(realMember);
+  const iAmRealOwner = isOwner(realMember);
   const myMember = effectiveLedgerMember();
   const iAmOwner = isOwner(myMember);
+  const memberEntries = Object.entries(S.members || {});
 
   app.innerHTML = `
     <div class="topbar">
       <button id="btnBackFromLedgerSection" class="link" aria-label="Back">&larr;</button>
-      <h2 style="margin:0">Ledger</h2>
+      <h2 style="margin:0">${ledgerIcon(ledger.icon)} ${ledger.name || "Ledger"}</h2>
       <span style="width:24px"></span>
     </div>
 
-    <div class="panel">
-      <button type="button" id="btnManageLedgers" class="panel card-button" style="text-align:left">
-        <div class="card-header-row"><h3 style="margin:0">${sysIcon("switch-3")}Switch / Manage Ledgers</h3><span>&rarr;</span></div>
-        <p class="muted" style="margin:0">Create, join, or switch between your ledgers</p>
-      </button>
-      <button type="button" id="btnOpenMembersFromLedgerSection" class="panel card-button" style="text-align:left" ${inLedger ? "" : "disabled"}>
-        <div class="card-header-row"><h3 style="margin:0">${sysIcon("users")}Members</h3><span>&rarr;</span></div>
-        <p class="muted" style="margin:0">${inLedger ? "See and manage who's in this ledger" : "Open a ledger to manage its members"}</p>
-      </button>
-    </div>
+    <button type="button" id="btnManageLedgers" class="link" style="margin-bottom:12px">${sysIcon("switch-3")}Switch / manage all ledgers</button>
 
-    ${inLedger ? `
+    ${previewWrap(`
       <div class="panel">
-        <h3>${ledgerIcon(ledger.icon)} ${ledger.name || ""} settings</h3>
-        ${previewWrap(renderSettingsPanel(ledger, myMember, iAmOwner))}
-      </div>` : ""}
+        <h3>${sysIcon("users")}Members</h3>
+        ${renderMembersPanel(memberEntries, myMember, iAmOwner)}
+      </div>
+
+      <div class="panel">
+        <h3>Ledger settings</h3>
+        ${renderSettingsPanel(ledger, myMember, iAmOwner)}
+      </div>
+    `)}
 
     ${iAmRealOwner ? `
       <div class="panel">
@@ -909,20 +905,6 @@ function renderRecurringPage() {
       <span style="width:24px"></span>
     </div>
     ${previewWrap(renderRecurringPanel(myMember, ledger))}
-  `;
-}
-
-function renderMembersPage() {
-  const memberEntries = Object.entries(S.members || {});
-  const myMember = effectiveLedgerMember();
-  const iAmOwner = isOwner(myMember);
-  app.innerHTML = `
-    <div class="topbar">
-      <button id="btnBackFromMembers" class="link" aria-label="Back">&larr;</button>
-      <h2 style="margin:0">Members</h2>
-      <span style="width:24px"></span>
-    </div>
-    ${previewWrap(renderMembersPanel(memberEntries, myMember, iAmOwner))}
   `;
 }
 
